@@ -226,6 +226,12 @@ class TipoEquipo(models.Model):
 class EquipoIndividual(models.Model):
     """Modelo para equipos individuales con códigos únicos"""
     ESTADOS = [
+        ('bueno', 'Bueno'),
+        ('regular', 'Regular'),
+        ('malo', 'Malo'),
+    ]
+    
+    ESTADOS_OPERATIVOS = [
         ('operativo', 'Operativo'),
         ('mantenimiento', 'En Mantenimiento'),
         ('reparacion', 'En Reparación'),
@@ -234,7 +240,8 @@ class EquipoIndividual(models.Model):
     
     tipo_equipo = models.ForeignKey(TipoEquipo, on_delete=models.CASCADE, related_name='equipos_individuales')
     codigo = models.CharField(max_length=20, unique=True, help_text="Código único del equipo")
-    estado = models.CharField(max_length=20, choices=ESTADOS, default='operativo')
+    estado_fisico = models.CharField(max_length=20, choices=ESTADOS, default='bueno', help_text="Estado físico del equipo")
+    estado_operativo = models.CharField(max_length=20, choices=ESTADOS_OPERATIVOS, default='operativo', help_text="Estado operativo del equipo")
     ubicacion = models.CharField(max_length=100, blank=True)
     fecha_ingreso = models.DateField(auto_now_add=True)
     observaciones = models.TextField(blank=True)
@@ -245,7 +252,16 @@ class EquipoIndividual(models.Model):
         ordering = ['tipo_equipo', 'codigo']
     
     def __str__(self):
-        return f"{self.tipo_equipo.get_nombre_display()} - {self.codigo}"
+        return f"{self.tipo_equipo.get_nombre_display()} - {self.codigo} - ({self.get_estado_fisico_display().upper()})"
+    
+    def get_display_name(self):
+        """Obtener nombre para mostrar en la interfaz"""
+        return f"{self.tipo_equipo.get_nombre_display()} - {self.codigo} - ({self.get_estado_fisico_display().upper()})"
+    
+    @property
+    def is_available(self):
+        """Verificar si el equipo está disponible para uso"""
+        return self.estado_operativo == 'operativo'
 
 class Equipo(models.Model):
     """Modelo para la asignación de equipos a ensayos"""
@@ -266,7 +282,7 @@ class Equipo(models.Model):
         """Obtener equipos disponibles del tipo seleccionado"""
         return EquipoIndividual.objects.filter(
             tipo_equipo=self.tipo_equipo,
-            estado='operativo'
+            estado_operativo='operativo'
         )
     
     def get_recomendacion_uso(self):
