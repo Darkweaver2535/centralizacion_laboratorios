@@ -115,37 +115,47 @@
         <div class="form-step" data-step="4">
             <div class="card">
                 <h3>Ensayos y Equipos</h3>
-                <p class="step-description">Seleccione los ensayos y equipos asociados al laboratorio:</p>
+                <p class="step-description">Seleccione los ensayos, cantidad de estudiantes y equipos necesarios:</p>
                 
                 <div class="error-message" id="error-ensayos"></div>
                 
                 <div class="ensayos-container">
                     <div class="ensayo-item">
-                        <div class="form-group">
-                            <label for="ensayo_1">Ensayo 1 *</label>
-                            <select id="ensayo_1" name="ensayos[]" required class="form-control">
-                                <option value="">Seleccione un ensayo</option>
-                                <option value="ensayo_traccion">Ensayo de Tracción</option>
-                                <option value="ensayo_compresion">Ensayo de Compresión</option>
-                                <option value="ensayo_dureza">Ensayo de Dureza</option>
-                                <option value="ensayo_impacto">Ensayo de Impacto</option>
-                                <option value="ensayo_ph">Ensayo de pH</option>
-                                <option value="ensayo_conductividad">Ensayo de Conductividad Eléctrica</option>
-                                <option value="ensayo_densidad">Ensayo de Densidad</option>
-                                <option value="ensayo_viscosidad">Ensayo de Viscosidad</option>
-                                <option value="ensayo_microscopia">Ensayo de Microscopía</option>
-                                <option value="ensayo_espectroscopia">Ensayo de Espectroscopía</option>
-                            </select>
+                        <div class="ensayo-header">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="ensayo_1">Ensayo 1 *</label>
+                                    <select id="ensayo_1" name="ensayos[]" required class="form-control">
+                                        <option value="">Seleccione un ensayo</option>
+                                        <option value="ensayo_traccion">Ensayo de Tracción</option>
+                                        <option value="ensayo_compresion">Ensayo de Compresión</option>
+                                        <option value="ensayo_dureza">Ensayo de Dureza</option>
+                                        <option value="ensayo_impacto">Ensayo de Impacto</option>
+                                        <option value="ensayo_ph">Ensayo de pH</option>
+                                        <option value="ensayo_conductividad">Ensayo de Conductividad Eléctrica</option>
+                                        <option value="ensayo_densidad">Ensayo de Densidad</option>
+                                        <option value="ensayo_viscosidad">Ensayo de Viscosidad</option>
+                                        <option value="ensayo_microscopia">Ensayo de Microscopía</option>
+                                        <option value="ensayo_espectroscopia">Ensayo de Espectroscopía</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="estudiantes_1">Cantidad de Estudiantes *</label>
+                                    <input type="number" id="estudiantes_1" name="estudiantes[]" min="1" value="1" 
+                                           class="form-control" onchange="updateRecomendaciones(1)">
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="equipos-section">
                             <h4>Equipos para este ensayo:</h4>
                             <div class="equipos-container" data-ensayo="1">
                                 <div class="equipo-item">
-                                    <div class="form-row">
+                                    <div class="equipo-selection">
                                         <div class="form-group">
-                                            <label>Equipo *</label>
-                                            <select name="equipos[1][]" required class="form-control">
+                                            <label>Tipo de Equipo *</label>
+                                            <select name="equipos[1][]" required class="form-control equipo-tipo-select" 
+                                                    data-ensayo="1" data-equipo="1" onchange="loadEquiposIndividuales(this)">
                                                 <option value="">Seleccione un equipo</option>
                                                 <option value="microscopio_optico">Microscopio Óptico</option>
                                                 <option value="balanza_analitica">Balanza Analítica</option>
@@ -159,19 +169,16 @@
                                                 <option value="mechero_bunsen">Mechero Bunsen</option>
                                             </select>
                                         </div>
-                                        <div class="form-group">
-                                            <label>Cantidad</label>
-                                            <input type="number" name="cantidades[1][]" min="1" value="1" class="form-control">
+                                        
+                                        <div class="form-group equipos-individuales-group" style="display: none;">
+                                            <label>Equipos Específicos</label>
+                                            <div class="equipos-individuales-container"></div>
                                         </div>
-                                        <div class="form-group">
-                                            <label>Estado</label>
-                                            <select name="estados[1][]" class="form-control">
-                                                <option value="operativo">Operativo</option>
-                                                <option value="mantenimiento">En Mantenimiento</option>
-                                                <option value="reparacion">En Reparación</option>
-                                                <option value="inoperativo">Inoperativo</option>
-                                            </select>
+                                        
+                                        <div class="recomendacion-container" style="display: none;">
+                                            <div class="recomendacion-info"></div>
                                         </div>
+                                        
                                         <button type="button" class="btn btn-danger remove-equipo">×</button>
                                     </div>
                                 </div>
@@ -231,7 +238,7 @@
 
 <style>
     .ingreso-container {
-        max-width: 900px;
+        max-width: 1000px;
         margin: 0 auto;
     }
 
@@ -440,6 +447,12 @@
         background: #f9fafb;
     }
 
+    .ensayo-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
     .equipos-section h4 {
         color: #374151;
         margin: 15px 0 10px 0;
@@ -452,11 +465,67 @@
         border-radius: 5px;
         padding: 15px;
         margin-bottom: 10px;
+        position: relative;
     }
 
-    .equipo-item .form-row {
-        grid-template-columns: 2fr 1fr 1fr auto;
-        align-items: end;
+    .equipo-selection {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .equipos-individuales-container {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 5px;
+        padding: 10px;
+        background: #f9fafb;
+    }
+
+    .equipo-individual-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .equipo-individual-item:last-child {
+        border-bottom: none;
+    }
+
+    .equipo-individual-item label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: normal;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .recomendacion-container {
+        margin-top: 10px;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .recomendacion-info {
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .recomendacion-info.suficiente {
+        background: #f0f9ff;
+        border-color: #3b82f6;
+        color: #1e40af;
+    }
+
+    .recomendacion-info.insuficiente {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
     }
 
     .resumen-datos {
@@ -490,6 +559,7 @@
         pointer-events: none;
     }
 
+    /* Responsive */
     @media (max-width: 768px) {
         .form-row {
             grid-template-columns: 1fr;
@@ -503,6 +573,11 @@
         .progress-step:not(:last-child)::after {
             display: none;
         }
+        
+        .ingreso-container {
+            max-width: 100%;
+            padding: 10px;
+        }
     }
 </style>
 
@@ -512,6 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressSteps = document.querySelectorAll('.progress-step');
     let currentStep = 1;
     let ensayoCount = 1;
+    let equipoCount = 1;
 
     console.log('Script cargado correctamente');
 
@@ -521,14 +597,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const materiaSelect = document.getElementById('materia');
         const semestre = semestreSelect.value;
         
-        // Limpiar opciones actuales
         materiaSelect.innerHTML = '<option value="">Cargando materias...</option>';
         
         if (semestre) {
-            // Obtener token CSRF
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             
-            // Realizar petición AJAX
             fetch('{% url "ingreso_datos" %}', {
                 method: 'POST',
                 headers: {
@@ -557,9 +630,117 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // Función para cargar equipos individuales
+    window.loadEquiposIndividuales = function(selectElement) {
+        const tipoEquipo = selectElement.value;
+        const equipoItem = selectElement.closest('.equipo-item');
+        const equiposIndividualesGroup = equipoItem.querySelector('.equipos-individuales-group');
+        const equiposIndividualesContainer = equipoItem.querySelector('.equipos-individuales-container');
+        const recomendacionContainer = equipoItem.querySelector('.recomendacion-container');
+        
+        if (tipoEquipo) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch('{% url "ingreso_datos" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `action=get_equipos_individuales&tipo_equipo=${tipoEquipo}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                equiposIndividualesContainer.innerHTML = '';
+                
+                data.equipos.forEach(equipo => {
+                    const equipoDiv = document.createElement('div');
+                    equipoDiv.className = 'equipo-individual-item';
+                    
+                    equipoDiv.innerHTML = `
+                        <label>
+                            <input type="checkbox" name="equipos_individuales[${selectElement.dataset.ensayo}][]" value="${equipo.id}">
+                            ${selectElement.selectedOptions[0].text} - ${equipo.codigo}
+                        </label>
+                    `;
+                    
+                    equiposIndividualesContainer.appendChild(equipoDiv);
+                });
+                
+                if (data.equipos.length > 0) {
+                    equiposIndividualesGroup.style.display = 'block';
+                    
+                    // Mostrar recomendación
+                    updateRecomendacionEquipo(selectElement, data.capacidad_estudiantes, data.total_disponibles);
+                } else {
+                    equiposIndividualesGroup.style.display = 'none';
+                    recomendacionContainer.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar equipos individuales:', error);
+                equiposIndividualesGroup.style.display = 'none';
+                recomendacionContainer.style.display = 'none';
+            });
+        } else {
+            equiposIndividualesGroup.style.display = 'none';
+            recomendacionContainer.style.display = 'none';
+        }
+    };
+
+    // Función para actualizar recomendación de equipo
+    function updateRecomendacionEquipo(selectElement, capacidadEstudiantes, totalDisponibles) {
+        const ensayoItem = selectElement.closest('.ensayo-item');
+        const estudiantesInput = ensayoItem.querySelector('input[name="estudiantes[]"]');
+        const cantidadEstudiantes = parseInt(estudiantesInput.value) || 1;
+        const tipoEquipo = selectElement.value;
+        
+        if (tipoEquipo) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch('{% url "ingreso_datos" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `action=get_recomendacion&tipo_equipo=${tipoEquipo}&cantidad_estudiantes=${cantidadEstudiantes}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                const recomendacionContainer = selectElement.closest('.equipo-item').querySelector('.recomendacion-container');
+                const recomendacionInfo = recomendacionContainer.querySelector('.recomendacion-info');
+                
+                if (data.mensaje) {
+                    recomendacionInfo.textContent = data.mensaje;
+                    recomendacionInfo.className = `recomendacion-info ${data.estado}`;
+                    recomendacionContainer.style.display = 'block';
+                } else {
+                    recomendacionContainer.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error al obtener recomendación:', error);
+            });
+        }
+    }
+
+    // Función para actualizar todas las recomendaciones de un ensayo
+    window.updateRecomendaciones = function(ensayoId) {
+        const ensayoItem = document.querySelector(`.ensayo-item:nth-child(${ensayoId})`);
+        const equipoSelects = ensayoItem.querySelectorAll('.equipo-tipo-select');
+        
+        equipoSelects.forEach(select => {
+            if (select.value) {
+                loadEquiposIndividuales(select);
+            }
+        });
+    };
+
     // Función para mostrar errores
     function showErrors(errors) {
-        // Limpiar errores anteriores
         document.querySelectorAll('.error-message').forEach(el => {
             el.classList.remove('show');
             el.textContent = '';
@@ -693,31 +874,41 @@ document.addEventListener('DOMContentLoaded', function() {
         ensayoCount++;
         const ensayoHtml = `
             <div class="ensayo-item">
-                <div class="form-group">
-                    <label for="ensayo_${ensayoCount}">Ensayo ${ensayoCount} *</label>
-                    <select id="ensayo_${ensayoCount}" name="ensayos[]" required class="form-control">
-                        <option value="">Seleccione un ensayo</option>
-                        <option value="ensayo_traccion">Ensayo de Tracción</option>
-                        <option value="ensayo_compresion">Ensayo de Compresión</option>
-                        <option value="ensayo_dureza">Ensayo de Dureza</option>
-                        <option value="ensayo_impacto">Ensayo de Impacto</option>
-                        <option value="ensayo_ph">Ensayo de pH</option>
-                        <option value="ensayo_conductividad">Ensayo de Conductividad Eléctrica</option>
-                        <option value="ensayo_densidad">Ensayo de Densidad</option>
-                        <option value="ensayo_viscosidad">Ensayo de Viscosidad</option>
-                        <option value="ensayo_microscopia">Ensayo de Microscopía</option>
-                        <option value="ensayo_espectroscopia">Ensayo de Espectroscopía</option>
-                    </select>
+                <div class="ensayo-header">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ensayo_${ensayoCount}">Ensayo ${ensayoCount} *</label>
+                            <select id="ensayo_${ensayoCount}" name="ensayos[]" required class="form-control">
+                                <option value="">Seleccione un ensayo</option>
+                                <option value="ensayo_traccion">Ensayo de Tracción</option>
+                                <option value="ensayo_compresion">Ensayo de Compresión</option>
+                                <option value="ensayo_dureza">Ensayo de Dureza</option>
+                                <option value="ensayo_impacto">Ensayo de Impacto</option>
+                                <option value="ensayo_ph">Ensayo de pH</option>
+                                <option value="ensayo_conductividad">Ensayo de Conductividad Eléctrica</option>
+                                <option value="ensayo_densidad">Ensayo de Densidad</option>
+                                <option value="ensayo_viscosidad">Ensayo de Viscosidad</option>
+                                <option value="ensayo_microscopia">Ensayo de Microscopía</option>
+                                <option value="ensayo_espectroscopia">Ensayo de Espectroscopía</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="estudiantes_${ensayoCount}">Cantidad de Estudiantes *</label>
+                            <input type="number" id="estudiantes_${ensayoCount}" name="estudiantes[]" min="1" value="1" 
+                                   class="form-control" onchange="updateRecomendaciones(${ensayoCount})">
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="equipos-section">
                     <h4>Equipos para este ensayo:</h4>
                     <div class="equipos-container" data-ensayo="${ensayoCount}">
                         <div class="equipo-item">
-                            <div class="form-row">
+                            <div class="equipo-selection">
                                 <div class="form-group">
-                                    <label>Equipo *</label>
-                                    <select name="equipos[${ensayoCount}][]" required class="form-control">
+                                    <label>Tipo de Equipo *</label>
+                                    <select name="equipos[${ensayoCount}][]" required class="form-control equipo-tipo-select" 
+                                            data-ensayo="${ensayoCount}" data-equipo="1" onchange="loadEquiposIndividuales(this)">
                                         <option value="">Seleccione un equipo</option>
                                         <option value="microscopio_optico">Microscopio Óptico</option>
                                         <option value="balanza_analitica">Balanza Analítica</option>
@@ -731,19 +922,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <option value="mechero_bunsen">Mechero Bunsen</option>
                                     </select>
                                 </div>
-                                <div class="form-group">
-                                    <label>Cantidad</label>
-                                    <input type="number" name="cantidades[${ensayoCount}][]" min="1" value="1" class="form-control">
+                                
+                                <div class="form-group equipos-individuales-group" style="display: none;">
+                                    <label>Equipos Específicos</label>
+                                    <div class="equipos-individuales-container"></div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Estado</label>
-                                    <select name="estados[${ensayoCount}][]" class="form-control">
-                                        <option value="operativo">Operativo</option>
-                                        <option value="mantenimiento">En Mantenimiento</option>
-                                        <option value="reparacion">En Reparación</option>
-                                        <option value="inoperativo">Inoperativo</option>
-                                    </select>
+                                
+                                <div class="recomendacion-container" style="display: none;">
+                                    <div class="recomendacion-info"></div>
                                 </div>
+                                
                                 <button type="button" class="btn btn-danger remove-equipo">×</button>
                             </div>
                         </div>
@@ -759,12 +947,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('add-equipo')) {
             const ensayoId = e.target.dataset.ensayo;
+            equipoCount++;
             const equipoHtml = `
                 <div class="equipo-item">
-                    <div class="form-row">
+                    <div class="equipo-selection">
                         <div class="form-group">
-                            <label>Equipo *</label>
-                            <select name="equipos[${ensayoId}][]" required class="form-control">
+                            <label>Tipo de Equipo *</label>
+                            <select name="equipos[${ensayoId}][]" required class="form-control equipo-tipo-select" 
+                                    data-ensayo="${ensayoId}" data-equipo="${equipoCount}" onchange="loadEquiposIndividuales(this)">
                                 <option value="">Seleccione un equipo</option>
                                 <option value="microscopio_optico">Microscopio Óptico</option>
                                 <option value="balanza_analitica">Balanza Analítica</option>
@@ -778,19 +968,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="mechero_bunsen">Mechero Bunsen</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Cantidad</label>
-                            <input type="number" name="cantidades[${ensayoId}][]" min="1" value="1" class="form-control">
+                        
+                        <div class="form-group equipos-individuales-group" style="display: none;">
+                            <label>Equipos Específicos</label>
+                            <div class="equipos-individuales-container"></div>
                         </div>
-                        <div class="form-group">
-                            <label>Estado</label>
-                            <select name="estados[${ensayoId}][]" class="form-control">
-                                <option value="operativo">Operativo</option>
-                                <option value="mantenimiento">En Mantenimiento</option>
-                                <option value="reparacion">En Reparación</option>
-                                <option value="inoperativo">Inoperativo</option>
-                            </select>
+                        
+                        <div class="recomendacion-container" style="display: none;">
+                            <div class="recomendacion-info"></div>
                         </div>
+                        
                         <button type="button" class="btn btn-danger remove-equipo">×</button>
                     </div>
                 </div>
@@ -850,13 +1037,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Resumen de ensayos
         const ensayosSelects = document.querySelectorAll('select[name="ensayos[]"]');
+        const estudiantesInputs = document.querySelectorAll('input[name="estudiantes[]"]');
         const resumenEnsayos = document.getElementById('resumen-ensayos');
         resumenEnsayos.innerHTML = '';
 
         ensayosSelects.forEach((select, index) => {
             if (select.value) {
+                const estudiantesInput = estudiantesInputs[index];
+                const cantidadEstudiantes = estudiantesInput ? estudiantesInput.value : 1;
+                
                 const ensayoDiv = document.createElement('div');
-                ensayoDiv.innerHTML = `<strong>Ensayo ${index + 1}:</strong> ${ensayosTexto[select.value] || select.value}`;
+                ensayoDiv.style.marginBottom = '10px';
+                ensayoDiv.innerHTML = `
+                    <strong>Ensayo ${index + 1}:</strong> ${ensayosTexto[select.value] || select.value}<br>
+                    <strong>Estudiantes:</strong> ${cantidadEstudiantes}
+                `;
                 resumenEnsayos.appendChild(ensayoDiv);
             }
         });
