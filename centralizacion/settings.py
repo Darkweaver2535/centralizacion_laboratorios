@@ -18,7 +18,6 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-4^37a#feuq%t$lcg1erz2aml4koeeni9fww7yne1(!w*i$vmj9')
 
@@ -33,9 +32,7 @@ ALLOWED_HOSTS = [
     '0.0.0.0',  # Añadido para Render
 ]
 
-
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -79,7 +76,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'centralizacion.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -94,7 +90,6 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -114,48 +109,48 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'es-es'
 TIME_ZONE = 'America/La_Paz'
-
 USE_I18N = True
-
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Asegurar que el directorio static existe
+if not os.path.exists(BASE_DIR / 'static'):
+    os.makedirs(BASE_DIR / 'static' / 'images', exist_ok=True)
+
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-
-# WhiteNoise configuration
+# WhiteNoise configuration mejorada
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Configuración adicional para WhiteNoise
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True if DEBUG else False
 
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 # Login URLs
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/login/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
-
 
 # Configuración de seguridad para producción
 if not DEBUG:
