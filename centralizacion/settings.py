@@ -132,10 +132,13 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# WhiteNoise configuration
+# WhiteNoise configuration mejorada
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Configuración de WhiteNoise para mejor handling de archivos
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = True if DEBUG else False
+WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br']
 
 # Media files
 MEDIA_URL = '/media/'
