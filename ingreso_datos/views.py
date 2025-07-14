@@ -9,7 +9,7 @@ from .forms import *
 @login_required
 def ingreso_datos_view(request):
     if request.method == 'POST':
-        # Si es una petición AJAX para obtener materias
+        # Si es una petición AJAX
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             if request.POST.get('action') == 'get_materias':
                 semestre = request.POST.get('semestre')
@@ -23,6 +23,66 @@ def ingreso_datos_view(request):
                     except ValueError:
                         pass
                 return JsonResponse({'materias': []})
+            
+            elif request.POST.get('action') == 'get_equipos_individuales':
+                tipo_equipo_id = request.POST.get('tipo_equipo')
+                if tipo_equipo_id:
+                    try:
+                        tipo_equipo = TipoEquipo.objects.get(nombre=tipo_equipo_id)
+                        equipos = EquipoIndividual.objects.filter(
+                            tipo_equipo=tipo_equipo,
+                            estado='operativo'
+                        ).values('id', 'codigo')
+                        
+                        return JsonResponse({
+                            'equipos': list(equipos),
+                            'capacidad_estudiantes': tipo_equipo.capacidad_estudiantes,
+                            'total_disponibles': equipos.count()
+                        })
+                    except TipoEquipo.DoesNotExist:
+                        pass
+                return JsonResponse({'equipos': [], 'capacidad_estudiantes': 1, 'total_disponibles': 0})
+            
+            elif request.POST.get('action') == 'get_recomendacion':
+                tipo_equipo_id = request.POST.get('tipo_equipo')
+                cantidad_estudiantes = request.POST.get('cantidad_estudiantes')
+                
+                if tipo_equipo_id and cantidad_estudiantes:
+                    try:
+                        tipo_equipo = TipoEquipo.objects.get(nombre=tipo_equipo_id)
+                        estudiantes = int(cantidad_estudiantes)
+                        
+                        capacidad_por_equipo = tipo_equipo.capacidad_estudiantes
+                        equipos_disponibles = EquipoIndividual.objects.filter(
+                            tipo_equipo=tipo_equipo,
+                            estado='operativo'
+                        ).count()
+                        
+                        equipos_necesarios = -(-estudiantes // capacidad_por_equipo)  # Ceil division
+                        
+                        if equipos_necesarios <= equipos_disponibles:
+                            if capacidad_por_equipo == 1:
+                                mensaje = f'✅ Cada estudiante usará un equipo individual. Se necesitan {equipos_necesarios} equipos.'
+                                estado = 'suficiente'
+                            else:
+                                mensaje = f'✅ Se pueden agrupar {capacidad_por_equipo} estudiantes por equipo. Se necesitan {equipos_necesarios} equipos.'
+                                estado = 'suficiente'
+                        else:
+                            faltante = equipos_necesarios - equipos_disponibles
+                            mensaje = f'⚠️ Se necesitan {equipos_necesarios} equipos pero solo hay {equipos_disponibles} disponibles. Se recomienda comprar {faltante} equipos adicionales.'
+                            estado = 'insuficiente'
+                        
+                        return JsonResponse({
+                            'mensaje': mensaje,
+                            'estado': estado,
+                            'equipos_necesarios': equipos_necesarios,
+                            'equipos_disponibles': equipos_disponibles,
+                            'equipos_faltantes': equipos_necesarios - equipos_disponibles if equipos_necesarios > equipos_disponibles else 0
+                        })
+                    except (TipoEquipo.DoesNotExist, ValueError):
+                        pass
+                
+                return JsonResponse({'mensaje': '', 'estado': 'error'})
             
             # Si es para validar paso
             step = request.POST.get('step')
@@ -59,34 +119,45 @@ def ingreso_datos_view(request):
                 
                 # Procesar ensayos
                 ensayos = request.POST.getlist('ensayos[]')
+                estudiantes = request.POST.getlist('estudiantes[]')
+                
                 for i, ensayo_nombre in enumerate(ensayos):
                     if ensayo_nombre.strip():
+                        cantidad_estudiantes = int(estudiantes[i]) if i < len(estudiantes) and estudiantes[i] else 1
+                        
                         ensayo = Ensayo.objects.create(
                             nombre=ensayo_nombre,
-                            laboratorio=laboratorio
+                            laboratorio=laboratorio,
+                            cantidad_estudiantes=cantidad_estudiantes
                         )
                         
                         # Procesar equipos para este ensayo
                         equipos_key = f'equipos[{i+1}][]'
-                        cantidades_key = f'cantidades[{i+1}][]'
-                        estados_key = f'estados[{i+1}][]'
+                        equipos_individuales_key = f'equipos_individuales[{i+1}][]'
                         
-                        equipos = request.POST.getlist(equipos_key)
-                        cantidades = request.POST.getlist(cantidades_key)
-                        estados = request.POST.getlist(estados_key)
+                        equipos_tipos = request.POST.getlist(equipos_key)
+                        equipos_individuales = request.POST.getlist(equipos_individuales_key)
                         
-                        for j, equipo_tipo in enumerate(equipos):
+                        for j, equipo_tipo in enumerate(equipos_tipos):
                             if equipo_tipo:
-                                tipo_equipo, created = TipoEquipo.objects.get_or_create(
-                                    nombre=equipo_tipo
-                                )
+                                tipo_equipo = TipoEquipo.objects.get(nombre=equipo_tipo)
                                 
-                                Equipo.objects.create(
+                                equipo = Equipo.objects.create(
                                     tipo_equipo=tipo_equipo,
                                     ensayo=ensayo,
-                                    cantidad=int(cantidades[j]) if j < len(cantidades) and cantidades[j] else 1,
-                                    estado=estados[j] if j < len(estados) else 'operativo'
+                                    cantidad_necesaria=1
                                 )
+                                
+                                # Asignar equipos individuales si fueron seleccionados
+                                if j < len(equipos_individuales):
+                                    equipos_ids = equipos_individuales[j].split(',') if equipos_individuales[j] else []
+                                    for equipo_id in equipos_ids:
+                                        if equipo_id.strip():
+                                            try:
+                                                equipo_individual = EquipoIndividual.objects.get(id=int(equipo_id))
+                                                equipo.equipos_seleccionados.add(equipo_individual)
+                                            except (EquipoIndividual.DoesNotExist, ValueError):
+                                                pass
                 
                 # Guardar registro completo
                 RegistroIngreso.objects.create(

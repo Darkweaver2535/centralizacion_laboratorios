@@ -188,6 +188,7 @@ class Ensayo(models.Model):
     
     nombre = models.CharField(max_length=50, choices=ENSAYOS)
     laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE, related_name='ensayos')
+    cantidad_estudiantes = models.IntegerField(default=1, help_text="Número de estudiantes que participarán en el ensayo")
     descripcion = models.TextField(blank=True)
     
     class Meta:
@@ -213,6 +214,7 @@ class TipoEquipo(models.Model):
     
     nombre = models.CharField(max_length=50, choices=TIPOS_EQUIPO, unique=True)
     descripcion = models.TextField(blank=True)
+    capacidad_estudiantes = models.IntegerField(default=1, help_text="Número de estudiantes que pueden usar simultáneamente este equipo")
     
     class Meta:
         verbose_name = 'Tipo de Equipo'
@@ -221,7 +223,8 @@ class TipoEquipo(models.Model):
     def __str__(self):
         return self.get_nombre_display()
 
-class Equipo(models.Model):
+class EquipoIndividual(models.Model):
+    """Modelo para equipos individuales con códigos únicos"""
     ESTADOS = [
         ('operativo', 'Operativo'),
         ('mantenimiento', 'En Mantenimiento'),
@@ -229,10 +232,27 @@ class Equipo(models.Model):
         ('inoperativo', 'Inoperativo'),
     ]
     
+    tipo_equipo = models.ForeignKey(TipoEquipo, on_delete=models.CASCADE, related_name='equipos_individuales')
+    codigo = models.CharField(max_length=20, unique=True, help_text="Código único del equipo")
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='operativo')
+    ubicacion = models.CharField(max_length=100, blank=True)
+    fecha_ingreso = models.DateField(auto_now_add=True)
+    observaciones = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name = 'Equipo Individual'
+        verbose_name_plural = 'Equipos Individuales'
+        ordering = ['tipo_equipo', 'codigo']
+    
+    def __str__(self):
+        return f"{self.tipo_equipo.get_nombre_display()} - {self.codigo}"
+
+class Equipo(models.Model):
+    """Modelo para la asignación de equipos a ensayos"""
     tipo_equipo = models.ForeignKey(TipoEquipo, on_delete=models.CASCADE)
     ensayo = models.ForeignKey(Ensayo, on_delete=models.CASCADE, related_name='equipos')
-    cantidad = models.IntegerField(default=1)
-    estado = models.CharField(max_length=20, choices=ESTADOS, default='operativo')
+    equipos_seleccionados = models.ManyToManyField(EquipoIndividual, blank=True)
+    cantidad_necesaria = models.IntegerField(default=1, help_text="Cantidad de equipos necesarios para el ensayo")
     fecha_registro = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -241,6 +261,46 @@ class Equipo(models.Model):
     
     def __str__(self):
         return f"{self.tipo_equipo} - {self.ensayo.nombre}"
+    
+    def get_equipos_disponibles(self):
+        """Obtener equipos disponibles del tipo seleccionado"""
+        return EquipoIndividual.objects.filter(
+            tipo_equipo=self.tipo_equipo,
+            estado='operativo'
+        )
+    
+    def get_recomendacion_uso(self):
+        """Obtener recomendación de uso basada en estudiantes y capacidad"""
+        estudiantes = self.ensayo.cantidad_estudiantes
+        capacidad_por_equipo = self.tipo_equipo.capacidad_estudiantes
+        equipos_disponibles = self.get_equipos_disponibles().count()
+        
+        equipos_necesarios = -(-estudiantes // capacidad_por_equipo)  # Ceil division
+        
+        if equipos_necesarios <= equipos_disponibles:
+            if capacidad_por_equipo == 1:
+                return {
+                    'estado': 'suficiente',
+                    'mensaje': f'Cada estudiante usará un equipo individual. Se necesitan {equipos_necesarios} equipos.',
+                    'equipos_necesarios': equipos_necesarios,
+                    'equipos_disponibles': equipos_disponibles
+                }
+            else:
+                return {
+                    'estado': 'suficiente',
+                    'mensaje': f'Se pueden agrupar {capacidad_por_equipo} estudiantes por equipo. Se necesitan {equipos_necesarios} equipos.',
+                    'equipos_necesarios': equipos_necesarios,
+                    'equipos_disponibles': equipos_disponibles
+                }
+        else:
+            faltante = equipos_necesarios - equipos_disponibles
+            return {
+                'estado': 'insuficiente',
+                'mensaje': f'Se necesitan {equipos_necesarios} equipos pero solo hay {equipos_disponibles} disponibles. Se recomienda comprar {faltante} equipos adicionales.',
+                'equipos_necesarios': equipos_necesarios,
+                'equipos_disponibles': equipos_disponibles,
+                'equipos_faltantes': faltante
+            }
 
 class RegistroIngreso(models.Model):
     laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE)
