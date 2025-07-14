@@ -1,10 +1,9 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistema de Laboratorios EMI</title>
+    <title>Sistema de Gestión de Laboratorios - EMI</title>
     <style>
         * {
             margin: 0;
@@ -14,212 +13,74 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url('{% load static %}{% static "images/fondo.jpg" %}') center/cover no-repeat;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
         }
 
-        /* Fondo de imagen que se carga dinámicamente */
-        .background-image {
-            position: fixed;
+        body::before {
+            content: '';
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            z-index: -2;
-            opacity: 0;
-            transition: opacity 0.8s ease;
-        }
-
-        .background-image.loaded {
-            opacity: 1;
-        }
-
-        /* Overlay dinámico */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(30, 58, 138, 0.4);
-            z-index: -1;
-            transition: background 0.8s ease;
-        }
-
-        .overlay.image-loaded {
-            background: rgba(30, 58, 138, 0.6);
-        }
-
-        /* Efectos de fondo animados */
-        .animated-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: -3;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 10s ease infinite;
-        }
-
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Patrón de puntos */
-        .pattern-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: 
-                radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 2px, transparent 2px),
-                radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px, 30px 30px;
-            z-index: -2;
-            animation: patternMove 20s linear infinite;
-        }
-
-        @keyframes patternMove {
-            0% { transform: translateX(0) translateY(0); }
-            100% { transform: translateX(50px) translateY(50px); }
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1;
         }
 
         .login-container {
             background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
             width: 100%;
             max-width: 420px;
-            text-align: center;
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
             position: relative;
-            z-index: 1;
-            animation: slideUp 0.8s ease-out;
+            z-index: 2;
         }
 
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .login-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-            border-radius: 20px;
-            z-index: -1;
+        .logo-section {
+            text-align: center;
+            margin-bottom: 30px;
         }
 
         .logo {
-            width: 100px;
+            width: 120px;
             height: auto;
             margin-bottom: 20px;
-            padding: 10px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .logo:hover {
-            transform: scale(1.05);
-        }
-
-        .logo-fallback {
-            width: 100px;
-            height: 75px;
-            margin: 0 auto 20px;
-            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
-            border-radius: 10px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-            text-align: center;
-            line-height: 1.2;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease;
-        }
-
-        .logo-fallback:hover {
-            transform: scale(1.05);
-        }
-
-        .logo-fallback::before {
-            content: '';
-            position: absolute;
-            top: 8px;
-            left: 20px;
-            right: 20px;
-            height: 8px;
-            background: #ffd700;
-            border-radius: 2px;
-        }
-
-        .logo-fallback::after {
-            content: '';
-            position: absolute;
-            bottom: 8px;
-            left: 20px;
-            right: 20px;
-            height: 8px;
-            background: #ffd700;
-            border-radius: 2px;
-        }
-
-        h1 {
+        .title {
             color: #1e3a8a;
-            margin-bottom: 10px;
             font-size: 26px;
             font-weight: 700;
+            margin-bottom: 8px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .subtitle {
-            color: #6b7280;
-            margin-bottom: 35px;
-            font-size: 15px;
+            color: #1e3a8a;
+            font-size: 16px;
             font-weight: 500;
+            margin-bottom: 30px;
         }
 
         .form-group {
             margin-bottom: 25px;
-            text-align: left;
         }
 
         label {
             display: block;
             margin-bottom: 8px;
-            color: #374151;
+            color: #1e3a8a;
             font-weight: 600;
             font-size: 14px;
         }
@@ -227,249 +88,123 @@
         input[type="text"],
         input[type="password"] {
             width: 100%;
-            padding: 15px 20px;
+            padding: 15px 18px;
             border: 2px solid #e5e7eb;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 16px;
-            background: rgba(255, 255, 255, 0.9);
             transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
         }
 
         input[type="text"]:focus,
         input[type="password"]:focus {
             outline: none;
             border-color: #1e3a8a;
-            background: rgba(255, 255, 255, 1);
             box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
-            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 1);
         }
 
-        .btn {
+        .btn-login {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            background: #1e3a8a;
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            box-shadow: 0 4px 15px rgba(30, 58, 138, 0.4);
         }
 
-        .btn:hover {
+        .btn-login:hover {
+            background: #1e40af;
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.6);
-        }
-
-        .btn:active {
-            transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
         }
 
         .error-message {
-            color: #dc2626;
-            background: rgba(254, 226, 226, 0.9);
+            background: #dc2626;
+            color: white;
             padding: 12px 15px;
             border-radius: 8px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             font-size: 14px;
-            border-left: 4px solid #dc2626;
-            backdrop-filter: blur(10px);
+            border-left: 4px solid #991b1b;
         }
 
         .footer {
-            margin-top: 35px;
-            padding-top: 25px;
-            border-top: 1px solid rgba(229, 231, 235, 0.5);
-            color: #6b7280;
-            font-size: 13px;
-        }
-
-        .footer p {
-            margin: 5px 0;
-        }
-
-        /* Loading indicator */
-        .loading-indicator {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(30, 58, 138, 0.2);
+            color: #1e3a8a;
             font-size: 12px;
-            z-index: 1000;
-            display: none;
         }
 
-        /* Responsive */
+        .footer strong {
+            color: #1e3a8a;
+            font-weight: 700;
+        }
+
+        /* Responsivo */
         @media (max-width: 480px) {
             .login-container {
-                padding: 30px 25px;
                 margin: 20px;
-                border-radius: 15px;
+                padding: 30px 25px;
             }
-
-            .logo, .logo-fallback {
-                width: 80px;
-                height: 60px;
+            
+            .logo {
+                width: 100px;
             }
-
-            h1 {
+            
+            .title {
                 font-size: 22px;
             }
-
+            
             .subtitle {
-                font-size: 14px;
-            }
-
-            input[type="text"],
-            input[type="password"] {
-                padding: 12px 15px;
-                font-size: 14px;
-            }
-
-            .btn {
-                padding: 12px;
                 font-size: 14px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Fondo animado -->
-    <div class="animated-background"></div>
-    
-    <!-- Patrón de puntos -->
-    <div class="pattern-overlay"></div>
-    
-    <!-- Imagen de fondo -->
-    <div class="background-image" id="backgroundImage"></div>
-    
-    <!-- Overlay -->
-    <div class="overlay" id="overlay"></div>
-    
-    <!-- Indicador de carga -->
-    <div class="loading-indicator" id="loadingIndicator">
-        Cargando imagen de fondo...
-    </div>
+    {% load static %}
     
     <div class="login-container">
-        <img src="{% static 'images/emi_logo.png' %}" alt="Logo EMI" class="logo"
-             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-        <div class="logo-fallback">
-            <div style="position: relative; z-index: 1;">
-                EMI<br>BOLIVIA
-            </div>
+        <div class="logo-section">
+            <img src="{% static 'images/emi_logo.png' %}" alt="Logo EMI" class="logo">
+            <div class="title">Sistema de Laboratorios</div>
+            <div class="subtitle">Escuela Militar de Ingeniería</div>
         </div>
-        
-        <h1>Sistema de Laboratorios</h1>
-        <p class="subtitle">Escuela Militar de Ingeniería</p>
-        
+
         {% if messages %}
             {% for message in messages %}
                 <div class="error-message">{{ message }}</div>
             {% endfor %}
         {% endif %}
-        
+
         <form method="post">
             {% csrf_token %}
             <div class="form-group">
-                <label for="username">Usuario:</label>
+                <label for="username">Usuario</label>
                 <input type="text" id="username" name="username" required>
             </div>
-            
+
             <div class="form-group">
-                <label for="password">Contraseña:</label>
+                <label for="password">Contraseña</label>
                 <input type="password" id="password" name="password" required>
             </div>
-            
-            <button type="submit" class="btn">Iniciar Sesión</button>
+
+            <button type="submit" class="btn-login">Iniciar Sesión</button>
         </form>
-        
+
         <div class="footer">
-            <p><strong>© 2024 Escuela Militar de Ingeniería</strong></p>
-            <p>Sistema de Gestión de Laboratorios</p>
+            <strong>EMI</strong> - Sistema de Gestión de Laboratorios<br>
+            Escuela Militar de Ingeniería © 2025
         </div>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const backgroundImage = document.getElementById('backgroundImage');
-            const overlay = document.getElementById('overlay');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            
-            // Mostrar indicador de carga
-            loadingIndicator.style.display = 'block';
-            
-            // Intentar cargar imagen de fondo
-            const imageUrl = "{% static 'images/fondo.jpg' %}";
-            console.log('Intentando cargar imagen desde:', imageUrl);
-            
-            // Método 1: Usar Image() para precargar
-            const testImage = new Image();
-            
-            testImage.onload = function() {
-                console.log('✅ Imagen cargada exitosamente');
-                loadingIndicator.style.display = 'none';
-                
-                // Aplicar imagen al fondo
-                backgroundImage.style.backgroundImage = `url('${imageUrl}')`;
-                backgroundImage.classList.add('loaded');
-                overlay.classList.add('image-loaded');
-                
-                // Opcional: Mensaje de éxito
-                console.log('🎨 Fondo de imagen aplicado correctamente');
-            };
-            
-            testImage.onerror = function() {
-                console.warn('⚠️ No se pudo cargar la imagen de fondo, usando fondo animado');
-                loadingIndicator.style.display = 'none';
-                
-                // Mantener el fondo animado como fallback
-                console.log('🎯 Usando fondo animado como alternativa');
-            };
-            
-            // Método 2: Verificar con fetch como backup
-            fetch(imageUrl)
-                .then(response => {
-                    if (response.ok) {
-                        console.log('✅ Verificación fetch exitosa');
-                        testImage.src = imageUrl;
-                    } else {
-                        console.warn('⚠️ Fetch falló, status:', response.status);
-                        loadingIndicator.style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ Error en fetch:', error);
-                    loadingIndicator.style.display = 'none';
-                });
-            
-            // Timeout de seguridad (3 segundos)
-            setTimeout(() => {
-                if (loadingIndicator.style.display !== 'none') {
-                    console.log('⏰ Timeout alcanzado, ocultando indicador');
-                    loadingIndicator.style.display = 'none';
-                }
-            }, 3000);
-        });
-        
-        // Efecto de focus mejorado
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.style.transform = 'translateY(-2px)';
-            });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.style.transform = 'translateY(0)';
-            });
-        });
-    </script>
 </body>
 </html>
