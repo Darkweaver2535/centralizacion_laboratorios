@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema de Laboratorios EMI{% endblock %}</title>
+    {% load static %}
     <style>
         * {
             margin: 0;
@@ -38,13 +39,62 @@
             gap: 20px;
         }
 
+        /* Logo con fallback */
+        .logo-container {
+            position: relative;
+            width: 80px;
+            height: 60px;
+        }
+
         .navbar-logo {
             width: 80px;
             height: auto;
+            max-height: 60px;
             padding: 8px;
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: block;
+        }
+
+        .navbar-logo-fallback {
+            width: 80px;
+            height: 60px;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+            line-height: 1.2;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .navbar-logo-fallback::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 15px;
+            right: 15px;
+            height: 8px;
+            background: #ffd700;
+            border-radius: 2px;
+        }
+
+        .navbar-logo-fallback::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 15px;
+            right: 15px;
+            height: 8px;
+            background: #ffd700;
+            border-radius: 2px;
         }
 
         .navbar h1 {
@@ -192,8 +242,9 @@
                 font-size: 16px;
             }
 
-            .navbar-logo {
+            .logo-container, .navbar-logo, .navbar-logo-fallback {
                 width: 60px;
+                height: 45px;
             }
         }
 
@@ -215,13 +266,21 @@
     </style>
 </head>
 <body>
-    {% load static %}
-    
     <!-- Navbar -->
     <nav class="navbar">
         <div class="navbar-brand">
             <button class="mobile-menu-toggle" onclick="toggleSidebar()">☰</button>
-            <img src="{% static 'images/emi_logo.png' %}" alt="Logo EMI" class="navbar-logo">
+            
+            <div class="logo-container">
+                <img src="{% static 'images/emi_logo.png' %}" alt="Logo EMI" class="navbar-logo" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="navbar-logo-fallback">
+                    <div style="position: relative; z-index: 1;">
+                        EMI<br>BOLIVIA
+                    </div>
+                </div>
+            </div>
+            
             <h1>Sistema de Gestión de Laboratorios</h1>
         </div>
         <div class="user-info">
