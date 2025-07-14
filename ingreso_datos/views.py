@@ -31,17 +31,59 @@ def ingreso_datos_view(request):
                         tipo_equipo = TipoEquipo.objects.get(nombre=tipo_equipo_id)
                         equipos = EquipoIndividual.objects.filter(
                             tipo_equipo=tipo_equipo,
-                            estado='operativo'
-                        ).values('id', 'codigo')
+                            estado_operativo='operativo'
+                        )
+                        
+                        # Estadísticas generales
+                        total_equipos = EquipoIndividual.objects.filter(tipo_equipo=tipo_equipo).count()
+                        equipos_operativos = equipos.count()
+                        equipos_mantenimiento = EquipoIndividual.objects.filter(
+                            tipo_equipo=tipo_equipo,
+                            estado_operativo='mantenimiento'
+                        ).count()
+                        equipos_reparacion = EquipoIndividual.objects.filter(
+                            tipo_equipo=tipo_equipo,
+                            estado_operativo='reparacion'
+                        ).count()
+                        equipos_inoperativos = EquipoIndividual.objects.filter(
+                            tipo_equipo=tipo_equipo,
+                            estado_operativo='inoperativo'
+                        ).count()
+                        
+                        equipos_data = []
+                        for equipo in equipos:
+                            equipos_data.append({
+                                'id': equipo.id,
+                                'codigo': equipo.codigo,
+                                'display_name': equipo.get_display_name(),
+                                'estado_fisico': equipo.get_estado_fisico_display(),
+                                'estado_operativo': equipo.get_estado_operativo_display()
+                            })
                         
                         return JsonResponse({
-                            'equipos': list(equipos),
+                            'equipos': equipos_data,
                             'capacidad_estudiantes': tipo_equipo.capacidad_estudiantes,
-                            'total_disponibles': equipos.count()
+                            'estadisticas': {
+                                'total_equipos': total_equipos,
+                                'operativos': equipos_operativos,
+                                'mantenimiento': equipos_mantenimiento,
+                                'reparacion': equipos_reparacion,
+                                'inoperativos': equipos_inoperativos
+                            }
                         })
                     except TipoEquipo.DoesNotExist:
                         pass
-                return JsonResponse({'equipos': [], 'capacidad_estudiantes': 1, 'total_disponibles': 0})
+                return JsonResponse({
+                    'equipos': [], 
+                    'capacidad_estudiantes': 1, 
+                    'estadisticas': {
+                        'total_equipos': 0,
+                        'operativos': 0,
+                        'mantenimiento': 0,
+                        'reparacion': 0,
+                        'inoperativos': 0
+                    }
+                })
             
             elif request.POST.get('action') == 'get_recomendacion':
                 tipo_equipo_id = request.POST.get('tipo_equipo')
@@ -55,21 +97,23 @@ def ingreso_datos_view(request):
                         capacidad_por_equipo = tipo_equipo.capacidad_estudiantes
                         equipos_disponibles = EquipoIndividual.objects.filter(
                             tipo_equipo=tipo_equipo,
-                            estado='operativo'
+                            estado_operativo='operativo'
                         ).count()
+                        
+                        total_equipos = EquipoIndividual.objects.filter(tipo_equipo=tipo_equipo).count()
                         
                         equipos_necesarios = -(-estudiantes // capacidad_por_equipo)  # Ceil division
                         
                         if equipos_necesarios <= equipos_disponibles:
                             if capacidad_por_equipo == 1:
-                                mensaje = f'✅ Cada estudiante usará un equipo individual. Se necesitan {equipos_necesarios} equipos.'
+                                mensaje = f'✅ Cada estudiante usará un equipo individual. Se necesitan {equipos_necesarios} equipos de {equipos_disponibles} disponibles (Total: {total_equipos}).'
                                 estado = 'suficiente'
                             else:
-                                mensaje = f'✅ Se pueden agrupar {capacidad_por_equipo} estudiantes por equipo. Se necesitan {equipos_necesarios} equipos.'
+                                mensaje = f'✅ Se pueden agrupar {capacidad_por_equipo} estudiantes por equipo. Se necesitan {equipos_necesarios} equipos de {equipos_disponibles} disponibles (Total: {total_equipos}).'
                                 estado = 'suficiente'
                         else:
                             faltante = equipos_necesarios - equipos_disponibles
-                            mensaje = f'⚠️ Se necesitan {equipos_necesarios} equipos pero solo hay {equipos_disponibles} disponibles. Se recomienda comprar {faltante} equipos adicionales.'
+                            mensaje = f'⚠️ Se necesitan {equipos_necesarios} equipos pero solo hay {equipos_disponibles} disponibles de {total_equipos} totales. Se recomienda comprar {faltante} equipos adicionales.'
                             estado = 'insuficiente'
                         
                         return JsonResponse({
@@ -77,6 +121,7 @@ def ingreso_datos_view(request):
                             'estado': estado,
                             'equipos_necesarios': equipos_necesarios,
                             'equipos_disponibles': equipos_disponibles,
+                            'total_equipos': total_equipos,
                             'equipos_faltantes': equipos_necesarios - equipos_disponibles if equipos_necesarios > equipos_disponibles else 0
                         })
                     except (TipoEquipo.DoesNotExist, ValueError):

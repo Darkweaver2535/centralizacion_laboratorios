@@ -1,0 +1,968 @@
+{% extends 'base.html' %}
+
+{% block title %}Visualización y Análisis - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Visualización y Análisis{% endblock %}
+
+{% block page_description %}Panel de análisis y visualización de datos de laboratorios y equipos a nivel nacional{% endblock %}
+
+{% block content %}
+<div class="visualizacion-container">
+    <!-- Panel de Estadísticas Generales -->
+    <div class="stats-panel">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">LAB</div>
+                <div class="stat-content">
+                    <h3 id="total-laboratorios">{{ stats.total_laboratorios }}</h3>
+                    <p>Laboratorios</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">ENS</div>
+                <div class="stat-content">
+                    <h3 id="total-ensayos">{{ stats.total_ensayos }}</h3>
+                    <p>Ensayos</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">EQP</div>
+                <div class="stat-content">
+                    <h3 id="total-equipos">{{ stats.total_equipos }}</h3>
+                    <p>Equipos</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">MAT</div>
+                <div class="stat-content">
+                    <h3 id="total-materias">{{ stats.total_materias }}</h3>
+                    <p>Materias</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Filtros -->
+    <div class="filters-panel">
+        <div class="card">
+            <h3>Filtros de Análisis</h3>
+            <p class="filter-description">Utilice los filtros para analizar datos específicos. Los filtros son dinámicos y se actualizan según las selecciones previas.</p>
+            
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="filtro-unidad">Unidad Académica</label>
+                    <select id="filtro-unidad" class="filter-select">
+                        <option value="">Todas las unidades</option>
+                        {% for unidad in unidades %}
+                            <option value="{{ unidad.nombre }}">{{ unidad.get_nombre_display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filtro-semestre">Semestre</label>
+                    <select id="filtro-semestre" class="filter-select">
+                        <option value="">Todos los semestres</option>
+                        {% for i in "1234567890" %}
+                            <option value="{{ forloop.counter }}">{{ forloop.counter }}° Semestre</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filtro-carrera">Carrera</label>
+                    <select id="filtro-carrera" class="filter-select">
+                        <option value="">Todas las carreras</option>
+                        {% for carrera in carreras %}
+                            <option value="{{ carrera.nombre }}">{{ carrera.get_nombre_display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filtro-materia">Materia</label>
+                    <select id="filtro-materia" class="filter-select">
+                        <option value="">Todas las materias</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filtro-laboratorio">Laboratorio</label>
+                    <select id="filtro-laboratorio" class="filter-select">
+                        <option value="">Todos los laboratorios</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filtro-equipo">Tipo de Equipo</label>
+                    <select id="filtro-equipo" class="filter-select">
+                        <option value="">Todos los equipos</option>
+                        {% for equipo in tipos_equipos %}
+                            <option value="{{ equipo.nombre }}">{{ equipo.get_nombre_display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button type="button" class="btn btn-primary" onclick="aplicarFiltros()">
+                    Aplicar Filtros
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
+                    Limpiar Filtros
+                </button>
+                <button type="button" class="btn btn-success" onclick="exportarDatos()">
+                    Exportar Resultados
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Resultados -->
+    <div class="results-panel">
+        <!-- Pestañas de Visualización -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-button active" onclick="mostrarTab('general')">
+                    General
+                </button>
+                <button class="tab-button" onclick="mostrarTab('laboratorios')">
+                    Laboratorios
+                </button>
+                <button class="tab-button" onclick="mostrarTab('ensayos')">
+                    Ensayos
+                </button>
+                <button class="tab-button" onclick="mostrarTab('equipos')">
+                    Equipos
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla General -->
+        <div class="tab-content active" id="tab-general">
+            <div class="tabla-excel">
+                <h4>Vista General - Información Completa</h4>
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <table class="excel-table" id="tabla-general">
+                            <thead>
+                                <tr>
+                                    <th>Unidad Académica</th>
+                                    <th>Semestre</th>
+                                    <th>Carrera</th>
+                                    <th>Materia</th>
+                                    <th>Laboratorio</th>
+                                    <th>Ensayo</th>
+                                    <th>Estudiantes</th>
+                                    <th>Tipo de Equipo</th>
+                                    <th>Código Equipo</th>
+                                    <th>Estado Físico</th>
+                                    <th>Llenado Por</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llenará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Laboratorios -->
+        <div class="tab-content" id="tab-laboratorios">
+            <div class="tabla-excel">
+                <h4>Laboratorios Registrados</h4>
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <table class="excel-table" id="tabla-laboratorios">
+                            <thead>
+                                <tr>
+                                    <th>Unidad Académica</th>
+                                    <th>Semestre</th>
+                                    <th>Carrera</th>
+                                    <th>Materia</th>
+                                    <th>Laboratorio</th>
+                                    <th>Llenado Por</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llenará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Ensayos -->
+        <div class="tab-content" id="tab-ensayos">
+            <div class="tabla-excel">
+                <h4>Ensayos por Laboratorio</h4>
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <table class="excel-table" id="tabla-ensayos">
+                            <thead>
+                                <tr>
+                                    <th>Laboratorio</th>
+                                    <th>Ensayo</th>
+                                    <th>Estudiantes</th>
+                                    <th>Unidad Académica</th>
+                                    <th>Carrera</th>
+                                    <th>Materia</th>
+                                    <th>Llenado Por</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llenará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Equipos -->
+        <div class="tab-content" id="tab-equipos">
+            <div class="tabla-excel">
+                <h4>Equipos por Laboratorio</h4>
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <table class="excel-table" id="tabla-equipos">
+                            <thead>
+                                <tr>
+                                    <th>Laboratorio</th>
+                                    <th>Ensayo</th>
+                                    <th>Tipo de Equipo</th>
+                                    <th>Código</th>
+                                    <th>Estado Físico</th>
+                                    <th>Unidad Académica</th>
+                                    <th>Carrera</th>
+                                    <th>Llenado Por</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llenará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .visualizacion-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Panel de Estadísticas */
+    .stats-panel {
+        margin-bottom: 30px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        font-size: 16px;
+        font-weight: bold;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f0f7ff;
+        border-radius: 50%;
+        color: #1e3a8a;
+    }
+
+    .stat-content h3 {
+        color: #1e3a8a;
+        font-size: 32px;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1;
+    }
+
+    .stat-content p {
+        color: #6b7280;
+        font-size: 14px;
+        margin: 5px 0 0 0;
+    }
+
+    /* Panel de Filtros */
+    .filters-panel {
+        margin-bottom: 30px;
+    }
+
+    .filter-description {
+        color: #6b7280;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .filter-group label {
+        font-weight: 500;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    .filter-select {
+        padding: 10px 15px;
+        border: 2px solid #e5e7eb;
+        border-radius: 5px;
+        font-size: 14px;
+        background: white;
+        transition: border-color 0.3s ease;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: #1e3a8a;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: #1e3a8a;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #1e40af;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #4b5563;
+    }
+
+    .btn-success {
+        background: #059669;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #047857;
+    }
+
+    /* Panel de Resultados */
+    .results-panel {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    /* Pestañas */
+    .tabs-container {
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .tabs {
+        display: flex;
+        background: #f8f9fa;
+    }
+
+    .tab-button {
+        padding: 15px 25px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #6b7280;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 3px solid transparent;
+    }
+
+    .tab-button:hover {
+        background: #e5e7eb;
+        color: #1e3a8a;
+    }
+
+    .tab-button.active {
+        background: white;
+        color: #1e3a8a;
+        border-bottom-color: #1e3a8a;
+    }
+
+    .tab-content {
+        display: none;
+        padding: 25px;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Tablas */
+    .tabla-excel {
+        margin-bottom: 25px;
+    }
+
+    .tabla-excel h4 {
+        color: #1e3a8a;
+        margin-bottom: 20px;
+        font-size: 18px;
+    }
+
+    /* Nuevo contenedor para controlar el scroll */
+    .table-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: 600px;
+        /* Scrollbar personalizada */
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+
+    .table-responsive::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    .excel-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        min-width: 1000px; /* Ancho mínimo para forzar scroll horizontal */
+    }
+
+    .excel-table th {
+        background: #f1f5f9;
+        color: #334155;
+        font-weight: 600;
+        padding: 12px 15px;
+        text-align: left;
+        border: 1px solid #e2e8f0;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .excel-table td {
+        padding: 12px 15px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    .excel-table tbody tr:nth-child(even) {
+        background: #f8fafc;
+    }
+
+    .excel-table tbody tr:hover {
+        background: #f1f5f9;
+    }
+
+    /* Estilos especiales para tabla general */
+    #tabla-general {
+        min-width: 1200px;
+    }
+
+    #tabla-general th:nth-child(1) { width: 120px; } /* Unidad Académica */
+    #tabla-general th:nth-child(2) { width: 80px; } /* Semestre */
+    #tabla-general th:nth-child(3) { width: 150px; } /* Carrera */
+    #tabla-general th:nth-child(4) { width: 120px; } /* Materia */
+    #tabla-general th:nth-child(5) { width: 120px; } /* Laboratorio */
+    #tabla-general th:nth-child(6) { width: 120px; } /* Ensayo */
+    #tabla-general th:nth-child(7) { width: 80px; } /* Estudiantes */
+    #tabla-general th:nth-child(8) { width: 120px; } /* Tipo Equipo */
+    #tabla-general th:nth-child(9) { width: 100px; } /* Código */
+    #tabla-general th:nth-child(10) { width: 100px; } /* Estado Físico */
+    #tabla-general th:nth-child(11) { width: 120px; } /* Llenado Por */
+
+    /* Estilos para tabla de laboratorios */
+    #tabla-laboratorios {
+        min-width: 800px;
+    }
+
+    /* Estilos para tabla de ensayos */
+    #tabla-ensayos {
+        min-width: 900px;
+    }
+
+    /* Estilos para tabla de equipos */
+    #tabla-equipos {
+        min-width: 1000px;
+    }
+
+    /* Loading */
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+    }
+
+    .loading::before {
+        content: "Cargando datos...";
+        font-size: 16px;
+        margin-right: 10px;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+    }
+
+    .empty-state::before {
+        content: "Sin datos disponibles";
+        font-size: 16px;
+        display: block;
+        margin-bottom: 15px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filters-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            justify-content: center;
+        }
+
+        .tabs {
+            flex-direction: column;
+        }
+
+        .tab-button {
+            justify-content: center;
+        }
+
+        .excel-table {
+            min-width: 600px;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar datos iniciales
+    aplicarFiltros();
+    
+    // Event listeners para filtros dinámicos
+    document.getElementById('filtro-unidad').addEventListener('change', function() {
+        actualizarFiltrosAnidados();
+    });
+    
+    document.getElementById('filtro-semestre').addEventListener('change', function() {
+        actualizarFiltrosAnidados();
+    });
+    
+    document.getElementById('filtro-carrera').addEventListener('change', function() {
+        actualizarFiltrosAnidados();
+    });
+    
+    document.getElementById('filtro-materia').addEventListener('change', function() {
+        actualizarFiltrosAnidados();
+    });
+});
+
+function actualizarFiltrosAnidados() {
+    const filtros = {
+        unidad_academica: document.getElementById('filtro-unidad').value,
+        semestre: document.getElementById('filtro-semestre').value,
+        carrera: document.getElementById('filtro-carrera').value,
+        materia: document.getElementById('filtro-materia').value,
+    };
+    
+    // Actualizar opciones de materia
+    if (filtros.unidad_academica || filtros.semestre || filtros.carrera) {
+        actualizarOpcionesFiltro('materia', filtros);
+    }
+    
+    // Actualizar opciones de laboratorio
+    if (filtros.unidad_academica || filtros.semestre || filtros.carrera || filtros.materia) {
+        actualizarOpcionesFiltro('laboratorio', filtros);
+    }
+}
+
+function actualizarOpcionesFiltro(campo, filtros) {
+    const params = new URLSearchParams(filtros);
+    params.append('campo', campo);
+    
+    fetch(`/visualizacion/opciones-filtro/?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById(`filtro-${campo}`);
+            const valorActual = select.value;
+            
+            select.innerHTML = `<option value="">Todos los ${campo}s</option>`;
+            
+            data.opciones.forEach(opcion => {
+                const option = document.createElement('option');
+                option.value = opcion[0];
+                option.textContent = opcion[1];
+                if (opcion[0] === valorActual) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function aplicarFiltros() {
+    const filtros = {
+        unidad_academica: document.getElementById('filtro-unidad').value,
+        semestre: document.getElementById('filtro-semestre').value,
+        carrera: document.getElementById('filtro-carrera').value,
+        materia: document.getElementById('filtro-materia').value,
+        laboratorio: document.getElementById('filtro-laboratorio').value,
+        tipo_equipo: document.getElementById('filtro-equipo').value,
+    };
+    
+    // Mostrar loading
+    mostrarLoading();
+    
+    const params = new URLSearchParams(filtros);
+    
+    fetch(`/visualizacion/filtrar/?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            actualizarEstadisticas(data.stats);
+            actualizarTablaGeneral(data.laboratorios, data.ensayos, data.equipos);
+            actualizarTablaLaboratorios(data.laboratorios);
+            actualizarTablaEnsayos(data.ensayos);
+            actualizarTablaEquipos(data.equipos);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarError('Error al cargar los datos');
+        });
+}
+
+function mostrarLoading() {
+    const tablas = ['tabla-general', 'tabla-laboratorios', 'tabla-ensayos', 'tabla-equipos'];
+    
+    tablas.forEach(tablaId => {
+        const tbody = document.querySelector(`#${tablaId} tbody`);
+        tbody.innerHTML = '<tr><td colspan="100%" class="loading">Cargando datos...</td></tr>';
+    });
+}
+
+function mostrarError(mensaje) {
+    const tablas = ['tabla-general', 'tabla-laboratorios', 'tabla-ensayos', 'tabla-equipos'];
+    
+    tablas.forEach(tablaId => {
+        const tbody = document.querySelector(`#${tablaId} tbody`);
+        tbody.innerHTML = `<tr><td colspan="100%" class="empty-state">${mensaje}</td></tr>`;
+    });
+}
+
+function actualizarEstadisticas(stats) {
+    document.getElementById('total-laboratorios').textContent = stats.total_laboratorios;
+    document.getElementById('total-ensayos').textContent = stats.total_ensayos;
+    document.getElementById('total-equipos').textContent = stats.total_equipos;
+}
+
+function actualizarTablaGeneral(laboratorios, ensayos, equipos) {
+    const tbody = document.querySelector('#tabla-general tbody');
+    
+    // Crear un mapa para combinar datos
+    const datosGenerales = [];
+    
+    // Combinar datos de laboratorios, ensayos y equipos
+    laboratorios.forEach(lab => {
+        const ensayosLab = ensayos.filter(e => e.laboratorio === lab.laboratorio);
+        
+        if (ensayosLab.length === 0) {
+            // Laboratorio sin ensayos
+            datosGenerales.push({
+                unidad_academica: lab.unidad_academica,
+                semestre: lab.semestre,
+                carrera: lab.carrera,
+                materia: lab.materia,
+                laboratorio: lab.laboratorio,
+                ensayo: '-',
+                estudiantes: '-',
+                tipo_equipo: '-',
+                codigo_equipo: '-',
+                estado_fisico: '-',
+                llenado_por: lab.llenado_por
+            });
+        } else {
+            ensayosLab.forEach(ensayo => {
+                const equiposEnsayo = equipos.filter(e => 
+                    e.laboratorio === lab.laboratorio && e.ensayo === ensayo.ensayo
+                );
+                
+                if (equiposEnsayo.length === 0) {
+                    // Ensayo sin equipos
+                    datosGenerales.push({
+                        unidad_academica: lab.unidad_academica,
+                        semestre: lab.semestre,
+                        carrera: lab.carrera,
+                        materia: lab.materia,
+                        laboratorio: lab.laboratorio,
+                        ensayo: ensayo.ensayo,
+                        estudiantes: ensayo.estudiantes,
+                        tipo_equipo: '-',
+                        codigo_equipo: '-',
+                        estado_fisico: '-',
+                        llenado_por: lab.llenado_por
+                    });
+                } else {
+                    equiposEnsayo.forEach(equipo => {
+                        datosGenerales.push({
+                            unidad_academica: lab.unidad_academica,
+                            semestre: lab.semestre,
+                            carrera: lab.carrera,
+                            materia: lab.materia,
+                            laboratorio: lab.laboratorio,
+                            ensayo: ensayo.ensayo,
+                            estudiantes: ensayo.estudiantes,
+                            tipo_equipo: equipo.tipo_equipo,
+                            codigo_equipo: equipo.codigo_equipo,
+                            estado_fisico: equipo.estado_fisico,
+                            llenado_por: lab.llenado_por
+                        });
+                    });
+                }
+            });
+        }
+    });
+    
+    if (datosGenerales.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="empty-state">No se encontraron datos con los filtros aplicados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = datosGenerales.map(dato => `
+        <tr>
+            <td>${dato.unidad_academica}</td>
+            <td>${dato.semestre}</td>
+            <td>${dato.carrera}</td>
+            <td>${dato.materia}</td>
+            <td>${dato.laboratorio}</td>
+            <td>${dato.ensayo}</td>
+            <td style="text-align: center;">${dato.estudiantes}</td>
+            <td>${dato.tipo_equipo}</td>
+            <td style="font-weight: 600; color: #1e3a8a;">${dato.codigo_equipo}</td>
+            <td>${dato.estado_fisico !== '-' ? `<span class="badge badge-${dato.estado_fisico.toLowerCase()}">${dato.estado_fisico}</span>` : '-'}</td>
+            <td>${dato.llenado_por}</td>
+        </tr>
+    `).join('');
+}
+
+function actualizarTablaLaboratorios(laboratorios) {
+    const tbody = document.querySelector('#tabla-laboratorios tbody');
+    
+    if (laboratorios.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No se encontraron laboratorios con los filtros aplicados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = laboratorios.map(lab => `
+        <tr>
+            <td>${lab.unidad_academica}</td>
+            <td>${lab.semestre}</td>
+            <td>${lab.carrera}</td>
+            <td>${lab.materia}</td>
+            <td>${lab.laboratorio}</td>
+            <td>${lab.llenado_por}</td>
+        </tr>
+    `).join('');
+}
+
+function actualizarTablaEnsayos(ensayos) {
+    const tbody = document.querySelector('#tabla-ensayos tbody');
+    
+    if (ensayos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No se encontraron ensayos con los filtros aplicados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = ensayos.map(ensayo => `
+        <tr>
+            <td>${ensayo.laboratorio}</td>
+            <td>${ensayo.ensayo}</td>
+            <td style="text-align: center; font-weight: 600;">${ensayo.estudiantes}</td>
+            <td>${ensayo.unidad_academica}</td>
+            <td>${ensayo.carrera}</td>
+            <td>${ensayo.materia}</td>
+            <td>${ensayo.llenado_por}</td>
+        </tr>
+    `).join('');
+}
+
+function actualizarTablaEquipos(equipos) {
+    const tbody = document.querySelector('#tabla-equipos tbody');
+    
+    if (equipos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No se encontraron equipos con los filtros aplicados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = equipos.map(equipo => `
+        <tr>
+            <td>${equipo.laboratorio}</td>
+            <td>${equipo.ensayo}</td>
+            <td>${equipo.tipo_equipo}</td>
+            <td style="font-weight: 600; color: #1e3a8a;">${equipo.codigo_equipo}</td>
+            <td><span class="badge badge-${equipo.estado_fisico.toLowerCase()}">${equipo.estado_fisico}</span></td>
+            <td>${equipo.unidad_academica}</td>
+            <td>${equipo.carrera}</td>
+            <td>${equipo.llenado_por}</td>
+        </tr>
+    `).join('');
+}
+
+function mostrarTab(tabName) {
+    // Ocultar todos los tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Mostrar tab seleccionado
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    event.target.classList.add('active');
+}
+
+function limpiarFiltros() {
+    document.getElementById('filtro-unidad').value = '';
+    document.getElementById('filtro-semestre').value = '';
+    document.getElementById('filtro-carrera').value = '';
+    document.getElementById('filtro-materia').value = '';
+    document.getElementById('filtro-laboratorio').value = '';
+    document.getElementById('filtro-equipo').value = '';
+    
+    // Restaurar opciones originales
+    document.getElementById('filtro-materia').innerHTML = '<option value="">Todas las materias</option>';
+    document.getElementById('filtro-laboratorio').innerHTML = '<option value="">Todos los laboratorios</option>';
+    
+    aplicarFiltros();
+}
+
+function exportarDatos() {
+    alert('Funcionalidad de exportación en desarrollo');
+    // Aquí se implementaría la funcionalidad de exportación
+}
+</script>
+
+<style>
+    .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .badge-bueno {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .badge-regular {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .badge-malo {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}

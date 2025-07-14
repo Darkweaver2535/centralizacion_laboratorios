@@ -23,4 +23,5 @@ urlpatterns = [
     path('', lambda request: redirect('login'), name='home'),
     path('login/', include('login.urls')),
     path('ingreso-datos/', include('ingreso_datos.urls')),
+    path('visualizacion/', include('visualizacion.urls')),
 ]
