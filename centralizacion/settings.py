@@ -123,18 +123,17 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Asegurar que el directorio static existe
-if not os.path.exists(BASE_DIR / 'static'):
-    os.makedirs(BASE_DIR / 'static' / 'images', exist_ok=True)
+# Crear directorios static si no existen
+os.makedirs(BASE_DIR / 'static' / 'css', exist_ok=True)
+os.makedirs(BASE_DIR / 'static' / 'js', exist_ok=True)
+os.makedirs(BASE_DIR / 'static' / 'images', exist_ok=True)
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# WhiteNoise configuration mejorada
+# WhiteNoise configuration
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Configuración adicional para WhiteNoise
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = True if DEBUG else False
 
