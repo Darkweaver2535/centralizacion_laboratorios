@@ -212,7 +212,8 @@ class TipoEquipo(models.Model):
         ('mechero_bunsen', 'Mechero Bunsen'),
     ]
     
-    nombre = models.CharField(max_length=50, choices=TIPOS_EQUIPO, unique=True)
+    nombre = models.CharField(max_length=50, unique=True, help_text="Identificador único del tipo de equipo")
+    nombre_display = models.CharField(max_length=100, blank=True, help_text="Nombre para mostrar en la interfaz")
     descripcion = models.TextField(blank=True)
     capacidad_estudiantes = models.IntegerField(default=1, help_text="Número de estudiantes que pueden usar simultáneamente este equipo")
     
@@ -222,6 +223,33 @@ class TipoEquipo(models.Model):
     
     def __str__(self):
         return self.get_nombre_display()
+    
+    def get_nombre_display(self):
+        """Devuelve el nombre para mostrar, usando nombre_display si está disponible"""
+        if self.nombre_display:
+            return self.nombre_display
+        
+        # Buscar en los tipos predefinidos
+        for key, display_name in self.TIPOS_EQUIPO:
+            if key == self.nombre:
+                return display_name
+        
+        # Si no se encuentra, formatear el nombre
+        return self.nombre.replace('_', ' ').title()
+    
+    def save(self, *args, **kwargs):
+        """Guardar con nombre_display automático si no se proporciona"""
+        if not self.nombre_display:
+            # Buscar en los tipos predefinidos
+            for key, display_name in self.TIPOS_EQUIPO:
+                if key == self.nombre:
+                    self.nombre_display = display_name
+                    break
+            else:
+                # Si no se encuentra, formatear el nombre
+                self.nombre_display = self.nombre.replace('_', ' ').title()
+        
+        super().save(*args, **kwargs)
 
 class EquipoIndividual(models.Model):
     """Modelo para equipos individuales con códigos únicos"""
@@ -242,6 +270,7 @@ class EquipoIndividual(models.Model):
     codigo = models.CharField(max_length=20, unique=True, help_text="Código único del equipo")
     estado_fisico = models.CharField(max_length=20, choices=ESTADOS, default='bueno', help_text="Estado físico del equipo")
     estado_operativo = models.CharField(max_length=20, choices=ESTADOS_OPERATIVOS, default='operativo', help_text="Estado operativo del equipo")
+    unidad_academica = models.ForeignKey(UnidadAcademica, on_delete=models.CASCADE, null=True, blank=True, help_text="Unidad académica donde se encuentra el equipo")
     ubicacion = models.CharField(max_length=100, blank=True)
     fecha_ingreso = models.DateField(auto_now_add=True)
     observaciones = models.TextField(blank=True)
