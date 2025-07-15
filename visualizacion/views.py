@@ -57,16 +57,12 @@ def filtrar_datos(request):
     # Aplicar filtros
     if filtros['unidad_academica']:
         laboratorios = laboratorios.filter(unidad_academica__nombre=filtros['unidad_academica'])
-    
     if filtros['semestre']:
         laboratorios = laboratorios.filter(materia__semestre=filtros['semestre'])
-    
     if filtros['carrera']:
         laboratorios = laboratorios.filter(materia__carrera__nombre=filtros['carrera'])
-    
     if filtros['materia']:
         laboratorios = laboratorios.filter(materia__nombre=filtros['materia'])
-    
     if filtros['laboratorio']:
         laboratorios = laboratorios.filter(nombre=filtros['laboratorio'])
     
@@ -74,6 +70,67 @@ def filtrar_datos(request):
     datos_laboratorios = []
     datos_ensayos = []
     datos_equipos = []
+    
+    # Para tabla de equipos: obtener TODOS los equipos individuales
+    equipos_individuales = EquipoIndividual.objects.all().order_by('unidad_academica__nombre', 'codigo')
+    
+    # Aplicar filtros a equipos individuales
+    if filtros['unidad_academica']:
+        equipos_individuales = equipos_individuales.filter(unidad_academica__nombre=filtros['unidad_academica'])
+    if filtros['tipo_equipo']:
+        equipos_individuales = equipos_individuales.filter(tipo_equipo__nombre=filtros['tipo_equipo'])
+    
+    # Filtros adicionales para equipos a través de ensayos
+    if filtros['semestre'] or filtros['carrera'] or filtros['materia'] or filtros['laboratorio']:
+        ensayos_filtrados = Ensayo.objects.all()
+        
+        if filtros['semestre']:
+            ensayos_filtrados = ensayos_filtrados.filter(laboratorio__materia__semestre=filtros['semestre'])
+        if filtros['carrera']:
+            ensayos_filtrados = ensayos_filtrados.filter(laboratorio__materia__carrera__nombre=filtros['carrera'])
+        if filtros['materia']:
+            ensayos_filtrados = ensayos_filtrados.filter(laboratorio__materia__nombre=filtros['materia'])
+        if filtros['laboratorio']:
+            ensayos_filtrados = ensayos_filtrados.filter(laboratorio__nombre=filtros['laboratorio'])
+        
+        # Para equipos: obtener equipos que están en esos ensayos
+        equipos_individuales = equipos_individuales.filter(equipo__ensayo__in=ensayos_filtrados).distinct()
+    
+    # Construir datos para tabla de equipos (TODOS los equipos)
+    for equipo in equipos_individuales:
+        # Obtener el primer ensayo donde se usa este equipo
+        ensayo_principal = Ensayo.objects.filter(
+            equipos__equipos_seleccionados=equipo
+        ).first()
+        
+        if ensayo_principal:
+            laboratorio = ensayo_principal.laboratorio
+            datos_equipos.append({
+                'laboratorio': laboratorio.get_nombre_display(),
+                'ensayo': ensayo_principal.get_nombre_display(),
+                'tipo_equipo': equipo.tipo_equipo.get_nombre_display(),
+                'codigo_equipo': equipo.codigo,
+                'estado_fisico': equipo.get_estado_fisico_display(),
+                'unidad_academica': laboratorio.unidad_academica.get_nombre_display(),
+                'carrera': laboratorio.materia.carrera.get_nombre_display(),
+                'llenado_por': laboratorio.usuario_creador.get_full_name() or laboratorio.usuario_creador.username,
+            })
+        else:
+            # Equipo sin ensayos
+            datos_equipos.append({
+                'laboratorio': 'Sin asignar',
+                'ensayo': 'Sin asignar',
+                'tipo_equipo': equipo.tipo_equipo.get_nombre_display(),
+                'codigo_equipo': equipo.codigo,
+                'estado_fisico': equipo.get_estado_fisico_display(),
+                'unidad_academica': equipo.unidad_academica.get_nombre_display(),
+                'carrera': '',
+                'llenado_por': 'N/A',
+            })
+    
+    # Construir datos para tabla general (sin duplicados)
+    equipos_general_agregados = set()  # Para evitar duplicados
+    datos_equipos_general = []  # Datos específicos para la tabla general
     
     for laboratorio in laboratorios:
         # Datos del laboratorio
@@ -98,37 +155,52 @@ def filtrar_datos(request):
                 'llenado_por': laboratorio.usuario_creador.get_full_name() or laboratorio.usuario_creador.username,
             })
             
-            # Datos de equipos
+            # Datos de equipos para la tabla general (sin duplicados)
             for equipo in ensayo.equipos.all():
+                if filtros['tipo_equipo'] and equipo.tipo_equipo.nombre != filtros['tipo_equipo']:
+                    continue
+                    
                 equipos_seleccionados = equipo.equipos_seleccionados.all()
                 
                 if equipos_seleccionados:
                     for equipo_individual in equipos_seleccionados:
-                        datos_equipos.append({
+                        # Crear clave única para evitar duplicados
+                        clave_equipo = f"{equipo_individual.codigo}_{laboratorio.id}_{ensayo.id}"
+                        
+                        if clave_equipo not in equipos_general_agregados:
+                            equipos_general_agregados.add(clave_equipo)
+                            datos_equipos_general.append({
+                                'laboratorio': laboratorio.get_nombre_display(),
+                                'ensayo': ensayo.get_nombre_display(),
+                                'estudiantes': ensayo.cantidad_estudiantes,
+                                'tipo_equipo': equipo.tipo_equipo.get_nombre_display(),
+                                'codigo_equipo': equipo_individual.codigo,
+                                'estado_fisico': equipo_individual.get_estado_fisico_display(),
+                                'unidad_academica': laboratorio.unidad_academica.get_nombre_display(),
+                                'semestre': f"{laboratorio.materia.semestre}° Semestre",
+                                'carrera': laboratorio.materia.carrera.get_nombre_display(),
+                                'materia': laboratorio.materia.get_nombre_display(),
+                                'llenado_por': laboratorio.usuario_creador.get_full_name() or laboratorio.usuario_creador.username,
+                            })
+                else:
+                    # Equipo sin equipos individuales seleccionados
+                    clave_equipo = f"sin_especificar_{laboratorio.id}_{ensayo.id}_{equipo.id}"
+                    
+                    if clave_equipo not in equipos_general_agregados:
+                        equipos_general_agregados.add(clave_equipo)
+                        datos_equipos_general.append({
                             'laboratorio': laboratorio.get_nombre_display(),
                             'ensayo': ensayo.get_nombre_display(),
+                            'estudiantes': ensayo.cantidad_estudiantes,
                             'tipo_equipo': equipo.tipo_equipo.get_nombre_display(),
-                            'codigo_equipo': equipo_individual.codigo,
-                            'estado_fisico': equipo_individual.get_estado_fisico_display(),
+                            'codigo_equipo': 'Sin especificar',
+                            'estado_fisico': '-',
                             'unidad_academica': laboratorio.unidad_academica.get_nombre_display(),
+                            'semestre': f"{laboratorio.materia.semestre}° Semestre",
                             'carrera': laboratorio.materia.carrera.get_nombre_display(),
+                            'materia': laboratorio.materia.get_nombre_display(),
                             'llenado_por': laboratorio.usuario_creador.get_full_name() or laboratorio.usuario_creador.username,
                         })
-                else:
-                    datos_equipos.append({
-                        'laboratorio': laboratorio.get_nombre_display(),
-                        'ensayo': ensayo.get_nombre_display(),
-                        'tipo_equipo': equipo.tipo_equipo.get_nombre_display(),
-                        'codigo_equipo': 'Sin especificar',
-                        'estado_fisico': '-',
-                        'unidad_academica': laboratorio.unidad_academica.get_nombre_display(),
-                        'carrera': laboratorio.materia.carrera.get_nombre_display(),
-                        'llenado_por': laboratorio.usuario_creador.get_full_name() or laboratorio.usuario_creador.username,
-                    })
-    
-    # Filtrar equipos si se especificó tipo de equipo
-    if filtros['tipo_equipo']:
-        datos_equipos = [e for e in datos_equipos if e['tipo_equipo'] == TipoEquipo.objects.get(nombre=filtros['tipo_equipo']).get_nombre_display()]
     
     # Calcular estadísticas de los datos filtrados
     stats_filtradas = {
@@ -141,6 +213,7 @@ def filtrar_datos(request):
         'laboratorios': datos_laboratorios,
         'ensayos': datos_ensayos,
         'equipos': datos_equipos,
+        'equipos_general': datos_equipos_general,  # Datos específicos para tabla general
         'stats': stats_filtradas,
     })
 
@@ -403,161 +476,111 @@ def exportar_excel(request):
     return response
 
 def obtener_datos_general_completos(filtros):
-    """Obtiene datos completos para la vista general"""
+    """Obtiene datos completos para la vista general - datos agrupados por laboratorios/ensayos"""
+    # Construir la consulta base
     laboratorios = Laboratorio.objects.all()
     
     # Aplicar filtros
-    if filtros['unidad_academica']:
+    if filtros.get('unidad_academica'):
         laboratorios = laboratorios.filter(unidad_academica__nombre=filtros['unidad_academica'])
-    if filtros['semestre']:
+    if filtros.get('semestre'):
         laboratorios = laboratorios.filter(materia__semestre=filtros['semestre'])
-    if filtros['carrera']:
+    if filtros.get('carrera'):
         laboratorios = laboratorios.filter(materia__carrera__nombre=filtros['carrera'])
-    if filtros['materia']:
+    if filtros.get('materia'):
         laboratorios = laboratorios.filter(materia__nombre=filtros['materia'])
-    if filtros['laboratorio']:
+    if filtros.get('laboratorio'):
         laboratorios = laboratorios.filter(nombre=filtros['laboratorio'])
     
-    datos = []
+    datos_generales = []
+    
     for laboratorio in laboratorios:
         # Obtener ensayos del laboratorio
-        ensayos = Ensayo.objects.filter(laboratorio=laboratorio)
+        ensayos = laboratorio.ensayos.all()
         
-        if not ensayos.exists():
-            # Laboratorio sin ensayos
-            datos.append({
-                'id_laboratorio': laboratorio.id,
-                'unidad_academica': laboratorio.unidad_academica.get_nombre_display(),
-                'codigo_unidad': laboratorio.unidad_academica.nombre,
-                'semestre': f"{laboratorio.materia.semestre}° Semestre",
-                'carrera': laboratorio.materia.carrera.get_nombre_display(),
-                'materia': laboratorio.materia.get_nombre_display(),
-                'laboratorio': laboratorio.nombre,
-                'descripcion_laboratorio': laboratorio.get_nombre_display(),
-                'fecha_creacion_lab': laboratorio.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S"),
-                'ensayo': 'Sin ensayos',
-                'tipo_ensayo': '',
-                'estudiantes': 0,
-                'fecha_creacion_ensayo': '',
-                'tipo_equipo': 'Sin equipos',
-                'nombre_equipo': '',
-                'codigo_equipo': '',
-                'descripcion_equipo': '',
-                'estado_fisico': '',
-                'observaciones_equipo': '',
-                'fecha_creacion_equipo': '',
-                'llenado_por': laboratorio.usuario_creador.username if laboratorio.usuario_creador else 'N/A',
-                'email_usuario': laboratorio.usuario_creador.email if laboratorio.usuario_creador else 'N/A',
-                'fecha_llenado': laboratorio.fecha_creacion.strftime("%Y-%m-%d"),
-            })
-        else:
-            for ensayo in ensayos:
-                # Obtener equipos del ensayo
-                equipos_ensayo = Equipo.objects.filter(ensayo=ensayo)
+        for ensayo in ensayos:
+            # Obtener equipos del ensayo
+            equipos_ensayo = ensayo.equipos.all()
+            
+            if filtros.get('tipo_equipo'):
+                equipos_ensayo = equipos_ensayo.filter(tipo_equipo__nombre=filtros['tipo_equipo'])
+            
+            for equipo in equipos_ensayo:
+                # Obtener equipos individuales seleccionados
+                equipos_seleccionados = equipo.equipos_seleccionados.all()
                 
-                if not equipos_ensayo.exists():
-                    # Ensayo sin equipos
-                    datos.append({
+                if equipos_seleccionados.exists():
+                    # Crear una fila por cada equipo individual
+                    for equipo_individual in equipos_seleccionados:
+                        datos_generales.append({
+                            'id_laboratorio': laboratorio.id,
+                            'unidad_academica': laboratorio.unidad_academica.get_nombre_display(),
+                            'codigo_unidad': laboratorio.unidad_academica.nombre,
+                            'semestre': f"{laboratorio.materia.semestre}° Semestre",
+                            'carrera': laboratorio.materia.carrera.get_nombre_display(),
+                            'materia': laboratorio.materia.get_nombre_display(),
+                            'laboratorio': laboratorio.get_nombre_display(),
+                            'descripcion_laboratorio': laboratorio.get_nombre_display(),
+                            'fecha_creacion_lab': laboratorio.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S"),
+                            'ensayo': ensayo.get_nombre_display(),
+                            'tipo_ensayo': ensayo.nombre,
+                            'estudiantes': ensayo.cantidad_estudiantes,
+                            'fecha_creacion_ensayo': laboratorio.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S"),
+                            'tipo_equipo': equipo.tipo_equipo.get_nombre_display(),
+                            'nombre_equipo': equipo.tipo_equipo.get_nombre_display(),
+                            'codigo_equipo': equipo_individual.codigo,
+                            'descripcion_equipo': equipo.tipo_equipo.descripcion,
+                            'estado_fisico': equipo_individual.get_estado_fisico_display(),
+                            'observaciones_equipo': equipo_individual.observaciones or '',
+                            'fecha_creacion_equipo': equipo_individual.fecha_ingreso.strftime("%Y-%m-%d %H:%M:%S"),
+                            'llenado_por': laboratorio.usuario_creador.get_full_name() or laboratorio.usuario_creador.username if laboratorio.usuario_creador else 'N/A',
+                            'email_usuario': laboratorio.usuario_creador.email if laboratorio.usuario_creador else 'N/A',
+                            'fecha_llenado': laboratorio.fecha_creacion.strftime("%Y-%m-%d"),
+                        })
+                else:
+                    # Equipo sin equipos individuales seleccionados
+                    datos_generales.append({
                         'id_laboratorio': laboratorio.id,
                         'unidad_academica': laboratorio.unidad_academica.get_nombre_display(),
                         'codigo_unidad': laboratorio.unidad_academica.nombre,
                         'semestre': f"{laboratorio.materia.semestre}° Semestre",
                         'carrera': laboratorio.materia.carrera.get_nombre_display(),
                         'materia': laboratorio.materia.get_nombre_display(),
-                        'laboratorio': laboratorio.nombre,
+                        'laboratorio': laboratorio.get_nombre_display(),
                         'descripcion_laboratorio': laboratorio.get_nombre_display(),
                         'fecha_creacion_lab': laboratorio.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S"),
                         'ensayo': ensayo.get_nombre_display(),
                         'tipo_ensayo': ensayo.nombre,
                         'estudiantes': ensayo.cantidad_estudiantes,
                         'fecha_creacion_ensayo': laboratorio.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S"),
-                        'tipo_equipo': 'Sin equipos específicos',
-                        'nombre_equipo': '',
-                        'codigo_equipo': '',
-                        'descripcion_equipo': '',
-                        'estado_fisico': '',
+                        'tipo_equipo': equipo.tipo_equipo.get_nombre_display(),
+                        'nombre_equipo': equipo.tipo_equipo.get_nombre_display(),
+                        'codigo_equipo': 'Sin especificar',
+                        'descripcion_equipo': equipo.tipo_equipo.descripcion,
+                        'estado_fisico': '-',
                         'observaciones_equipo': '',
                         'fecha_creacion_equipo': '',
-                        'llenado_por': laboratorio.usuario_creador.username if laboratorio.usuario_creador else 'N/A',
+                        'llenado_por': laboratorio.usuario_creador.get_full_name() or laboratorio.usuario_creador.username if laboratorio.usuario_creador else 'N/A',
                         'email_usuario': laboratorio.usuario_creador.email if laboratorio.usuario_creador else 'N/A',
                         'fecha_llenado': laboratorio.fecha_creacion.strftime("%Y-%m-%d"),
                     })
-                else:
-                    for equipo_ensayo in equipos_ensayo:
-                        # Obtener equipos individuales seleccionados
-                        equipos_individuales = equipo_ensayo.equipos_seleccionados.all()
-                        
-                        if not equipos_individuales.exists():
-                            # Tipo de equipo sin equipos individuales
-                            datos.append({
-                                'id_laboratorio': laboratorio.id,
-                                'unidad_academica': laboratorio.unidad_academica.get_nombre_display(),
-                                'codigo_unidad': laboratorio.unidad_academica.nombre,
-                                'semestre': f"{laboratorio.materia.semestre}° Semestre",
-                                'carrera': laboratorio.materia.carrera.get_nombre_display(),
-                                'materia': laboratorio.materia.get_nombre_display(),
-                                'laboratorio': laboratorio.nombre,
-                                'descripcion_laboratorio': laboratorio.get_nombre_display(),
-                                'fecha_creacion_lab': laboratorio.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S"),
-                                'ensayo': ensayo.get_nombre_display(),
-                                'tipo_ensayo': ensayo.nombre,
-                                'estudiantes': ensayo.cantidad_estudiantes,
-                                'fecha_creacion_ensayo': laboratorio.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S"),
-                                'tipo_equipo': equipo_ensayo.tipo_equipo.get_nombre_display(),
-                                'nombre_equipo': 'Sin equipos específicos',
-                                'codigo_equipo': '',
-                                'descripcion_equipo': '',
-                                'estado_fisico': '',
-                                'observaciones_equipo': '',
-                                'fecha_creacion_equipo': '',
-                                'llenado_por': laboratorio.usuario_creador.username if laboratorio.usuario_creador else 'N/A',
-                                'email_usuario': laboratorio.usuario_creador.email if laboratorio.usuario_creador else 'N/A',
-                                'fecha_llenado': laboratorio.fecha_creacion.strftime("%Y-%m-%d"),
-                            })
-                        else:
-                            for equipo_individual in equipos_individuales:
-                                datos.append({
-                                    'id_laboratorio': laboratorio.id,
-                                    'unidad_academica': laboratorio.unidad_academica.get_nombre_display(),
-                                    'codigo_unidad': laboratorio.unidad_academica.nombre,
-                                    'semestre': f"{laboratorio.materia.semestre}° Semestre",
-                                    'carrera': laboratorio.materia.carrera.get_nombre_display(),
-                                    'materia': laboratorio.materia.get_nombre_display(),
-                                    'laboratorio': laboratorio.nombre,
-                                    'descripcion_laboratorio': laboratorio.get_nombre_display(),
-                                    'fecha_creacion_lab': laboratorio.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S"),
-                                    'ensayo': ensayo.get_nombre_display(),
-                                    'tipo_ensayo': ensayo.nombre,
-                                    'estudiantes': ensayo.cantidad_estudiantes,
-                                    'fecha_creacion_ensayo': laboratorio.fecha_creacion.strftime("%Y-%m-%d %H:%M:%S"),
-                                    'tipo_equipo': equipo_ensayo.tipo_equipo.get_nombre_display(),
-                                    'nombre_equipo': equipo_individual.tipo_equipo.get_nombre_display(),
-                                    'codigo_equipo': equipo_individual.codigo,
-                                    'descripcion_equipo': equipo_individual.tipo_equipo.descripcion,
-                                    'estado_fisico': equipo_individual.get_estado_fisico_display(),
-                                    'observaciones_equipo': equipo_individual.observaciones,
-                                    'fecha_creacion_equipo': equipo_individual.fecha_ingreso.strftime("%Y-%m-%d %H:%M:%S"),
-                                    'llenado_por': laboratorio.usuario_creador.username if laboratorio.usuario_creador else 'N/A',
-                                    'email_usuario': laboratorio.usuario_creador.email if laboratorio.usuario_creador else 'N/A',
-                                    'fecha_llenado': laboratorio.fecha_creacion.strftime("%Y-%m-%d"),
-                                })
     
-    return datos
+    return datos_generales
 
 def obtener_datos_laboratorios_completos(filtros):
     """Obtiene datos completos para laboratorios"""
     laboratorios = Laboratorio.objects.all()
     
     # Aplicar filtros
-    if filtros['unidad_academica']:
+    if filtros.get('unidad_academica'):
         laboratorios = laboratorios.filter(unidad_academica__nombre=filtros['unidad_academica'])
-    if filtros['semestre']:
+    if filtros.get('semestre'):
         laboratorios = laboratorios.filter(materia__semestre=filtros['semestre'])
-    if filtros['carrera']:
+    if filtros.get('carrera'):
         laboratorios = laboratorios.filter(materia__carrera__nombre=filtros['carrera'])
-    if filtros['materia']:
+    if filtros.get('materia'):
         laboratorios = laboratorios.filter(materia__nombre=filtros['materia'])
-    if filtros['laboratorio']:
+    if filtros.get('laboratorio'):
         laboratorios = laboratorios.filter(nombre=filtros['laboratorio'])
     
     datos = []
@@ -596,15 +619,15 @@ def obtener_datos_ensayos_completos(filtros):
     ensayos = Ensayo.objects.all()
     
     # Aplicar filtros a través de laboratorio
-    if filtros['unidad_academica']:
+    if filtros.get('unidad_academica'):
         ensayos = ensayos.filter(laboratorio__unidad_academica__nombre=filtros['unidad_academica'])
-    if filtros['semestre']:
+    if filtros.get('semestre'):
         ensayos = ensayos.filter(laboratorio__materia__semestre=filtros['semestre'])
-    if filtros['carrera']:
+    if filtros.get('carrera'):
         ensayos = ensayos.filter(laboratorio__materia__carrera__nombre=filtros['carrera'])
-    if filtros['materia']:
+    if filtros.get('materia'):
         ensayos = ensayos.filter(laboratorio__materia__nombre=filtros['materia'])
-    if filtros['laboratorio']:
+    if filtros.get('laboratorio'):
         ensayos = ensayos.filter(laboratorio__nombre=filtros['laboratorio'])
     
     datos = []
@@ -641,39 +664,75 @@ def obtener_datos_ensayos_completos(filtros):
     return datos
 
 def obtener_datos_equipos_completos(filtros):
-    """Obtiene datos completos para equipos"""
-    equipos = EquipoIndividual.objects.all()
+    """Obtiene datos completos para equipos - todos los equipos individuales"""
+    # Obtener todos los equipos individuales ordenados por unidad académica y código
+    equipos_individuales = EquipoIndividual.objects.all().order_by('unidad_academica__nombre', 'codigo')
     
     # Aplicar filtros
-    if filtros['unidad_academica']:
-        equipos = equipos.filter(unidad_academica__nombre=filtros['unidad_academica'])
-    if filtros['tipo_equipo']:
-        equipos = equipos.filter(tipo_equipo__nombre=filtros['tipo_equipo'])
+    if filtros.get('unidad_academica'):
+        equipos_individuales = equipos_individuales.filter(unidad_academica__nombre=filtros['unidad_academica'])
+    if filtros.get('tipo_equipo'):
+        equipos_individuales = equipos_individuales.filter(tipo_equipo__nombre=filtros['tipo_equipo'])
     
     # Filtros adicionales a través de ensayos
-    if filtros['semestre'] or filtros['carrera'] or filtros['materia'] or filtros['laboratorio']:
+    if filtros.get('semestre') or filtros.get('carrera') or filtros.get('materia') or filtros.get('laboratorio'):
         ensayos_filtrados = Ensayo.objects.all()
         
-        if filtros['semestre']:
+        if filtros.get('semestre'):
             ensayos_filtrados = ensayos_filtrados.filter(laboratorio__materia__semestre=filtros['semestre'])
-        if filtros['carrera']:
+        if filtros.get('carrera'):
             ensayos_filtrados = ensayos_filtrados.filter(laboratorio__materia__carrera__nombre=filtros['carrera'])
-        if filtros['materia']:
+        if filtros.get('materia'):
             ensayos_filtrados = ensayos_filtrados.filter(laboratorio__materia__nombre=filtros['materia'])
-        if filtros['laboratorio']:
+        if filtros.get('laboratorio'):
             ensayos_filtrados = ensayos_filtrados.filter(laboratorio__nombre=filtros['laboratorio'])
         
         # Obtener equipos que están en esos ensayos
-        equipos = equipos.filter(equipo__ensayo__in=ensayos_filtrados)
+        equipos_individuales = equipos_individuales.filter(equipo__ensayo__in=ensayos_filtrados).distinct()
     
     datos = []
-    for equipo in equipos:
-        # Obtener todos los ensayos donde se usa este equipo
+    
+    for equipo in equipos_individuales:
+        # Obtener el ensayo donde se usa este equipo (puede tener múltiples ensayos)
         ensayos_equipo = Ensayo.objects.filter(
             equipos__equipos_seleccionados=equipo
         ).distinct()
         
-        if not ensayos_equipo.exists():
+        if ensayos_equipo.exists():
+            # Tomar el primer ensayo (o podrías crear una fila por cada ensayo)
+            ensayo = ensayos_equipo.first()
+            laboratorio = ensayo.laboratorio
+            
+            datos.append({
+                'id_equipo': equipo.id,
+                'codigo_equipo': equipo.codigo,
+                'nombre_equipo': equipo.tipo_equipo.get_nombre_display(),
+                'descripcion_equipo': equipo.tipo_equipo.descripcion,
+                'tipo_equipo': equipo.tipo_equipo.get_nombre_display(),
+                'codigo_tipo_equipo': equipo.tipo_equipo.nombre,
+                'estado_fisico': equipo.get_estado_fisico_display(),
+                'codigo_estado': equipo.estado_fisico,
+                'observaciones': equipo.observaciones or '',
+                'unidad_academica': laboratorio.unidad_academica.get_nombre_display(),
+                'codigo_unidad': laboratorio.unidad_academica.nombre,
+                'laboratorio': laboratorio.get_nombre_display(),
+                'id_laboratorio': laboratorio.id,
+                'ensayo': ensayo.get_nombre_display(),
+                'tipo_ensayo': ensayo.nombre,
+                'cantidad_estudiantes': ensayo.cantidad_estudiantes,
+                'semestre': f"{laboratorio.materia.semestre}° Semestre",
+                'numero_semestre': laboratorio.materia.semestre,
+                'carrera': laboratorio.materia.carrera.get_nombre_display(),
+                'materia': laboratorio.materia.get_nombre_display(),
+                'fecha_creacion': equipo.fecha_ingreso.strftime("%Y-%m-%d %H:%M:%S"),
+                'llenado_por': laboratorio.usuario_creador.get_full_name() or laboratorio.usuario_creador.username if laboratorio.usuario_creador else 'N/A',
+                'email_usuario': laboratorio.usuario_creador.email if laboratorio.usuario_creador else 'N/A',
+                'nombre_completo_usuario': laboratorio.usuario_creador.get_full_name() if laboratorio.usuario_creador else 'N/A',
+                'fecha_llenado': laboratorio.fecha_creacion.strftime("%Y-%m-%d"),
+                'dia_semana': laboratorio.fecha_creacion.strftime("%A"),
+                'mes_año': laboratorio.fecha_creacion.strftime("%B %Y"),
+            })
+        else:
             # Equipo sin ensayos asociados
             datos.append({
                 'id_equipo': equipo.id,
@@ -684,50 +743,26 @@ def obtener_datos_equipos_completos(filtros):
                 'codigo_tipo_equipo': equipo.tipo_equipo.nombre,
                 'estado_fisico': equipo.get_estado_fisico_display(),
                 'codigo_estado': equipo.estado_fisico,
-                'observaciones': equipo.observaciones,
+                'observaciones': equipo.observaciones or '',
                 'unidad_academica': equipo.unidad_academica.get_nombre_display(),
                 'codigo_unidad': equipo.unidad_academica.nombre,
                 'laboratorio': 'Sin asignar',
+                'id_laboratorio': '',
                 'ensayo': 'Sin asignar',
+                'tipo_ensayo': '',
+                'cantidad_estudiantes': '',
                 'semestre': '',
+                'numero_semestre': '',
                 'carrera': '',
                 'materia': '',
                 'fecha_creacion': equipo.fecha_ingreso.strftime("%Y-%m-%d %H:%M:%S"),
+                'llenado_por': 'N/A',
+                'email_usuario': 'N/A',
+                'nombre_completo_usuario': 'N/A',
                 'fecha_llenado': equipo.fecha_ingreso.strftime("%Y-%m-%d"),
                 'dia_semana': equipo.fecha_ingreso.strftime("%A"),
                 'mes_año': equipo.fecha_ingreso.strftime("%B %Y"),
             })
-        else:
-            for ensayo in ensayos_equipo:
-                datos.append({
-                    'id_equipo': equipo.id,
-                    'codigo_equipo': equipo.codigo,
-                    'nombre_equipo': equipo.nombre,
-                    'descripcion_equipo': equipo.descripcion,
-                    'tipo_equipo': equipo.tipo_equipo.get_nombre_display(),
-                    'codigo_tipo_equipo': equipo.tipo_equipo.nombre,
-                    'estado_fisico': equipo.get_estado_fisico_display(),
-                    'codigo_estado': equipo.estado_fisico,
-                    'observaciones': equipo.observaciones,
-                    'unidad_academica': equipo.unidad_academica.get_nombre_display(),
-                    'codigo_unidad': equipo.unidad_academica.nombre,
-                    'laboratorio': ensayo.laboratorio.nombre,
-                    'id_laboratorio': ensayo.laboratorio.id,
-                    'ensayo': ensayo.get_nombre_display(),
-                    'tipo_ensayo': ensayo.nombre,
-                    'cantidad_estudiantes': ensayo.cantidad_estudiantes,
-                    'semestre': f"{ensayo.laboratorio.materia.semestre}° Semestre",
-                    'numero_semestre': ensayo.laboratorio.materia.semestre,
-                    'carrera': ensayo.laboratorio.materia.carrera.get_nombre_display(),
-                    'materia': ensayo.laboratorio.materia.get_nombre_display(),
-                    'fecha_creacion': equipo.fecha_ingreso.strftime("%Y-%m-%d %H:%M:%S"),
-                    'llenado_por': ensayo.laboratorio.usuario_creador.username if ensayo.laboratorio.usuario_creador else 'N/A',
-                    'email_usuario': ensayo.laboratorio.usuario_creador.email if ensayo.laboratorio.usuario_creador else 'N/A',
-                    'nombre_completo_usuario': ensayo.laboratorio.usuario_creador.get_full_name() if ensayo.laboratorio.usuario_creador else 'N/A',
-                    'fecha_llenado': equipo.fecha_ingreso.strftime("%Y-%m-%d"),
-                    'dia_semana': equipo.fecha_ingreso.strftime("%A"),
-                    'mes_año': equipo.fecha_ingreso.strftime("%B %Y"),
-                })
     
     return datos
 
