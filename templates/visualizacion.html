@@ -790,7 +790,7 @@ function aplicarFiltros() {
         .then(response => response.json())
         .then(data => {
             actualizarEstadisticas(data.stats);
-            actualizarTablaGeneral(data.laboratorios, data.ensayos, data.equipos);
+            actualizarTablaGeneral(data.laboratorios, data.ensayos, data.equipos_general);
             actualizarTablaLaboratorios(data.laboratorios);
             actualizarTablaEnsayos(data.ensayos);
             actualizarTablaEquipos(data.equipos);
@@ -825,91 +825,28 @@ function actualizarEstadisticas(stats) {
     document.getElementById('total-equipos').textContent = stats.total_equipos;
 }
 
-function actualizarTablaGeneral(laboratorios, ensayos, equipos) {
+function actualizarTablaGeneral(laboratorios, ensayos, equipos_general) {
     const tbody = document.querySelector('#tabla-general tbody');
     
-    // Crear un mapa para combinar datos
-    const datosGenerales = [];
-    
-    // Combinar datos de laboratorios, ensayos y equipos
-    laboratorios.forEach(lab => {
-        const ensayosLab = ensayos.filter(e => e.laboratorio === lab.laboratorio);
-        
-        if (ensayosLab.length === 0) {
-            // Laboratorio sin ensayos
-            datosGenerales.push({
-                unidad_academica: lab.unidad_academica,
-                semestre: lab.semestre,
-                carrera: lab.carrera,
-                materia: lab.materia,
-                laboratorio: lab.laboratorio,
-                ensayo: '-',
-                estudiantes: '-',
-                tipo_equipo: '-',
-                codigo_equipo: '-',
-                estado_fisico: '-',
-                llenado_por: lab.llenado_por
-            });
-        } else {
-            ensayosLab.forEach(ensayo => {
-                const equiposEnsayo = equipos.filter(e => 
-                    e.laboratorio === lab.laboratorio && e.ensayo === ensayo.ensayo
-                );
-                
-                if (equiposEnsayo.length === 0) {
-                    // Ensayo sin equipos
-                    datosGenerales.push({
-                        unidad_academica: lab.unidad_academica,
-                        semestre: lab.semestre,
-                        carrera: lab.carrera,
-                        materia: lab.materia,
-                        laboratorio: lab.laboratorio,
-                        ensayo: ensayo.ensayo,
-                        estudiantes: ensayo.estudiantes,
-                        tipo_equipo: '-',
-                        codigo_equipo: '-',
-                        estado_fisico: '-',
-                        llenado_por: lab.llenado_por
-                    });
-                } else {
-                    equiposEnsayo.forEach(equipo => {
-                        datosGenerales.push({
-                            unidad_academica: lab.unidad_academica,
-                            semestre: lab.semestre,
-                            carrera: lab.carrera,
-                            materia: lab.materia,
-                            laboratorio: lab.laboratorio,
-                            ensayo: ensayo.ensayo,
-                            estudiantes: ensayo.estudiantes,
-                            tipo_equipo: equipo.tipo_equipo,
-                            codigo_equipo: equipo.codigo_equipo,
-                            estado_fisico: equipo.estado_fisico,
-                            llenado_por: lab.llenado_por
-                        });
-                    });
-                }
-            });
-        }
-    });
-    
-    if (datosGenerales.length === 0) {
+    // ✅ SOLUCIÓN: Usar directamente equipos_general (datos únicos del backend)
+    if (equipos_general.length === 0) {
         tbody.innerHTML = '<tr><td colspan="11" class="empty-state">No se encontraron datos con los filtros aplicados</td></tr>';
         return;
     }
     
-    tbody.innerHTML = datosGenerales.map(dato => `
+    tbody.innerHTML = equipos_general.map(equipo => `
         <tr>
-            <td>${dato.unidad_academica}</td>
-            <td>${dato.semestre}</td>
-            <td>${dato.carrera}</td>
-            <td>${dato.materia}</td>
-            <td>${dato.laboratorio}</td>
-            <td>${dato.ensayo}</td>
-            <td style="text-align: center;">${dato.estudiantes}</td>
-            <td>${dato.tipo_equipo}</td>
-            <td style="font-weight: 600; color: #1e3a8a;">${dato.codigo_equipo}</td>
-            <td>${dato.estado_fisico !== '-' ? `<span class="badge badge-${dato.estado_fisico.toLowerCase()}">${dato.estado_fisico}</span>` : '-'}</td>
-            <td>${dato.llenado_por}</td>
+            <td>${equipo.unidad_academica}</td>
+            <td>${equipo.semestre}</td>
+            <td>${equipo.carrera}</td>
+            <td>${equipo.materia}</td>
+            <td>${equipo.laboratorio}</td>
+            <td>${equipo.ensayo}</td>
+            <td style="text-align: center;">${equipo.estudiantes}</td>
+            <td>${equipo.tipo_equipo}</td>
+            <td style="font-weight: 600; color: #1e3a8a;">${equipo.codigo_equipo}</td>
+            <td>${equipo.estado_fisico !== '-' ? `<span class="badge badge-${equipo.estado_fisico.toLowerCase()}">${equipo.estado_fisico}</span>` : '-'}</td>
+            <td>${equipo.llenado_por}</td>
         </tr>
     `).join('');
 }
