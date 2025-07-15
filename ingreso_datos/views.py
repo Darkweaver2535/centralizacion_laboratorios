@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
 from django.http import JsonResponse
+from django.core import serializers
+import json
 from .models import *
 from .forms import *
 
@@ -26,27 +28,36 @@ def ingreso_datos_view(request):
             
             elif request.POST.get('action') == 'get_equipos_individuales':
                 tipo_equipo_id = request.POST.get('tipo_equipo')
+                unidad_academica_id = request.POST.get('unidad_academica')
+                
                 if tipo_equipo_id:
                     try:
                         tipo_equipo = TipoEquipo.objects.get(nombre=tipo_equipo_id)
-                        equipos = EquipoIndividual.objects.filter(
-                            tipo_equipo=tipo_equipo,
-                            estado_operativo='operativo'
-                        )
                         
-                        # Estadísticas generales
-                        total_equipos = EquipoIndividual.objects.filter(tipo_equipo=tipo_equipo).count()
+                        # Filtrar equipos por unidad académica si se especifica
+                        equipos_filter = {'tipo_equipo': tipo_equipo, 'estado_operativo': 'operativo'}
+                        if unidad_academica_id:
+                            equipos_filter['unidad_academica__nombre'] = unidad_academica_id
+                        
+                        equipos = EquipoIndividual.objects.filter(**equipos_filter)
+                        
+                        # Estadísticas generales (también filtradas por unidad académica)
+                        stats_filter = {'tipo_equipo': tipo_equipo}
+                        if unidad_academica_id:
+                            stats_filter['unidad_academica__nombre'] = unidad_academica_id
+                        
+                        total_equipos = EquipoIndividual.objects.filter(**stats_filter).count()
                         equipos_operativos = equipos.count()
                         equipos_mantenimiento = EquipoIndividual.objects.filter(
-                            tipo_equipo=tipo_equipo,
+                            **stats_filter,
                             estado_operativo='mantenimiento'
                         ).count()
                         equipos_reparacion = EquipoIndividual.objects.filter(
-                            tipo_equipo=tipo_equipo,
+                            **stats_filter,
                             estado_operativo='reparacion'
                         ).count()
                         equipos_inoperativos = EquipoIndividual.objects.filter(
-                            tipo_equipo=tipo_equipo,
+                            **stats_filter,
                             estado_operativo='inoperativo'
                         ).count()
                         
@@ -217,12 +228,23 @@ def ingreso_datos_view(request):
         except Exception as e:
             messages.error(request, f'Error al guardar la información: {str(e)}')
     
+    # Preparar datos para JavaScript
+    tipos_equipo = TipoEquipo.objects.all().order_by('nombre_display')
+    tipos_equipo_json = []
+    for tipo in tipos_equipo:
+        tipos_equipo_json.append({
+            'nombre': tipo.nombre,
+            'nombre_display': tipo.get_nombre_display(),
+        })
+
     # Inicializar formularios
     context = {
         'unidad_form': UnidadAcademicaForm(),
         'info_form': InformacionAcademicaForm(),
         'lab_form': LaboratorioForm(),
         'ensayo_form': EnsayoEquipoForm(),
+        'tipos_equipo': tipos_equipo,
+        'tipos_equipo_json': json.dumps(tipos_equipo_json),
     }
     
     return render(request, 'ingreso_datos.html', context)
