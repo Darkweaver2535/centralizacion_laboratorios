@@ -26,17 +26,7 @@ class InformacionAcademicaForm(forms.Form):
     )
     
     carrera = forms.ChoiceField(
-        choices=[
-            ('', 'Seleccione una carrera'),
-            ('ingenieria_sistemas', 'Ingeniería de Sistemas'),
-            ('ingenieria_civil', 'Ingeniería Civil'),
-            ('ingenieria_industrial', 'Ingeniería Industrial'),
-            ('ingenieria_electronica', 'Ingeniería Electrónica'),
-            ('ingenieria_mecanica', 'Ingeniería Mecánica'),
-            ('ingenieria_quimica', 'Ingeniería Química'),
-            ('ingenieria_petrolera', 'Ingeniería Petrolera'),
-            ('ingenieria_ambiental', 'Ingeniería Ambiental'),
-        ],
+        choices=[],  # Will be populated dynamically
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
@@ -49,6 +39,13 @@ class InformacionAcademicaForm(forms.Form):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        from .models import Carrera
+        # Generate choices dynamically from the Carrera model
+        carrera_choices = [('', 'Seleccione una carrera')]
+        carrera_choices.extend([(carrera.nombre, carrera.get_nombre_display()) 
+                               for carrera in Carrera.objects.all().order_by('nombre')])
+        self.fields['carrera'].choices = carrera_choices
+        
         # Si se proporciona un semestre, actualizar las opciones de materia
         if self.data.get('semestre'):
             try:

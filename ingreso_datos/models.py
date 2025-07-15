@@ -22,14 +22,17 @@ class UnidadAcademica(models.Model):
 
 class Carrera(models.Model):
     CARRERAS = [
-        ('ingenieria_sistemas', 'Ingeniería de Sistemas'),
-        ('ingenieria_civil', 'Ingeniería Civil'),
-        ('ingenieria_industrial', 'Ingeniería Industrial'),
-        ('ingenieria_electronica', 'Ingeniería Electrónica'),
-        ('ingenieria_mecanica', 'Ingeniería Mecánica'),
-        ('ingenieria_quimica', 'Ingeniería Química'),
-        ('ingenieria_petrolera', 'Ingeniería Petrolera'),
         ('ingenieria_ambiental', 'Ingeniería Ambiental'),
+        ('ingenieria_civil', 'Ingeniería Civil'),
+        ('ingenieria_sistemas_electronicos', 'Ingeniería en Sistemas Electrónicos'),
+        ('ingenieria_comercial', 'Ingeniería Comercial'),
+        ('ingenieria_sistemas', 'Ingeniería de Sistemas'),
+        ('ingenieria_agroindustrial', 'Ingeniería Agroindustrial'),
+        ('sistemas_electronicos', 'Sistemas Electrónicos'),
+        ('informatica', 'Informática'),
+        ('construccion_civil', 'Construcción Civil'),
+        ('energias_renovables', 'Energías Renovables'),
+        ('diseno_grafico', 'Diseño Gráfico y Comunicación Audiovisual'),
     ]
     
     nombre = models.CharField(max_length=50, choices=CARRERAS, unique=True)
