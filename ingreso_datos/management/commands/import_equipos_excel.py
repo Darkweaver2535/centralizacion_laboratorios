@@ -192,13 +192,39 @@ class Command(BaseCommand):
             df.columns = df.columns.str.strip()
             
             # Verificar que las columnas requeridas existen
-            columnas_requeridas = ['CODIGO', 'DESCRIPCION DE ACTIVO', 'ESTADO']
-            columnas_faltantes = [col for col in columnas_requeridas if col not in df.columns]
+            # Mapear nombres de columnas alternativos
+            mapeo_columnas = {
+                'CODIGO': ['CODIGO', 'CÓDIGO'],
+                'DESCRIPCION DE ACTIVO': ['DESCRIPCION DE ACTIVO', 'DESCRIPCIÓN', 'DESCRIPCION'],
+                'ESTADO': ['ESTADO']
+            }
+            
+            # Encontrar las columnas correctas
+            columnas_encontradas = {}
+            for col_requerida, variantes in mapeo_columnas.items():
+                encontrada = False
+                for variante in variantes:
+                    if variante in df.columns:
+                        columnas_encontradas[col_requerida] = variante
+                        encontrada = True
+                        break
+                if not encontrada:
+                    columnas_encontradas[col_requerida] = None
+            
+            # Verificar columnas faltantes
+            columnas_faltantes = [col for col, col_real in columnas_encontradas.items() if col_real is None]
             
             if columnas_faltantes:
                 self.stdout.write(f'    ⚠️  Columnas faltantes en hoja {sheet_name}: {", ".join(columnas_faltantes)}')
                 self.stdout.write(f'    Columnas disponibles: {list(df.columns)}')
                 return 0, 0, [f'Hoja {sheet_name}: Columnas faltantes - {", ".join(columnas_faltantes)}']
+
+            # Renombrar columnas para usar nombres estándar
+            df = df.rename(columns={
+                columnas_encontradas['CODIGO']: 'CODIGO',
+                columnas_encontradas['DESCRIPCION DE ACTIVO']: 'DESCRIPCION DE ACTIVO',
+                columnas_encontradas['ESTADO']: 'ESTADO'
+            })
 
             # Filtrar filas vacías o con código vacío
             df = df.dropna(subset=['CODIGO'])

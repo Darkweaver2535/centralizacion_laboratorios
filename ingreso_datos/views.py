@@ -30,21 +30,41 @@ def ingreso_datos_view(request):
                 tipo_equipo_id = request.POST.get('tipo_equipo')
                 unidad_academica_id = request.POST.get('unidad_academica')
                 
-                if tipo_equipo_id:
+                if tipo_equipo_id and unidad_academica_id:
                     try:
                         tipo_equipo = TipoEquipo.objects.get(nombre=tipo_equipo_id)
                         
-                        # Filtrar equipos por unidad académica si se especifica
-                        equipos_filter = {'tipo_equipo': tipo_equipo, 'estado_operativo': 'operativo'}
-                        if unidad_academica_id:
-                            equipos_filter['unidad_academica__nombre'] = unidad_academica_id
+                        # Verificar que la unidad académica existe
+                        try:
+                            unidad_academica = UnidadAcademica.objects.get(nombre=unidad_academica_id)
+                        except UnidadAcademica.DoesNotExist:
+                            # Si no existe la unidad académica, no mostrar equipos
+                            return JsonResponse({
+                                'equipos': [], 
+                                'capacidad_estudiantes': 1, 
+                                'estadisticas': {
+                                    'total_equipos': 0,
+                                    'operativos': 0,
+                                    'mantenimiento': 0,
+                                    'reparacion': 0,
+                                    'inoperativos': 0
+                                }
+                            })
+                        
+                        # Filtrar equipos OBLIGATORIAMENTE por unidad académica
+                        equipos_filter = {
+                            'tipo_equipo': tipo_equipo, 
+                            'estado_operativo': 'operativo',
+                            'unidad_academica': unidad_academica
+                        }
                         
                         equipos = EquipoIndividual.objects.filter(**equipos_filter)
                         
-                        # Estadísticas generales (también filtradas por unidad académica)
-                        stats_filter = {'tipo_equipo': tipo_equipo}
-                        if unidad_academica_id:
-                            stats_filter['unidad_academica__nombre'] = unidad_academica_id
+                        # Estadísticas generales (también filtradas OBLIGATORIAMENTE por unidad académica)
+                        stats_filter = {
+                            'tipo_equipo': tipo_equipo,
+                            'unidad_academica': unidad_academica
+                        }
                         
                         total_equipos = EquipoIndividual.objects.filter(**stats_filter).count()
                         equipos_operativos = equipos.count()
@@ -84,6 +104,7 @@ def ingreso_datos_view(request):
                         })
                     except TipoEquipo.DoesNotExist:
                         pass
+                
                 return JsonResponse({
                     'equipos': [], 
                     'capacidad_estudiantes': 1, 
@@ -99,19 +120,30 @@ def ingreso_datos_view(request):
             elif request.POST.get('action') == 'get_recomendacion':
                 tipo_equipo_id = request.POST.get('tipo_equipo')
                 cantidad_estudiantes = request.POST.get('cantidad_estudiantes')
+                unidad_academica_id = request.POST.get('unidad_academica')
                 
-                if tipo_equipo_id and cantidad_estudiantes:
+                if tipo_equipo_id and cantidad_estudiantes and unidad_academica_id:
                     try:
                         tipo_equipo = TipoEquipo.objects.get(nombre=tipo_equipo_id)
                         estudiantes = int(cantidad_estudiantes)
                         
+                        # Verificar que la unidad académica existe
+                        try:
+                            unidad_academica = UnidadAcademica.objects.get(nombre=unidad_academica_id)
+                        except UnidadAcademica.DoesNotExist:
+                            return JsonResponse({'recomendacion': 'Por favor selecciona una unidad académica válida.'})
+                        
                         capacidad_por_equipo = tipo_equipo.capacidad_estudiantes
                         equipos_disponibles = EquipoIndividual.objects.filter(
                             tipo_equipo=tipo_equipo,
-                            estado_operativo='operativo'
+                            estado_operativo='operativo',
+                            unidad_academica=unidad_academica
                         ).count()
                         
-                        total_equipos = EquipoIndividual.objects.filter(tipo_equipo=tipo_equipo).count()
+                        total_equipos = EquipoIndividual.objects.filter(
+                            tipo_equipo=tipo_equipo,
+                            unidad_academica=unidad_academica
+                        ).count()
                         
                         equipos_necesarios = -(-estudiantes // capacidad_por_equipo)  # Ceil division
                         
@@ -139,6 +171,33 @@ def ingreso_datos_view(request):
                         pass
                 
                 return JsonResponse({'mensaje': '', 'estado': 'error'})
+            
+            elif request.POST.get('action') == 'get_tipos_equipo':
+                unidad_academica_id = request.POST.get('unidad_academica')
+                
+                if unidad_academica_id:
+                    try:
+                        unidad_academica = UnidadAcademica.objects.get(nombre=unidad_academica_id)
+                        
+                        # Obtener tipos de equipo que tienen equipos en esta unidad académica
+                        tipos_equipo = TipoEquipo.objects.filter(
+                            equipos_individuales__unidad_academica=unidad_academica
+                        ).distinct().order_by('nombre')
+                        
+                        tipos_data = []
+                        for tipo in tipos_equipo:
+                            tipos_data.append({
+                                'nombre': tipo.nombre,
+                                'display_name': tipo.get_nombre_display()
+                            })
+                        
+                        return JsonResponse({
+                            'tipos_equipo': tipos_data
+                        })
+                    except UnidadAcademica.DoesNotExist:
+                        pass
+                
+                return JsonResponse({'tipos_equipo': []})
             
             # Si es para validar paso
             step = request.POST.get('step')
