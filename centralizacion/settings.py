@@ -27,7 +27,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-
+# CSRF Configuration para Render
+CSRF_TRUSTED_ORIGINS = [
+    'https://reordenamiento-laboratorios.onrender.com',
+]
 # Application definition
 
 INSTALLED_APPS = [
