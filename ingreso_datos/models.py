@@ -45,9 +45,11 @@ class Carrera(models.Model):
     def __str__(self):
         return self.get_nombre_display()
 
-class Materia(models.Model):
-    # Materias comunes por semestre
-    MATERIAS_POR_SEMESTRE = {
+class Asignatura(models.Model):
+    """Nuevo modelo para asignaturas con información extendida"""
+    
+    # Asignaturas comunes por semestre
+    ASIGNATURAS_POR_SEMESTRE = {
         1: [
             ('matematica_i', 'Matemática I'),
             ('fisica_i', 'Física I'),
@@ -123,30 +125,80 @@ class Materia(models.Model):
     nombre = models.CharField(max_length=50, choices=[])
     carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE)
     semestre = models.IntegerField(choices=[(i, f"{i}° Semestre") for i in range(1, 11)])
+    carga_horaria_semanal = models.IntegerField(help_text="Horas por semana")
+    carga_horaria_semestral = models.IntegerField(help_text="Total de horas en el semestre")
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Generar choices dinámicamente basado en todas las materias
-        all_materias = []
-        for materias_list in self.MATERIAS_POR_SEMESTRE.values():
-            all_materias.extend(materias_list)
-        self._meta.get_field('nombre').choices = list(set(all_materias))
+        # Generar choices dinámicamente basado en todas las asignaturas
+        all_asignaturas = []
+        for asignaturas_list in self.ASIGNATURAS_POR_SEMESTRE.values():
+            all_asignaturas.extend(asignaturas_list)
+        self._meta.get_field('nombre').choices = list(set(all_asignaturas))
     
     class Meta:
-        verbose_name = 'Materia'
-        verbose_name_plural = 'Materias'
+        verbose_name = 'Asignatura'
+        verbose_name_plural = 'Asignaturas'
         unique_together = ['nombre', 'carrera', 'semestre']
     
     def __str__(self):
         return f"{self.get_nombre_display()} - {self.carrera} - {self.semestre}° Semestre"
     
     @classmethod
-    def get_materias_por_semestre(cls, semestre):
-        """Obtener materias disponibles para un semestre específico"""
-        return cls.MATERIAS_POR_SEMESTRE.get(semestre, [])
+    def get_asignaturas_por_semestre(cls, semestre):
+        """Obtener asignaturas disponibles para un semestre específico"""
+        return cls.ASIGNATURAS_POR_SEMESTRE.get(semestre, [])
+
+class UnidadTematica(models.Model):
+    """Unidades temáticas dentro de una asignatura"""
+    asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE, related_name='unidades_tematicas')
+    nombre = models.CharField(max_length=200)
+    numero = models.IntegerField(help_text="Número de la unidad temática")
+    descripcion = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name = 'Unidad Temática'
+        verbose_name_plural = 'Unidades Temáticas'
+        unique_together = ['asignatura', 'numero']
+        ordering = ['asignatura', 'numero']
+    
+    def __str__(self):
+        return f"Unidad {self.numero}: {self.nombre} ({self.asignatura})"
+
+class GuiaLaboratorio(models.Model):
+    """Guías de laboratorio por unidad temática"""
+    unidad_tematica = models.ForeignKey(UnidadTematica, on_delete=models.CASCADE, related_name='guias_laboratorio')
+    nombre = models.CharField(max_length=200)
+    numero = models.IntegerField(help_text="Número de la guía")
+    descripcion = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name = 'Guía de Laboratorio'
+        verbose_name_plural = 'Guías de Laboratorio'
+        unique_together = ['unidad_tematica', 'numero']
+        ordering = ['unidad_tematica', 'numero']
+    
+    def __str__(self):
+        return f"Guía {self.numero}: {self.nombre} ({self.unidad_tematica.asignatura})"
+
+class Practica(models.Model):
+    """Prácticas de laboratorio"""
+    guia_laboratorio = models.ForeignKey(GuiaLaboratorio, on_delete=models.CASCADE, related_name='practicas')
+    nombre = models.CharField(max_length=200)
+    numero = models.IntegerField(help_text="Número de la práctica")
+    descripcion = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name = 'Práctica'
+        verbose_name_plural = 'Prácticas'
+        unique_together = ['guia_laboratorio', 'numero']
+        ordering = ['guia_laboratorio', 'numero']
+    
+    def __str__(self):
+        return f"Práctica {self.numero}: {self.nombre}"
 
 class Laboratorio(models.Model):
-    # Laboratorios predefinidos
+    """Laboratorios físicos"""
     LABORATORIOS = [
         ('lab_fisica_mecanica', 'Laboratorio de Física Mecánica'),
         ('lab_quimica_general', 'Laboratorio de Química General'),
@@ -162,10 +214,8 @@ class Laboratorio(models.Model):
     
     nombre = models.CharField(max_length=50, choices=LABORATORIOS)
     unidad_academica = models.ForeignKey(UnidadAcademica, on_delete=models.CASCADE)
-    materia = models.ForeignKey(Materia, on_delete=models.CASCADE)
-    usuario_creador = models.ForeignKey(User, on_delete=models.CASCADE)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    seccion_area = models.CharField(max_length=100, help_text="Sección o área del laboratorio")
+    identificador_aula = models.CharField(max_length=50, help_text="Número o identificador del aula")
     
     class Meta:
         verbose_name = 'Laboratorio'
@@ -174,34 +224,8 @@ class Laboratorio(models.Model):
     def __str__(self):
         return f"{self.get_nombre_display()} - {self.unidad_academica}"
 
-class Ensayo(models.Model):
-    # Ensayos predefinidos
-    ENSAYOS = [
-        ('ensayo_traccion', 'Ensayo de Tracción'),
-        ('ensayo_compresion', 'Ensayo de Compresión'),
-        ('ensayo_dureza', 'Ensayo de Dureza'),
-        ('ensayo_impacto', 'Ensayo de Impacto'),
-        ('ensayo_ph', 'Ensayo de pH'),
-        ('ensayo_conductividad', 'Ensayo de Conductividad Eléctrica'),
-        ('ensayo_densidad', 'Ensayo de Densidad'),
-        ('ensayo_viscosidad', 'Ensayo de Viscosidad'),
-        ('ensayo_microscopia', 'Ensayo de Microscopía'),
-        ('ensayo_espectroscopia', 'Ensayo de Espectroscopía'),
-    ]
-    
-    nombre = models.CharField(max_length=50, choices=ENSAYOS)
-    laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE, related_name='ensayos')
-    cantidad_estudiantes = models.IntegerField(default=1, help_text="Número de estudiantes que participarán en el ensayo")
-    descripcion = models.TextField(blank=True)
-    
-    class Meta:
-        verbose_name = 'Ensayo'
-        verbose_name_plural = 'Ensayos'
-    
-    def __str__(self):
-        return f"{self.get_nombre_display()} - {self.laboratorio.nombre}"
-
 class TipoEquipo(models.Model):
+    """Tipos de equipos disponibles"""
     TIPOS_EQUIPO = [
         ('microscopio_optico', 'Microscopio Óptico'),
         ('balanza_analitica', 'Balanza Analítica'),
@@ -215,10 +239,9 @@ class TipoEquipo(models.Model):
         ('mechero_bunsen', 'Mechero Bunsen'),
     ]
     
-    nombre = models.CharField(max_length=50, unique=True, help_text="Identificador único del tipo de equipo")
-    nombre_display = models.CharField(max_length=100, blank=True, help_text="Nombre para mostrar en la interfaz")
+    nombre = models.CharField(max_length=50, unique=True)
+    nombre_display = models.CharField(max_length=100, blank=True)
     descripcion = models.TextField(blank=True)
-    capacidad_estudiantes = models.IntegerField(default=1, help_text="Número de estudiantes que pueden usar simultáneamente este equipo")
     
     class Meta:
         verbose_name = 'Tipo de Equipo'
@@ -228,34 +251,116 @@ class TipoEquipo(models.Model):
         return self.get_nombre_display()
     
     def get_nombre_display(self):
-        """Devuelve el nombre para mostrar, usando nombre_display si está disponible"""
         if self.nombre_display:
             return self.nombre_display
         
-        # Buscar en los tipos predefinidos
         for key, display_name in self.TIPOS_EQUIPO:
             if key == self.nombre:
                 return display_name
         
-        # Si no se encuentra, formatear el nombre
         return self.nombre.replace('_', ' ').title()
+
+class EquipoExistente(models.Model):
+    """Equipos existentes en el laboratorio"""
+    ESTADOS = [
+        ('excelente', 'Excelente'),
+        ('bueno', 'Bueno'),
+        ('regular', 'Regular'),
+        ('malo', 'Malo'),
+        ('inoperativo', 'Inoperativo'),
+    ]
     
-    def save(self, *args, **kwargs):
-        """Guardar con nombre_display automático si no se proporciona"""
-        if not self.nombre_display:
-            # Buscar en los tipos predefinidos
-            for key, display_name in self.TIPOS_EQUIPO:
-                if key == self.nombre:
-                    self.nombre_display = display_name
-                    break
-            else:
-                # Si no se encuentra, formatear el nombre
-                self.nombre_display = self.nombre.replace('_', ' ').title()
-        
-        super().save(*args, **kwargs)
+    tipo_equipo = models.ForeignKey(TipoEquipo, on_delete=models.CASCADE)
+    marca = models.CharField(max_length=100, blank=True)
+    modelo = models.CharField(max_length=100, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='bueno')
+    numero_unidades = models.IntegerField(default=1, help_text="Número de unidades de este equipo")
+    es_activo_fijo = models.BooleanField(default=False, help_text="¿Es un activo fijo según acta de entrega?")
+    fotografia_frontal = models.ImageField(upload_to='equipos/fotos_frontales/', blank=True, null=True)
+    fotografia_placa = models.ImageField(upload_to='equipos/fotos_placas/', blank=True, null=True)
+    laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE, related_name='equipos_existentes')
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    usuario_creador = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+    class Meta:
+        verbose_name = 'Equipo Existente'
+        verbose_name_plural = 'Equipos Existentes'
+    
+    def __str__(self):
+        return f"{self.tipo_equipo} - {self.marca} {self.modelo} ({self.numero_unidades} unidades)"
+
+class EquipoRequerido(models.Model):
+    """Equipos requeridos para una práctica específica"""
+    practica = models.ForeignKey(Practica, on_delete=models.CASCADE, related_name='equipos_requeridos')
+    tipo_equipo = models.ForeignKey(TipoEquipo, on_delete=models.CASCADE)
+    numero_equipos_requeridos = models.IntegerField(help_text="Número de equipos necesarios")
+    especificaciones = models.TextField(blank=True, help_text="Especificaciones técnicas requeridas")
+    
+    class Meta:
+        verbose_name = 'Equipo Requerido'
+        verbose_name_plural = 'Equipos Requeridos'
+        unique_together = ['practica', 'tipo_equipo']
+    
+    def __str__(self):
+        return f"{self.tipo_equipo} ({self.numero_equipos_requeridos} unidades) - {self.practica}"
+
+class RegistroEquipos(models.Model):
+    """Registro principal que conecta todo"""
+    unidad_academica = models.ForeignKey(UnidadAcademica, on_delete=models.CASCADE)
+    carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE)
+    asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE)
+    unidad_tematica = models.ForeignKey(UnidadTematica, on_delete=models.CASCADE)
+    guia_laboratorio = models.ForeignKey(GuiaLaboratorio, on_delete=models.CASCADE)
+    practica = models.ForeignKey(Practica, on_delete=models.CASCADE)
+    laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE)
+    
+    usuario_creador = models.ForeignKey(User, on_delete=models.CASCADE)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Registro de Equipos'
+        verbose_name_plural = 'Registros de Equipos'
+    
+    def __str__(self):
+        return f"{self.asignatura} - {self.practica} ({self.unidad_academica})"
+
+# Modelos heredados para compatibilidad (mantener temporalmente)
+class Materia(Asignatura):
+    """Alias para compatibilidad con código existente"""
+    class Meta:
+        proxy = True
+        verbose_name = 'Materia (Deprecado)'
+        verbose_name_plural = 'Materias (Deprecadas)'
+
+# Temporal fix - commenting out problematic proxy model
+"""
+class Ensayo(Practica):
+    # Alias para compatibilidad con código existente
+    cantidad_estudiantes = models.IntegerField(default=1, null=True, blank=True)
+    laboratorio_old = models.ForeignKey('Laboratorio', on_delete=models.CASCADE, related_name='ensayos_old', null=True, blank=True)
+    
+    class Meta:
+        proxy = True
+        verbose_name = 'Ensayo (Deprecado)'
+        verbose_name_plural = 'Ensayos (Deprecados)'
+"""
+
+class Equipo(models.Model):
+    """Mantenido para compatibilidad temporal"""
+    tipo_equipo = models.ForeignKey(TipoEquipo, on_delete=models.CASCADE)
+    # Commented out to fix migration issue
+    # ensayo = models.ForeignKey(Ensayo, on_delete=models.CASCADE, related_name='equipos', null=True, blank=True)
+    equipos_seleccionados = models.ManyToManyField('EquipoIndividual', blank=True)
+    cantidad_necesaria = models.IntegerField(default=1)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Equipo (Deprecado)'
+        verbose_name_plural = 'Equipos (Deprecados)'
 
 class EquipoIndividual(models.Model):
-    """Modelo para equipos individuales con códigos únicos"""
+    """Mantenido para compatibilidad temporal"""
     ESTADOS = [
         ('bueno', 'Bueno'),
         ('regular', 'Regular'),
@@ -270,95 +375,25 @@ class EquipoIndividual(models.Model):
     ]
     
     tipo_equipo = models.ForeignKey(TipoEquipo, on_delete=models.CASCADE, related_name='equipos_individuales')
-    codigo = models.CharField(max_length=20, unique=True, help_text="Código único del equipo")
-    estado_fisico = models.CharField(max_length=20, choices=ESTADOS, default='bueno', help_text="Estado físico del equipo")
-    estado_operativo = models.CharField(max_length=20, choices=ESTADOS_OPERATIVOS, default='operativo', help_text="Estado operativo del equipo")
-    unidad_academica = models.ForeignKey(UnidadAcademica, on_delete=models.CASCADE, null=True, blank=True, help_text="Unidad académica donde se encuentra el equipo")
+    codigo = models.CharField(max_length=20, unique=True)
+    estado_fisico = models.CharField(max_length=20, choices=ESTADOS, default='bueno')
+    estado_operativo = models.CharField(max_length=20, choices=ESTADOS_OPERATIVOS, default='operativo')
+    unidad_academica = models.ForeignKey(UnidadAcademica, on_delete=models.CASCADE, null=True, blank=True)
     ubicacion = models.CharField(max_length=100, blank=True)
     fecha_ingreso = models.DateField(auto_now_add=True)
     observaciones = models.TextField(blank=True)
     
     class Meta:
-        verbose_name = 'Equipo Individual'
-        verbose_name_plural = 'Equipos Individuales'
-        ordering = ['tipo_equipo', 'codigo']
-    
-    def __str__(self):
-        return f"{self.tipo_equipo.get_nombre_display()} - {self.codigo} - ({self.get_estado_fisico_display().upper()})"
-    
-    def get_display_name(self):
-        """Obtener nombre para mostrar en la interfaz"""
-        return f"{self.tipo_equipo.get_nombre_display()} - {self.codigo} - ({self.get_estado_fisico_display().upper()})"
-    
-    @property
-    def is_available(self):
-        """Verificar si el equipo está disponible para uso"""
-        return self.estado_operativo == 'operativo'
-
-class Equipo(models.Model):
-    """Modelo para la asignación de equipos a ensayos"""
-    tipo_equipo = models.ForeignKey(TipoEquipo, on_delete=models.CASCADE)
-    ensayo = models.ForeignKey(Ensayo, on_delete=models.CASCADE, related_name='equipos')
-    equipos_seleccionados = models.ManyToManyField(EquipoIndividual, blank=True)
-    cantidad_necesaria = models.IntegerField(default=1, help_text="Cantidad de equipos necesarios para el ensayo")
-    fecha_registro = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        verbose_name = 'Equipo'
-        verbose_name_plural = 'Equipos'
-    
-    def __str__(self):
-        return f"{self.tipo_equipo} - {self.ensayo.nombre}"
-    
-    def get_equipos_disponibles(self):
-        """Obtener equipos disponibles del tipo seleccionado"""
-        return EquipoIndividual.objects.filter(
-            tipo_equipo=self.tipo_equipo,
-            estado_operativo='operativo'
-        )
-    
-    def get_recomendacion_uso(self):
-        """Obtener recomendación de uso basada en estudiantes y capacidad"""
-        estudiantes = self.ensayo.cantidad_estudiantes
-        capacidad_por_equipo = self.tipo_equipo.capacidad_estudiantes
-        equipos_disponibles = self.get_equipos_disponibles().count()
-        
-        equipos_necesarios = -(-estudiantes // capacidad_por_equipo)  # Ceil division
-        
-        if equipos_necesarios <= equipos_disponibles:
-            if capacidad_por_equipo == 1:
-                return {
-                    'estado': 'suficiente',
-                    'mensaje': f'Cada estudiante usará un equipo individual. Se necesitan {equipos_necesarios} equipos.',
-                    'equipos_necesarios': equipos_necesarios,
-                    'equipos_disponibles': equipos_disponibles
-                }
-            else:
-                return {
-                    'estado': 'suficiente',
-                    'mensaje': f'Se pueden agrupar {capacidad_por_equipo} estudiantes por equipo. Se necesitan {equipos_necesarios} equipos.',
-                    'equipos_necesarios': equipos_necesarios,
-                    'equipos_disponibles': equipos_disponibles
-                }
-        else:
-            faltante = equipos_necesarios - equipos_disponibles
-            return {
-                'estado': 'insuficiente',
-                'mensaje': f'Se necesitan {equipos_necesarios} equipos pero solo hay {equipos_disponibles} disponibles. Se recomienda comprar {faltante} equipos adicionales.',
-                'equipos_necesarios': equipos_necesarios,
-                'equipos_disponibles': equipos_disponibles,
-                'equipos_faltantes': faltante
-            }
+        verbose_name = 'Equipo Individual (Deprecado)'
+        verbose_name_plural = 'Equipos Individuales (Deprecados)'
 
 class RegistroIngreso(models.Model):
-    laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE)
+    """Mantenido para compatibilidad temporal"""
+    laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE, null=True, blank=True)
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     fecha_ingreso = models.DateTimeField(auto_now_add=True)
     datos_completos = models.JSONField()
     
     class Meta:
-        verbose_name = 'Registro de Ingreso'
-        verbose_name_plural = 'Registros de Ingresos'
-    
-    def __str__(self):
-        return f"Registro {self.laboratorio.nombre} - {self.fecha_ingreso}"
+        verbose_name = 'Registro de Ingreso (Deprecado)'
+        verbose_name_plural = 'Registros de Ingresos (Deprecados)'

@@ -1,0 +1,963 @@
+{% extends 'base.html' %}
+
+{% block title %}Nuevo Insumo - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Nuevo Insumo{% endblock %}
+
+{% block page_description %}Registro de nuevo insumo para inventario de laboratorio{% endblock %}
+
+{% block content %}
+<div class="nuevo-insumo-container">
+    <div class="form-header">
+        <div class="header-content">
+            <h2><i class="fas fa-plus-circle"></i> Registro de Nuevo Insumo</h2>
+            <p>Complete la información del insumo para agregar al inventario</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'insumos:lista' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Inventario
+            </a>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="insumoForm" class="insumo-form">
+        {% csrf_token %}
+        
+        <!-- Sección 1: Información Básica -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-info-circle"></i> Información Básica</h3>
+                <p>Datos principales del insumo</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="nombre" class="required">Nombre del Insumo</label>
+                    <input type="text" 
+                           id="nombre" 
+                           name="nombre" 
+                           class="form-control"
+                           placeholder="Ej: Ácido Clorhídrico, Tubo de ensayo, etc."
+                           required>
+                    <small class="form-help">Nombre descriptivo completo del insumo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="codigo_interno">Código Interno</label>
+                    <input type="text" 
+                           id="codigo_interno" 
+                           name="codigo_interno" 
+                           class="form-control"
+                           placeholder="Se generará automáticamente">
+                    <small class="form-help">Deje vacío para generación automática</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tipo" class="required">Tipo de Insumo</label>
+                    <select id="tipo" name="tipo" class="form-control" required>
+                        <option value="">Seleccione el tipo</option>
+                        {% for value, display in tipos_choices %}
+                            <option value="{{ value }}">{{ display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="descripcion">Descripción</label>
+                    <textarea id="descripcion" 
+                              name="descripcion" 
+                              class="form-control"
+                              rows="3"
+                              placeholder="Descripción detallada del insumo, especificaciones técnicas, etc."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 2: Especificaciones Técnicas -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-flask"></i> Especificaciones Técnicas</h3>
+                <p>Características técnicas y de seguridad</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="formula_quimica">Fórmula Química</label>
+                    <input type="text" 
+                           id="formula_quimica" 
+                           name="formula_quimica" 
+                           class="form-control"
+                           placeholder="Ej: HCl, NaCl, H₂SO₄">
+                </div>
+                
+                <div class="form-group">
+                    <label for="pureza">Pureza (%)</label>
+                    <input type="number" 
+                           id="pureza" 
+                           name="pureza" 
+                           class="form-control"
+                           step="0.01" 
+                           min="0" 
+                           max="100"
+                           placeholder="Ej: 99.5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="concentracion">Concentración</label>
+                    <input type="text" 
+                           id="concentracion" 
+                           name="concentracion" 
+                           class="form-control"
+                           placeholder="Ej: 37%, 1M, 0.1N">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cas_number">Número CAS</label>
+                    <input type="text" 
+                           id="cas_number" 
+                           name="cas_number" 
+                           class="form-control"
+                           placeholder="Ej: 7647-01-0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="peso_molecular">Peso Molecular</label>
+                    <input type="number" 
+                           id="peso_molecular" 
+                           name="peso_molecular" 
+                           class="form-control"
+                           step="0.01" 
+                           min="0"
+                           placeholder="g/mol">
+                </div>
+                
+                <div class="form-group">
+                    <label for="punto_fusion">Punto de Fusión (°C)</label>
+                    <input type="number" 
+                           id="punto_fusion" 
+                           name="punto_fusion" 
+                           class="form-control"
+                           step="0.1"
+                           placeholder="Ej: -114.2">
+                </div>
+                
+                <div class="form-group">
+                    <label for="punto_ebullicion">Punto de Ebullición (°C)</label>
+                    <input type="number" 
+                           id="punto_ebullicion" 
+                           name="punto_ebullicion" 
+                           class="form-control"
+                           step="0.1"
+                           placeholder="Ej: 84.2">
+                </div>
+                
+                <div class="form-group">
+                    <label for="densidad">Densidad (g/mL)</label>
+                    <input type="number" 
+                           id="densidad" 
+                           name="densidad" 
+                           class="form-control"
+                           step="0.001" 
+                           min="0"
+                           placeholder="Ej: 1.18">
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 3: Inventario y Stock -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-warehouse"></i> Control de Inventario</h3>
+                <p>Cantidades y gestión de stock</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="cantidad_inicial" class="required">Cantidad Inicial</label>
+                    <input type="number" 
+                           id="cantidad_inicial" 
+                           name="cantidad_inicial" 
+                           class="form-control"
+                           step="0.01" 
+                           min="0"
+                           required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="unidad_medida" class="required">Unidad de Medida</label>
+                    <input type="text" 
+                           id="unidad_medida" 
+                           name="unidad_medida" 
+                           class="form-control"
+                           placeholder="Ej: mL, g, kg, unidades, L"
+                           required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cantidad_minima">Stock Mínimo</label>
+                    <input type="number" 
+                           id="cantidad_minima" 
+                           name="cantidad_minima" 
+                           class="form-control"
+                           step="0.01" 
+                           min="0"
+                           placeholder="Cantidad mínima para alerta">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cantidad_maxima">Stock Máximo</label>
+                    <input type="number" 
+                           id="cantidad_maxima" 
+                           name="cantidad_maxima" 
+                           class="form-control"
+                           step="0.01" 
+                           min="0"
+                           placeholder="Capacidad máxima de almacenamiento">
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 4: Ubicación y Almacenamiento -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-map-marker-alt"></i> Ubicación y Almacenamiento</h3>
+                <p>Ubicación física y condiciones de almacenamiento</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="ubicacion">Ubicación</label>
+                    <input type="text" 
+                           id="ubicacion" 
+                           name="ubicacion" 
+                           class="form-control"
+                           placeholder="Ej: Estante A-1, Refrigerador Lab-1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="condiciones_almacenamiento">Condiciones de Almacenamiento</label>
+                    <textarea id="condiciones_almacenamiento" 
+                              name="condiciones_almacenamiento" 
+                              class="form-control"
+                              rows="2"
+                              placeholder="Ej: Mantener en lugar fresco y seco, alejado de la luz"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="temperatura_almacenamiento">Temperatura de Almacenamiento</label>
+                    <input type="text" 
+                           id="temperatura_almacenamiento" 
+                           name="temperatura_almacenamiento" 
+                           class="form-control"
+                           placeholder="Ej: 2-8°C, Temperatura ambiente">
+                </div>
+                
+                <div class="form-group">
+                    <label for="humedad_relativa">Humedad Relativa (%)</label>
+                    <input type="number" 
+                           id="humedad_relativa" 
+                           name="humedad_relativa" 
+                           class="form-control"
+                           step="0.1" 
+                           min="0" 
+                           max="100"
+                           placeholder="Ej: 45-65">
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 5: Fechas y Validez -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-calendar-alt"></i> Fechas y Validez</h3>
+                <p>Fechas de adquisición, vencimiento y validez</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fecha_adquisicion">Fecha de Adquisición</label>
+                    <input type="date" 
+                           id="fecha_adquisicion" 
+                           name="fecha_adquisicion" 
+                           class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="fecha_vencimiento">Fecha de Vencimiento</label>
+                    <input type="date" 
+                           id="fecha_vencimiento" 
+                           name="fecha_vencimiento" 
+                           class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="fecha_apertura">Fecha de Apertura</label>
+                    <input type="date" 
+                           id="fecha_apertura" 
+                           name="fecha_apertura" 
+                           class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="tiempo_vida_util">Tiempo de Vida Útil (días)</label>
+                    <input type="number" 
+                           id="tiempo_vida_util" 
+                           name="tiempo_vida_util" 
+                           class="form-control"
+                           min="1"
+                           placeholder="Días después de apertura">
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 6: Proveedor y Costos -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-dollar-sign"></i> Proveedor y Información Económica</h3>
+                <p>Datos del proveedor y costos asociados</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="proveedor">Proveedor</label>
+                    <select id="proveedor" name="proveedor" class="form-control">
+                        <option value="">Seleccione un proveedor</option>
+                        {% for proveedor in proveedores %}
+                            <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">
+                        <a href="#" onclick="mostrarFormularioProveedor()">¿No encuentra el proveedor? Agregar nuevo</a>
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_lote">Número de Lote</label>
+                    <input type="text" 
+                           id="numero_lote" 
+                           name="numero_lote" 
+                           class="form-control"
+                           placeholder="Número de lote del proveedor">
+                </div>
+                
+                <div class="form-group">
+                    <label for="costo_unitario">Costo Unitario (BOB)</label>
+                    <input type="number" 
+                           id="costo_unitario" 
+                           name="costo_unitario" 
+                           class="form-control"
+                           step="0.01" 
+                           min="0"
+                           placeholder="0.00">
+                </div>
+                
+                <div class="form-group">
+                    <label for="moneda">Moneda</label>
+                    <select id="moneda" name="moneda" class="form-control">
+                        <option value="BOB">Bolivianos (BOB)</option>
+                        <option value="USD">Dólares (USD)</option>
+                        <option value="EUR">Euros (EUR)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 7: Seguridad -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-shield-alt"></i> Información de Seguridad</h3>
+                <p>Pictogramas, riesgos y medidas de seguridad</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="pictogramas_seguridad">Pictogramas de Seguridad</label>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pict_explosivo" name="pictogramas_seguridad" value="explosivo">
+                            <label for="pict_explosivo">💥 Explosivo</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pict_inflamable" name="pictogramas_seguridad" value="inflamable">
+                            <label for="pict_inflamable">🔥 Inflamable</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pict_comburente" name="pictogramas_seguridad" value="comburente">
+                            <label for="pict_comburente">⚡ Comburente</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pict_gas_presion" name="pictogramas_seguridad" value="gas_presion">
+                            <label for="pict_gas_presion">🫧 Gas a presión</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pict_corrosivo" name="pictogramas_seguridad" value="corrosivo">
+                            <label for="pict_corrosivo">🧪 Corrosivo</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pict_toxicidad_aguda" name="pictogramas_seguridad" value="toxicidad_aguda">
+                            <label for="pict_toxicidad_aguda">☠️ Toxicidad aguda</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pict_peligro_salud" name="pictogramas_seguridad" value="peligro_salud">
+                            <label for="pict_peligro_salud">⚕️ Peligro para la salud</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pict_sensibilizante" name="pictogramas_seguridad" value="sensibilizante">
+                            <label for="pict_sensibilizante">⚠️ Sensibilizante</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pict_medio_ambiente" name="pictogramas_seguridad" value="medio_ambiente">
+                            <label for="pict_medio_ambiente">🌍 Peligroso para el medio ambiente</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="frases_riesgo">Frases de Riesgo (R)</label>
+                    <textarea id="frases_riesgo" 
+                              name="frases_riesgo" 
+                              class="form-control"
+                              rows="2"
+                              placeholder="Ej: R34: Provoca quemaduras, R37: Irrita las vías respiratorias"></textarea>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="frases_seguridad">Frases de Seguridad (S)</label>
+                    <textarea id="frases_seguridad" 
+                              name="frases_seguridad" 
+                              class="form-control"
+                              rows="2"
+                              placeholder="Ej: S26: En caso de contacto con los ojos, lávense inmediata y abundantemente con agua"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 8: Observaciones -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-clipboard"></i> Observaciones Adicionales</h3>
+                <p>Información adicional relevante</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="observaciones">Observaciones Generales</label>
+                    <textarea id="observaciones" 
+                              name="observaciones" 
+                              class="form-control"
+                              rows="4"
+                              placeholder="Observaciones adicionales, instrucciones especiales, etc."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button type="reset" class="btn btn-outline">
+                <i class="fas fa-undo"></i> Limpiar Formulario
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar Insumo
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal para Nuevo Proveedor -->
+<div id="proveedorModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Nuevo Proveedor</h3>
+            <span class="modal-close" onclick="cerrarModalProveedor()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="proveedorForm">
+                <div class="form-group">
+                    <label>Nombre del Proveedor:</label>
+                    <input type="text" id="nombreProveedor" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Contacto:</label>
+                    <input type="text" id="contactoProveedor" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono:</label>
+                    <input type="text" id="telefonoProveedor" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="emailProveedor" class="form-control">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalProveedor()">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="guardarProveedor()">Guardar Proveedor</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nuevo-insumo-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+        padding: 25px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-content h2 {
+        margin: 0 0 8px 0;
+        color: #1e3a8a;
+        font-size: 28px;
+        font-weight: 600;
+    }
+
+    .header-content p {
+        margin: 0;
+        color: #64748b;
+        font-size: 16px;
+    }
+
+    .insumo-form {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-header {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .section-header h3 {
+        margin: 0 0 8px 0;
+        color: #1e3a8a;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .section-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    .form-group label.required::after {
+        content: " *";
+        color: #ef4444;
+        font-weight: bold;
+    }
+
+    .form-control {
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-help {
+        margin-top: 4px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .form-help a {
+        color: #3b82f6;
+        text-decoration: none;
+    }
+
+    .form-help a:hover {
+        text-decoration: underline;
+    }
+
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .checkbox-item:hover {
+        background: #f8fafc;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+    }
+
+    .checkbox-item label {
+        margin: 0;
+        font-size: 13px;
+        font-weight: normal;
+        cursor: pointer;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        padding: 25px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-secondary { background: #6b7280; color: white; }
+    .btn-outline { background: transparent; color: #6b7280; border: 2px solid #e5e7eb; }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+
+    .btn-outline:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .modal-close {
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+    }
+
+    .modal-close:hover {
+        color: #000;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .modal-footer {
+        padding: 20px 25px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .form-header {
+            flex-direction: column;
+            gap: 20px;
+            align-items: stretch;
+        }
+        
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .nuevo-insumo-container {
+            padding: 15px;
+        }
+        
+        .checkbox-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+// Generar código automáticamente si está vacío
+document.getElementById('nombre').addEventListener('blur', function() {
+    const codigoInput = document.getElementById('codigo_interno');
+    if (!codigoInput.value) {
+        const nombre = this.value.trim();
+        if (nombre) {
+            // Generar código basado en las primeras letras y tipo
+            const tipo = document.getElementById('tipo').value;
+            const prefijo = tipo ? tipo.substring(0, 3).toUpperCase() : 'INS';
+            const codigo = prefijo + '-' + nombre.substring(0, 4).toUpperCase() + '-' + Date.now().toString().slice(-4);
+            codigoInput.value = codigo;
+        }
+    }
+});
+
+// Calcular fecha de vencimiento después de apertura
+document.getElementById('fecha_apertura').addEventListener('change', function() {
+    const fechaApertura = new Date(this.value);
+    const diasVida = document.getElementById('tiempo_vida_util').value;
+    
+    if (fechaApertura && diasVida) {
+        const fechaVencimiento = new Date(fechaApertura);
+        fechaVencimiento.setDate(fechaVencimiento.getDate() + parseInt(diasVida));
+        
+        document.getElementById('fecha_vencimiento').value = fechaVencimiento.toISOString().split('T')[0];
+    }
+});
+
+document.getElementById('tiempo_vida_util').addEventListener('change', function() {
+    const fechaApertura = document.getElementById('fecha_apertura').value;
+    const diasVida = this.value;
+    
+    if (fechaApertura && diasVida) {
+        const fechaVencimientoCalculada = new Date(fechaApertura);
+        fechaVencimientoCalculada.setDate(fechaVencimientoCalculada.getDate() + parseInt(diasVida));
+        
+        document.getElementById('fecha_vencimiento').value = fechaVencimientoCalculada.toISOString().split('T')[0];
+    }
+});
+
+// Modal de nuevo proveedor
+function mostrarFormularioProveedor() {
+    document.getElementById('proveedorModal').style.display = 'block';
+}
+
+function cerrarModalProveedor() {
+    document.getElementById('proveedorModal').style.display = 'none';
+    document.getElementById('proveedorForm').reset();
+}
+
+function guardarProveedor() {
+    const nombre = document.getElementById('nombreProveedor').value.trim();
+    const contacto = document.getElementById('contactoProveedor').value.trim();
+    const telefono = document.getElementById('telefonoProveedor').value.trim();
+    const email = document.getElementById('emailProveedor').value.trim();
+    
+    if (!nombre) {
+        alert('El nombre del proveedor es requerido');
+        return;
+    }
+    
+    const data = {
+        nombre: nombre,
+        contacto: contacto,
+        telefono: telefono,
+        email: email,
+        csrfmiddlewaretoken: document.querySelector('[name=csrfmiddlewaretoken]').value
+    };
+    
+    fetch('/api/proveedores/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': data.csrfmiddlewaretoken
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Agregar el nuevo proveedor al select
+            const proveedorSelect = document.getElementById('proveedor');
+            const option = document.createElement('option');
+            option.value = data.proveedor.id;
+            option.textContent = data.proveedor.nombre;
+            option.selected = true;
+            proveedorSelect.appendChild(option);
+            
+            cerrarModalProveedor();
+            alert('Proveedor agregado correctamente');
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo agregar el proveedor'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al agregar el proveedor');
+    });
+}
+
+// Validación del formulario
+document.getElementById('insumoForm').addEventListener('submit', function(e) {
+    const requiredFields = this.querySelectorAll('[required]');
+    let valid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            field.style.borderColor = '#ef4444';
+            valid = false;
+        } else {
+            field.style.borderColor = '#e5e7eb';
+        }
+    });
+    
+    if (!valid) {
+        e.preventDefault();
+        alert('Por favor, complete todos los campos requeridos.');
+        return;
+    }
+    
+    // Validar fechas
+    const fechaAdquisicion = document.getElementById('fecha_adquisicion').value;
+    const fechaVencimiento = document.getElementById('fecha_vencimiento').value;
+    
+    if (fechaAdquisicion && fechaVencimiento && new Date(fechaAdquisicion) > new Date(fechaVencimiento)) {
+        e.preventDefault();
+        alert('La fecha de adquisición no puede ser posterior a la fecha de vencimiento.');
+        return;
+    }
+    
+    // Validar stock mínimo y máximo
+    const stockMin = parseFloat(document.getElementById('cantidad_minima').value);
+    const stockMax = parseFloat(document.getElementById('cantidad_maxima').value);
+    
+    if (stockMin && stockMax && stockMin >= stockMax) {
+        e.preventDefault();
+        alert('El stock mínimo debe ser menor que el stock máximo.');
+        return;
+    }
+});
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    const modal = document.getElementById('proveedorModal');
+    if (event.target == modal) {
+        cerrarModalProveedor();
+    }
+}
+
+// Auto-guardar en localStorage para evitar pérdida de datos
+function autoGuardar() {
+    const formData = new FormData(document.getElementById('insumoForm'));
+    const data = {};
+    formData.forEach((value, key) => {
+        data[key] = value;
+    });
+    localStorage.setItem('insumo_draft', JSON.stringify(data));
+}
+
+// Cargar datos guardados al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    const draft = localStorage.getItem('insumo_draft');
+    if (draft) {
+        const data = JSON.parse(draft);
+        Object.keys(data).forEach(key => {
+            const field = document.getElementById(key);
+            if (field && data[key]) {
+                field.value = data[key];
+            }
+        });
+    }
+    
+    // Auto-guardar cada 30 segundos
+    setInterval(autoGuardar, 30000);
+});
+
+// Limpiar draft al enviar exitosamente
+document.getElementById('insumoForm').addEventListener('submit', function() {
+    localStorage.removeItem('insumo_draft');
+});
+</script>
+{% endblock %}

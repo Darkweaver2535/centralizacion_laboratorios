@@ -39,7 +39,7 @@ class InformacionAcademicaForm(forms.Form):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from .models import Carrera
+        from core.models import Carrera
         # Generate choices dynamically from the Carrera model
         carrera_choices = [('', 'Seleccione una carrera')]
         carrera_choices.extend([(carrera.nombre, carrera.get_nombre_display()) 

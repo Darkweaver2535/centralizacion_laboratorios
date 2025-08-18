@@ -1802,6 +1802,66 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('DEBUG: Limpieza completada');
     }
 
+    // Función para cargar carreras por unidad académica
+    function loadCarrerasPorUnidad(unidadAcademica) {
+        console.log('DEBUG: Cargando carreras para unidad académica:', unidadAcademica);
+        
+        const carreraSelect = document.querySelector('[name="carrera"]');
+        if (!carreraSelect) {
+            console.error('ERROR: No se encontró el select de carreras');
+            return;
+        }
+        
+        // Limpiar y mostrar estado de carga
+        carreraSelect.innerHTML = '<option value="">Cargando carreras...</option>';
+        carreraSelect.disabled = true;
+        
+        if (!unidadAcademica) {
+            carreraSelect.innerHTML = '<option value="">Seleccione primero una unidad académica</option>';
+            return;
+        }
+        
+        // Hacer petición AJAX
+        fetch(`/ingreso_datos/carreras/?unidad_academica=${encodeURIComponent(unidadAcademica)}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('DEBUG: Carreras recibidas:', data);
+            
+            if (data.success && data.carreras) {
+                // Limpiar y agregar opción por defecto
+                carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+                
+                // Agregar las carreras
+                data.carreras.forEach(carrera => {
+                    const option = document.createElement('option');
+                    option.value = carrera.id;
+                    option.textContent = carrera.text;
+                    carreraSelect.appendChild(option);
+                });
+                
+                carreraSelect.disabled = false;
+                console.log('DEBUG: Carreras cargadas exitosamente');
+            } else {
+                throw new Error(data.error || 'Formato de respuesta inválido');
+            }
+        })
+        .catch(error => {
+            console.error('ERROR: Cargando carreras:', error);
+            carreraSelect.innerHTML = '<option value="">Error cargando carreras</option>';
+            carreraSelect.disabled = true;
+        });
+    }
+
     // Función para recargar equipos individuales cuando cambie la unidad académica
     function recargarEquiposIndividuales() {
         console.log('DEBUG: Recargando equipos individuales');
@@ -1827,6 +1887,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('[name="unidad_academica"]').addEventListener('change', function() {
         const unidadAcademica = this.value;
         console.log('DEBUG: Unidad académica cambiada a', unidadAcademica);
+        
+        // Cargar carreras para la nueva unidad académica
+        loadCarrerasPorUnidad(unidadAcademica);
         
         // Limpiar todos los equipos individuales
         limpiarTodosEquiposIndividuales();

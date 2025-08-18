@@ -337,3 +337,55 @@ def validate_step(request, step):
         'valid': len(errors) == 0,
         'errors': errors
     })
+
+@login_required
+def get_carreras_por_unidad(request):
+    """Vista AJAX para obtener carreras filtradas por unidad académica"""
+    if request.method == 'GET':
+        unidad_academica = request.GET.get('unidad_academica')
+        
+        if not unidad_academica:
+            return JsonResponse({'error': 'Unidad académica requerida'}, status=400)
+        
+        try:
+            from core.models import UnidadAcademica, Carrera
+            
+            # Mapear los valores del formulario a los nombres en la base de datos
+            mapeo_unidades = {
+                'la_paz': 'UASC',
+                'santa_cruz': 'UASC', 
+                'cochabamba': 'UACBBA',
+                'riberalta': 'UARIBE',
+                'tropico': 'UATROP'
+            }
+            
+            nombre_unidad = mapeo_unidades.get(unidad_academica)
+            if not nombre_unidad:
+                return JsonResponse({'error': 'Unidad académica no válida'}, status=400)
+            
+            # Obtener la unidad académica
+            try:
+                unidad = UnidadAcademica.objects.get(nombre=nombre_unidad)
+                # Obtener carreras de esa unidad
+                carreras = Carrera.objects.filter(unidad_academica=unidad).order_by('nombre')
+                
+                # Preparar los datos para el frontend
+                carreras_data = []
+                for carrera in carreras:
+                    carreras_data.append({
+                        'id': carrera.nombre,
+                        'text': carrera.get_nombre_display()
+                    })
+                
+                return JsonResponse({
+                    'carreras': carreras_data,
+                    'success': True
+                })
+                
+            except UnidadAcademica.DoesNotExist:
+                return JsonResponse({'error': f'Unidad académica {nombre_unidad} no encontrada'}, status=404)
+                
+        except Exception as e:
+            return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)

@@ -1,0 +1,921 @@
+{% extends 'base.html' %}
+
+{% block title %}Nuevo Equipo - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Nuevo Equipo{% endblock %}
+
+{% block page_description %}Registro completo de equipos con 22 campos requeridos{% endblock %}
+
+{% block content %}
+<div class="nuevo-equipo-container">
+    <div class="form-header">
+        <div class="header-content">
+            <h2><i class="fas fa-plus-circle"></i> Registro de Nuevo Equipo</h2>
+            <p>Complete todos los campos requeridos para registrar el equipo en el sistema</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'equipos:lista' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Listado
+            </a>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="equipoForm" class="equipo-form">
+        {% csrf_token %}
+        
+        <!-- Sección 1: Información Básica -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-info-circle"></i> Información Básica</h3>
+                <p>Datos fundamentales del equipo</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="equipo_existente" class="required">Nombre del Equipo</label>
+                    <input type="text" 
+                           id="equipo_existente" 
+                           name="equipo_existente" 
+                           class="form-control"
+                           placeholder="Ej: Microscopio Óptico Binocular"
+                           required>
+                    <small class="form-help">Nombre descriptivo completo del equipo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="marca">Marca</label>
+                    <input type="text" 
+                           id="marca" 
+                           name="marca" 
+                           class="form-control"
+                           placeholder="Ej: Olympus, Zeiss, etc.">
+                </div>
+                
+                <div class="form-group">
+                    <label for="modelo">Modelo</label>
+                    <input type="text" 
+                           id="modelo" 
+                           name="modelo" 
+                           class="form-control"
+                           placeholder="Ej: CX23, BX53, etc.">
+                </div>
+                
+                <div class="form-group">
+                    <label for="serie">Número de Serie</label>
+                    <input type="text" 
+                           id="serie" 
+                           name="serie" 
+                           class="form-control"
+                           placeholder="Número de serie único">
+                </div>
+                
+                <div class="form-group">
+                    <label for="codigo_inventario" class="required">Código de Inventario</label>
+                    <input type="text" 
+                           id="codigo_inventario" 
+                           name="codigo_inventario" 
+                           class="form-control"
+                           placeholder="Se generará automáticamente"
+                           readonly>
+                    <small class="form-help">Se asigna automáticamente al guardar</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_unidades" class="required">Número de Unidades</label>
+                    <input type="number" 
+                           id="numero_unidades" 
+                           name="numero_unidades" 
+                           class="form-control"
+                           min="1" 
+                           value="1"
+                           required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 2: Ubicación Académica -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-university"></i> Ubicación Académica</h3>
+                <p>Asignación a unidad académica y estructura curricular</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="unidad_academica" class="required">Unidad Académica</label>
+                    <select id="unidad_academica" name="unidad_academica" class="form-control" required>
+                        <option value="">Seleccione una unidad académica</option>
+                        {% for unidad in unidades %}
+                            <option value="{{ unidad.id }}">{{ unidad.get_nombre_display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="carrera" class="required">Carrera</label>
+                    <select id="carrera" name="carrera" class="form-control" required disabled>
+                        <option value="">Primero seleccione una unidad académica</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="semestre" class="required">Semestre</label>
+                    <select id="semestre" name="semestre" class="form-control" required>
+                        <option value="">Seleccione el semestre</option>
+                        {% for value, display in semestres_choices %}
+                            <option value="{{ value }}">{{ display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="asignatura">Asignatura</label>
+                    <select id="asignatura" name="asignatura" class="form-control" disabled>
+                        <option value="">Primero seleccione carrera y semestre</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="carga_horaria_semanal" class="required">Carga Horaria Semanal</label>
+                    <input type="number" 
+                           id="carga_horaria_semanal" 
+                           name="carga_horaria_semanal" 
+                           class="form-control"
+                           min="1"
+                           max="20"
+                           value="4"
+                           required>
+                    <small class="form-help">Horas por semana (típicamente 2-6 horas)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="carga_horaria_semestral" class="required">Carga Horaria Semestral</label>
+                    <input type="number" 
+                           id="carga_horaria_semestral" 
+                           name="carga_horaria_semestral" 
+                           class="form-control"
+                           min="16"
+                           max="320"
+                           value="64"
+                           required>
+                    <small class="form-help">Total de horas en el semestre (típicamente 32-96 horas)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="unidad_tematica">Unidad Temática</label>
+                    <select id="unidad_tematica" name="unidad_tematica" class="form-control" disabled>
+                        <option value="">Primero seleccione una asignatura</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="guia_laboratorio">Guía de Laboratorio</label>
+                    <select id="guia_laboratorio" name="guia_laboratorio" class="form-control" disabled>
+                        <option value="">Primero seleccione una unidad temática</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="practica">Práctica</label>
+                    <select id="practica" name="practica" class="form-control" disabled>
+                        <option value="">Primero seleccione una guía de laboratorio</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="laboratorio" class="required">Laboratorio</label>
+                    <select id="laboratorio" name="laboratorio" class="form-control" required>
+                        <option value="">Seleccione el laboratorio</option>
+                        {% for laboratorio in laboratorios %}
+                            <option value="{{ laboratorio.id }}">{{ laboratorio.get_nombre_display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 3: Estado y Fechas -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-calendar-alt"></i> Estado y Fechas</h3>
+                <p>Información sobre estado actual y fechas relevantes</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="estado" class="required">Estado Actual</label>
+                    <select id="estado" name="estado" class="form-control" required>
+                        {% for value, display in estados_choices %}
+                            <option value="{{ value }}" {% if value == 'operativo' %}selected{% endif %}>{{ display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fecha_adquisicion">Fecha de Adquisición</label>
+                    <input type="date" 
+                           id="fecha_adquisicion" 
+                           name="fecha_adquisicion" 
+                           class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="costo_dolares">Costo (USD)</label>
+                    <input type="number" 
+                           id="costo_dolares" 
+                           name="costo_dolares" 
+                           class="form-control"
+                           step="0.01" 
+                           min="0"
+                           placeholder="0.00">
+                </div>
+                
+                <div class="form-group">
+                    <label for="costo_bolivianos">Costo (BOB)</label>
+                    <input type="number" 
+                           id="costo_bolivianos" 
+                           name="costo_bolivianos" 
+                           class="form-control"
+                           step="0.01" 
+                           min="0"
+                           placeholder="0.00">
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 4: Características Técnicas -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-cogs"></i> Características Técnicas</h3>
+                <p>Especificaciones y características del equipo</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="observaciones">Observaciones</label>
+                    <textarea id="observaciones" 
+                              name="observaciones" 
+                              class="form-control"
+                              rows="3"
+                              placeholder="Observaciones adicionales, especificaciones técnicas, etc."></textarea>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="caracteristicas">Características Detalladas</label>
+                    <textarea id="caracteristicas" 
+                              name="caracteristicas" 
+                              class="form-control"
+                              rows="4"
+                              placeholder="Descripción detallada de las características técnicas del equipo"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 4.5: Información Adicional -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-cogs"></i> Información Adicional</h3>
+                <p>Detalles adicionales del equipo y ubicación</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="seccion_area">Sección/Área</label>
+                    <input type="text" 
+                           id="seccion_area" 
+                           name="seccion_area" 
+                           class="form-control"
+                           placeholder="Ej: Área de Física, Sección A">
+                    <small class="form-help">Sección específica dentro del laboratorio</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="identificador_aula">Identificador/Nº de Aula</label>
+                    <input type="text" 
+                           id="identificador_aula" 
+                           name="identificador_aula" 
+                           class="form-control"
+                           placeholder="Ej: 301, Lab-A, Mesa-1">
+                    <small class="form-help">Número o identificador específico del aula</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="equipo_requerido">Equipo Requerido</label>
+                    <input type="text" 
+                           id="equipo_requerido" 
+                           name="equipo_requerido" 
+                           class="form-control"
+                           placeholder="Ej: Computadora, Fuente de alimentación">
+                    <small class="form-help">Equipos adicionales necesarios para el laboratorio</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_equipos_requeridos">Número de Equipos Requeridos</label>
+                    <input type="number" 
+                           id="numero_equipos_requeridos" 
+                           name="numero_equipos_requeridos" 
+                           class="form-control"
+                           min="0"
+                           value="0"
+                           placeholder="0">
+                    <small class="form-help">Cantidad de equipos adicionales necesarios</small>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="es_activo_fijo" name="es_activo_fijo">
+                        <span class="checkmark"></span>
+                        ¿Es un Activo Fijo de acuerdo a su Acta de Entrega?
+                    </label>
+                    <small class="form-help">Marcar si el equipo está registrado como activo fijo institucional</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 5: Imágenes -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3><i class="fas fa-camera"></i> Documentación Fotográfica</h3>
+                <p>Fotografías del equipo para identificación</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fotografia_frontal">Fotografía Frontal</label>
+                    <div class="file-upload-container">
+                        <input type="file" 
+                               id="fotografia_frontal" 
+                               name="fotografia_frontal" 
+                               class="file-input"
+                               accept="image/*"
+                               onchange="previewImage(this, 'preview-frontal')">
+                        <label for="fotografia_frontal" class="file-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Seleccionar imagen frontal</span>
+                        </label>
+                        <div id="preview-frontal" class="image-preview"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fotografia_placa_caracteristicas">Fotografía Placa de Características</label>
+                    <div class="file-upload-container">
+                        <input type="file" 
+                               id="fotografia_placa_caracteristicas" 
+                               name="fotografia_placa_caracteristicas" 
+                               class="file-input"
+                               accept="image/*"
+                               onchange="previewImage(this, 'preview-placa')">
+                        <label for="fotografia_placa_caracteristicas" class="file-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Seleccionar imagen de placa</span>
+                        </label>
+                        <div id="preview-placa" class="image-preview"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button type="reset" class="btn btn-outline">
+                <i class="fas fa-undo"></i> Limpiar Formulario
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar Equipo
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .nuevo-equipo-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+        padding: 25px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-content h2 {
+        margin: 0 0 8px 0;
+        color: #1e3a8a;
+        font-size: 28px;
+        font-weight: 600;
+    }
+
+    .header-content p {
+        margin: 0;
+        color: #64748b;
+        font-size: 16px;
+    }
+
+    .equipo-form {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-header {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .section-header h3 {
+        margin: 0 0 8px 0;
+        color: #1e3a8a;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .section-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    .form-group label.required::after {
+        content: " *";
+        color: #ef4444;
+        font-weight: bold;
+    }
+
+    .form-control {
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-control:disabled {
+        background: #f9fafb;
+        color: #9ca3af;
+        cursor: not-allowed;
+    }
+
+    .form-help {
+        margin-top: 4px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    /* File Upload Styling */
+    .file-upload-container {
+        position: relative;
+    }
+
+    .file-input {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    .file-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 30px 20px;
+        border: 2px dashed #d1d5db;
+        border-radius: 8px;
+        background: #f9fafb;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+    .file-label:hover {
+        border-color: #3b82f6;
+        background: #f0f9ff;
+    }
+
+    .file-label i {
+        font-size: 24px;
+        color: #6b7280;
+        margin-bottom: 8px;
+    }
+
+    .file-label span {
+        color: #374151;
+        font-weight: 500;
+    }
+
+    .image-preview {
+        margin-top: 10px;
+        text-align: center;
+    }
+
+    .image-preview img {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        padding: 25px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: #6b7280;
+        border: 2px solid #e5e7eb;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+
+    .btn-outline:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .form-header {
+            flex-direction: column;
+            gap: 20px;
+            align-items: stretch;
+        }
+        
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .nuevo-equipo-container {
+            padding: 15px;
+        }
+    }
+
+    /* Loading and feedback states */
+    .form-control.loading {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z' opacity='.25'/%3E%3Cpath d='M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z' fill='%23666'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Checkbox personalizado */
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        font-weight: 500;
+        color: #374151;
+        margin: 0;
+    }
+
+    .checkbox-container input[type="checkbox"] {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+
+    .checkbox-container input[type="checkbox"]:checked {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+
+    .checkbox-container input[type="checkbox"]:checked::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .checkbox-container:hover input[type="checkbox"] {
+        border-color: #3b82f6;
+    }
+</style>
+
+<script>
+// Preview de imágenes
+function previewImage(input, previewId) {
+    const preview = document.getElementById(previewId);
+    const file = input.files[0];
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        }
+        reader.readAsDataURL(file);
+    } else {
+        preview.innerHTML = '';
+    }
+}
+
+// Carga dinámica de carreras
+document.getElementById('unidad_academica').addEventListener('change', function() {
+    const unidadId = this.value;
+    const carreraSelect = document.getElementById('carrera');
+    const asignaturaSelect = document.getElementById('asignatura');
+    
+    // Limpiar selects dependientes
+    carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+    asignaturaSelect.innerHTML = '<option value="">Primero seleccione carrera y semestre</option>';
+    carreraSelect.disabled = !unidadId;
+    asignaturaSelect.disabled = true;
+    
+    if (unidadId) {
+        carreraSelect.classList.add('loading');
+        
+        fetch(`/api/carreras/?unidad_academica=${unidadId}`)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(carrera => {
+                    const option = document.createElement('option');
+                    option.value = carrera.id;
+                    option.textContent = carrera.nombre;
+                    carreraSelect.appendChild(option);
+                });
+                carreraSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error cargando carreras:', error);
+                carreraSelect.innerHTML = '<option value="">Error cargando carreras</option>';
+            })
+            .finally(() => {
+                carreraSelect.classList.remove('loading');
+            });
+    }
+});
+
+// Carga dinámica de asignaturas
+function cargarAsignaturas() {
+    const carreraId = document.getElementById('carrera').value;
+    const semestre = document.getElementById('semestre').value;
+    const asignaturaSelect = document.getElementById('asignatura');
+    const unidadTematicaSelect = document.getElementById('unidad_tematica');
+    
+    // Limpiar selects dependientes
+    asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+    unidadTematicaSelect.innerHTML = '<option value="">Primero seleccione una asignatura</option>';
+    asignaturaSelect.disabled = !(carreraId && semestre);
+    unidadTematicaSelect.disabled = true;
+    
+    if (carreraId && semestre) {
+        asignaturaSelect.classList.add('loading');
+        
+        fetch(`/api/asignaturas/?carrera=${carreraId}&semestre=${semestre}`)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(asignatura => {
+                    const option = document.createElement('option');
+                    option.value = asignatura.id;
+                    option.textContent = asignatura.nombre;
+                    asignaturaSelect.appendChild(option);
+                });
+                asignaturaSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error cargando asignaturas:', error);
+                asignaturaSelect.innerHTML = '<option value="">Error cargando asignaturas</option>';
+            })
+            .finally(() => {
+                asignaturaSelect.classList.remove('loading');
+            });
+    }
+}
+
+document.getElementById('carrera').addEventListener('change', cargarAsignaturas);
+document.getElementById('semestre').addEventListener('change', cargarAsignaturas);
+
+// Continuar con las demás cargas dinámicas...
+document.getElementById('asignatura').addEventListener('change', function() {
+    const asignaturaId = this.value;
+    const unidadTematicaSelect = document.getElementById('unidad_tematica');
+    const guiaLaboratorioSelect = document.getElementById('guia_laboratorio');
+    
+    unidadTematicaSelect.innerHTML = '<option value="">Seleccione una unidad temática</option>';
+    guiaLaboratorioSelect.innerHTML = '<option value="">Primero seleccione una unidad temática</option>';
+    unidadTematicaSelect.disabled = !asignaturaId;
+    guiaLaboratorioSelect.disabled = true;
+    
+    if (asignaturaId) {
+        unidadTematicaSelect.classList.add('loading');
+        
+        fetch(`/api/unidades-tematicas/?asignatura=${asignaturaId}`)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(unidad => {
+                    const option = document.createElement('option');
+                    option.value = unidad.id;
+                    option.textContent = unidad.nombre;
+                    unidadTematicaSelect.appendChild(option);
+                });
+                unidadTematicaSelect.disabled = false;
+            })
+            .catch(error => console.error('Error:', error))
+            .finally(() => unidadTematicaSelect.classList.remove('loading'));
+    }
+});
+
+// Manejo del dropdown de unidades temáticas para cargar guías de laboratorio
+document.getElementById('unidad_tematica').addEventListener('change', function() {
+    const unidadTematicaId = this.value;
+    const guiaLaboratorioSelect = document.getElementById('guia_laboratorio');
+    const practicaSelect = document.getElementById('practica');
+    
+    // Limpiar y deshabilitar los dropdowns dependientes
+    guiaLaboratorioSelect.innerHTML = '<option value="">Seleccione una guía de laboratorio</option>';
+    practicaSelect.innerHTML = '<option value="">Primero seleccione una guía</option>';
+    
+    guiaLaboratorioSelect.disabled = !unidadTematicaId;
+    practicaSelect.disabled = true;
+    
+    if (unidadTematicaId) {
+        guiaLaboratorioSelect.classList.add('loading');
+        
+        fetch(`/api/guias-laboratorio/?unidad_tematica=${unidadTematicaId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Error del servidor:', data.error);
+                    return;
+                }
+                
+                data.forEach(guia => {
+                    const option = document.createElement('option');
+                    option.value = guia.id;
+                    option.textContent = `Guía ${guia.numero}: ${guia.nombre}`;
+                    guiaLaboratorioSelect.appendChild(option);
+                });
+                guiaLaboratorioSelect.disabled = false;
+            })
+            .catch(error => console.error('Error:', error))
+            .finally(() => guiaLaboratorioSelect.classList.remove('loading'));
+    }
+});
+
+// Manejo del dropdown de guías de laboratorio para cargar prácticas
+document.getElementById('guia_laboratorio').addEventListener('change', function() {
+    const guiaLaboratorioId = this.value;
+    const practicaSelect = document.getElementById('practica');
+    
+    // Limpiar dropdown de prácticas
+    practicaSelect.innerHTML = '<option value="">Seleccione una práctica</option>';
+    practicaSelect.disabled = !guiaLaboratorioId;
+    
+    if (guiaLaboratorioId) {
+        practicaSelect.classList.add('loading');
+        
+        fetch(`/api/practicas/?guia_laboratorio=${guiaLaboratorioId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Error del servidor:', data.error);
+                    return;
+                }
+                
+                data.forEach(practica => {
+                    const option = document.createElement('option');
+                    option.value = practica.id;
+                    option.textContent = `${practica.numero}: ${practica.nombre}`;
+                    practicaSelect.appendChild(option);
+                });
+                practicaSelect.disabled = false;
+            })
+            .catch(error => console.error('Error:', error))
+            .finally(() => practicaSelect.classList.remove('loading'));
+    }
+});
+
+// Validación del formulario
+document.getElementById('equipoForm').addEventListener('submit', function(e) {
+    const requiredFields = this.querySelectorAll('[required]');
+    let valid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            field.style.borderColor = '#ef4444';
+            valid = false;
+        } else {
+            field.style.borderColor = '#e5e7eb';
+        }
+    });
+    
+    if (!valid) {
+        e.preventDefault();
+        alert('Por favor, complete todos los campos requeridos.');
+    }
+});
+
+// Conversión automática de monedas (ejemplo básico)
+document.getElementById('costo_dolares').addEventListener('input', function() {
+    const usd = parseFloat(this.value) || 0;
+    const exchangeRate = 6.96; // Tipo de cambio ejemplo
+    document.getElementById('costo_bolivianos').value = (usd * exchangeRate).toFixed(2);
+});
+
+document.getElementById('costo_bolivianos').addEventListener('input', function() {
+    const bob = parseFloat(this.value) || 0;
+    const exchangeRate = 6.96; // Tipo de cambio ejemplo
+    document.getElementById('costo_dolares').value = (bob / exchangeRate).toFixed(2);
+});
+</script>
+{% endblock %}
