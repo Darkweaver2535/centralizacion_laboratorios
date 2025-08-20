@@ -7,15 +7,18 @@
 {% block page_description %}{{ subtitle }}{% endblock %}
 
 {% block content %}
-<div class="nuevo-insumo-container">
+<div class="editar-insumo-container">
     <div class="form-header">
         <div class="header-content">
-            <h2><i class="fas fa-plus-circle"></i> {{ title }}</h2>
+            <h2><i class="fas fa-edit"></i> {{ title }}</h2>
             <p>{{ subtitle }}</p>
         </div>
         <div class="header-actions">
+            <a href="{% url 'insumos:detalle' insumo.id %}" class="btn btn-info">
+                <i class="fas fa-eye"></i> Ver Detalle
+            </a>
             <a href="{% url 'insumos:lista' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver a Lista de Insumos
+                <i class="fas fa-arrow-left"></i> Volver a Lista
             </a>
         </div>
     </div>
@@ -131,7 +134,7 @@
                 <div class="form-group">
                     {{ form.codigo_inventario.label_tag }}
                     {{ form.codigo_inventario }}
-                    <small class="form-help">Se genera automáticamente si se deja vacío</small>
+                    <small class="form-help">Código único del elemento</small>
                 </div>
             </div>
         </div>
@@ -201,8 +204,11 @@
         <!-- Botones de Acción -->
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Guardar Insumo
+                <i class="fas fa-save"></i> Guardar Cambios
             </button>
+            <a href="{% url 'insumos:detalle' insumo.id %}" class="btn btn-info">
+                <i class="fas fa-eye"></i> Ver Detalle
+            </a>
             <a href="{% url 'insumos:lista' %}" class="btn btn-secondary">
                 <i class="fas fa-times"></i> Cancelar
             </a>
@@ -211,7 +217,7 @@
 </div>
 
 <style>
-.nuevo-insumo-container {
+.editar-insumo-container {
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -390,6 +396,16 @@ textarea.form-control {
 
 .btn-secondary:hover {
     background: #4b5563;
+    transform: translateY(-2px);
+}
+
+.btn-info {
+    background: #0284c7;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #0369a1;
     transform: translateY(-2px);
 }
 

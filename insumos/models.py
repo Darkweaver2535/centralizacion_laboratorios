@@ -32,15 +32,29 @@ class TipoInsumo(models.Model):
 
 class Insumo(models.Model):
     """
-    Modelo para insumos de laboratorio
-    Similar estructura a equipos pero adaptada para insumos
+    Modelo para insumos de laboratorio con 19 columnas según especificación oficial
     """
     
+    # Categorías de insumos (equivalente a los tipos anteriores)
+    CATEGORIAS = [
+        ('reactivos', 'Reactivos Químicos'),
+        ('materiales_laboratorio', 'Materiales de Laboratorio'),
+        ('herramientas', 'Herramientas'),
+        ('consumibles', 'Consumibles'),
+        ('material_vidrio', 'Material de Vidrio'),
+        ('equipos_proteccion', 'Equipos de Protección'),
+        ('material_electronico', 'Material Electrónico'),
+        ('software', 'Software'),
+        ('licencias', 'Licencias'),
+        ('otros', 'Otros'),
+    ]
+    
     ESTADOS = [
-        ('disponible', 'Disponible'),
-        ('agotado', 'Agotado'),
+        ('bueno', 'Bueno'),
+        ('regular', 'Regular'),
+        ('malo', 'Malo'),
         ('vencido', 'Vencido'),
-        ('en_proceso', 'En Proceso de Compra'),
+        ('agotado', 'Agotado'),
         ('descartado', 'Descartado'),
     ]
     
@@ -57,96 +71,105 @@ class Insumo(models.Model):
         ('piezas', 'Piezas'),
         ('cajas', 'Cajas'),
         ('paquetes', 'Paquetes'),
+        ('frascos', 'Frascos'),
+        ('sobres', 'Sobres'),
     ]
     
-    # Información académica
+    USO_PRINCIPAL = [
+        ('ensayos', 'Ensayos de Laboratorio'),
+        ('practicas', 'Prácticas Académicas'),
+        ('investigacion', 'Investigación'),
+        ('mantenimiento', 'Mantenimiento'),
+        ('limpieza', 'Limpieza'),
+        ('seguridad', 'Seguridad'),
+        ('calibracion', 'Calibración'),
+        ('otros', 'Otros'),
+    ]
+    
+    CONDICIONES_ALMACENAMIENTO = [
+        ('temperatura_ambiente', 'Temperatura Ambiente'),
+        ('refrigeracion', 'Refrigeración (2-8°C)'),
+        ('congelacion', 'Congelación (-18°C)'),
+        ('lugar_seco', 'Lugar Seco'),
+        ('lugar_oscuro', 'Lugar Oscuro'),
+        ('ventilado', 'Lugar Ventilado'),
+        ('controlado', 'Ambiente Controlado'),
+        ('especial', 'Condiciones Especiales'),
+    ]
+    
+    # 1. UNIDAD ACADÉMICA
     unidad_academica = models.ForeignKey(
         UnidadAcademica, 
         on_delete=models.CASCADE,
         verbose_name="Unidad Académica"
     )
     
-    carrera = models.ForeignKey(
-        Carrera, 
+    # 2. LABORATORIO
+    laboratorio = models.ForeignKey(
+        Laboratorio, 
         on_delete=models.CASCADE,
-        verbose_name="Carrera"
+        verbose_name="Laboratorio"
     )
     
-    semestre = models.IntegerField(
-        choices=[(i, f"{i}° Semestre") for i in range(1, 11)],
-        verbose_name="Semestre"
+    # 3. CATEGORÍA
+    categoria = models.CharField(
+        max_length=50,
+        choices=CATEGORIAS,
+        default='consumible',
+        verbose_name="Categoría"
     )
     
-    asignatura = models.ForeignKey(
-        Asignatura, 
-        on_delete=models.CASCADE,
-        verbose_name="Asignatura"
-    )
-    
-    unidad_tematica = models.ForeignKey(
-        UnidadTematica, 
-        on_delete=models.CASCADE,
-        verbose_name="Unidad Temática"
-    )
-    
-    guia_laboratorio = models.ForeignKey(
-        GuiaLaboratorio, 
-        on_delete=models.CASCADE,
-        verbose_name="Guía de Laboratorio"
-    )
-    
-    practica = models.ForeignKey(
-        Practica, 
-        on_delete=models.CASCADE,
-        verbose_name="Práctica"
-    )
-    
-    # Información del insumo
-    tipo_insumo = models.ForeignKey(
-        TipoInsumo, 
-        on_delete=models.CASCADE,
-        verbose_name="Tipo de Insumo"
-    )
-    
-    nombre = models.CharField(
+    # 4. NOMBRE DEL ELEMENTO
+    nombre_elemento = models.CharField(
         max_length=200,
-        verbose_name="Nombre del Insumo"
+        default='Sin nombre',
+        verbose_name="Nombre del Elemento"
     )
     
-    descripcion = models.TextField(
+    # 5. DESCRIPCIÓN/CARACTERÍSTICAS
+    descripcion_caracteristicas = models.TextField(
         blank=True,
-        verbose_name="Descripción"
+        verbose_name="Descripción/Características"
     )
     
-    marca = models.CharField(
+    # 6. MARCA / MODELO
+    marca_modelo = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Marca / Modelo"
+    )
+    
+    # 7. CÓDIGO DE INVENTARIO (INTERNO)
+    codigo_inventario = models.CharField(
         max_length=100,
+        unique=True,
         blank=True,
-        verbose_name="Marca"
+        verbose_name="Código de Inventario (Interno)"
     )
     
-    modelo = models.CharField(
-        max_length=100,
+    # 8. ESTADO
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADOS,
+        default='bueno',
+        verbose_name="Estado"
+    )
+    
+    # 9. UBICACIÓN FÍSICA
+    ubicacion_fisica = models.CharField(
+        max_length=200,
         blank=True,
-        verbose_name="Modelo"
+        verbose_name="Ubicación Física",
+        help_text="Estante, cajón, armario, etc."
     )
     
-    # Inventario
-    cantidad_actual = models.FloatField(
+    # 10. CANTIDAD
+    cantidad = models.FloatField(
         default=0,
-        verbose_name="Cantidad Actual"
+        verbose_name="Cantidad"
     )
     
-    cantidad_minima = models.FloatField(
-        default=0,
-        verbose_name="Cantidad Mínima",
-        help_text="Cantidad mínima para alertas de stock"
-    )
-    
-    cantidad_requerida = models.FloatField(
-        default=0,
-        verbose_name="Cantidad Requerida"
-    )
-    
+    # 11. UNIDAD DE MEDIDA
     unidad_medida = models.CharField(
         max_length=20,
         choices=UNIDADES_MEDIDA,
@@ -154,92 +177,75 @@ class Insumo(models.Model):
         verbose_name="Unidad de Medida"
     )
     
-    # Estado y ubicación
-    estado = models.CharField(
-        max_length=20,
-        choices=ESTADOS,
-        default='disponible',
-        verbose_name="Estado"
+    # 12. FECHA DE INGRESO/COMPRA
+    fecha_ingreso_compra = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Fecha de Ingreso/Compra"
     )
     
-    laboratorio = models.ForeignKey(
-        Laboratorio, 
+    # 13. USO PRINCIPAL
+    uso_principal = models.CharField(
+        max_length=30,
+        choices=USO_PRINCIPAL,
+        blank=True,
+        null=True,
+        verbose_name="Uso Principal"
+    )
+    
+    # 14. CARRERA
+    carrera = models.ForeignKey(
+        Carrera, 
         on_delete=models.CASCADE,
-        verbose_name="Ubicación (Laboratorio)"
+        verbose_name="Carrera"
     )
     
-    ubicacion_especifica = models.CharField(
-        max_length=200,
-        blank=True,
-        verbose_name="Ubicación Específica",
-        help_text="Estante, cajón, etc."
+    # 15. ASIGNATURA
+    asignatura = models.ForeignKey(
+        Asignatura, 
+        on_delete=models.CASCADE,
+        verbose_name="Asignatura"
     )
     
-    # Información adicional
-    fecha_vencimiento = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de Vencimiento"
+    # 16. UNIDAD TEMÁTICA
+    unidad_tematica = models.ForeignKey(
+        UnidadTematica, 
+        on_delete=models.CASCADE,
+        verbose_name="Unidad Temática"
     )
     
-    numero_lote = models.CharField(
-        max_length=100,
-        blank=True,
-        verbose_name="Número de Lote"
-    )
-    
-    proveedor = models.CharField(
-        max_length=200,
-        blank=True,
-        verbose_name="Proveedor"
-    )
-    
-    precio_unitario = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        verbose_name="Precio Unitario"
-    )
-    
-    # Seguridad
-    es_peligroso = models.BooleanField(
-        default=False,
-        verbose_name="Es Peligroso",
-        help_text="Requiere manejo especial o EPP"
-    )
-    
-    notas_seguridad = models.TextField(
-        blank=True,
-        verbose_name="Notas de Seguridad"
-    )
-    
-    # Fotografías
-    fotografia = models.ImageField(
-        upload_to='insumos/fotos/',
+    # 17. CONDICIONES DE ALMACENAMIENTO
+    condiciones_almacenamiento = models.CharField(
+        max_length=30,
+        choices=CONDICIONES_ALMACENAMIENTO,
         blank=True,
         null=True,
-        verbose_name="Fotografía del Insumo"
+        verbose_name="Condiciones de Almacenamiento"
+    )
+    
+    # 18. OBSERVACIONES
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name="Observaciones"
+    )
+    
+    # 19. INGRESE EL LINK DE LA FOTOGRAFÍA DEL ELEMENTO
+    link_fotografia = models.URLField(
+        blank=True,
+        verbose_name="Link de la Fotografía del Elemento",
+        help_text="URL de la imagen del elemento"
     )
     
     # Auditoría
     usuario_creador = models.ForeignKey(
         User, 
         on_delete=models.CASCADE,
+        blank=True,
+        null=True,
         verbose_name="Usuario Creador"
     )
-    
-    observaciones = models.TextField(
-        blank=True,
-        verbose_name="Observaciones"
-    )
-    
-    codigo_inventario = models.CharField(
-        max_length=50,
-        blank=True,
-        unique=True,
-        verbose_name="Código de Inventario"
-    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -247,47 +253,56 @@ class Insumo(models.Model):
     class Meta:
         verbose_name = "Insumo"
         verbose_name_plural = "Insumos"
-        ordering = ['unidad_academica', 'carrera', 'semestre', 'tipo_insumo', 'nombre']
+        ordering = ['unidad_academica', 'carrera', 'categoria', 'nombre_elemento']
     
     def __str__(self):
-        return f"{self.nombre} - {self.unidad_academica} - {self.carrera}"
+        return f"{self.nombre_elemento} - {self.categoria} - {self.laboratorio}"
     
     def save(self, *args, **kwargs):
         # Generar código de inventario automáticamente si no existe
-        if not self.codigo_inventario:
+        if not self.codigo_inventario and self.unidad_academica and self.laboratorio:
             self.codigo_inventario = self.generar_codigo_inventario()
+        elif not self.codigo_inventario:
+            # Código simple si no hay unidad académica o laboratorio
+            ultimo_numero = Insumo.objects.count()
+            self.codigo_inventario = f'INS-{ultimo_numero + 1:06d}'
         super().save(*args, **kwargs)
     
     def generar_codigo_inventario(self):
         """Generar código de inventario único para insumos"""
-        # Formato: INS-UA-CAR-SEM-NUM
+        # Formato: INS-UA-LAB-NUM
         ua_code = self.unidad_academica.nombre[:3].upper()
-        car_code = self.carrera.nombre[:3].upper()
-        sem_code = f"S{self.semestre:02d}"
+        lab_code = self.laboratorio.nombre[:3].upper()
         
         # Obtener el siguiente número secuencial
         ultimo_insumo = Insumo.objects.filter(
             unidad_academica=self.unidad_academica,
-            carrera=self.carrera,
-            semestre=self.semestre
+            laboratorio=self.laboratorio
         ).order_by('-id').first()
         
-        num = 1 if not ultimo_insumo else ultimo_insumo.id + 1
+        if ultimo_insumo and ultimo_insumo.codigo_inventario:
+            try:
+                ultimo_num = int(ultimo_insumo.codigo_inventario.split('-')[-1])
+                nuevo_num = ultimo_num + 1
+            except (ValueError, IndexError):
+                nuevo_num = 1
+        else:
+            nuevo_num = 1
         
-        return f"INS-{ua_code}-{car_code}-{sem_code}-{num:04d}"
+        return f"INS-{ua_code}-{lab_code}-{nuevo_num:04d}"
     
-    @property
-    def esta_por_agotarse(self):
-        """Verificar si el insumo está por agotarse"""
-        return self.cantidad_actual <= self.cantidad_minima
-    
-    @property
-    def esta_vencido(self):
-        """Verificar si el insumo está vencido"""
-        if not self.fecha_vencimiento:
-            return False
-        from django.utils import timezone
-        return self.fecha_vencimiento < timezone.now().date()
+    def get_estado_badge_class(self):
+        """Devuelve la clase CSS para el badge del estado"""
+        badge_classes = {
+            'bueno': 'badge-success',
+            'regular': 'badge-warning',
+            'malo': 'badge-danger',
+            'vencido': 'badge-dark',
+            'agotado': 'badge-secondary',
+            'descartado': 'badge-danger',
+        }
+        return badge_classes.get(self.estado, 'badge-secondary')
+
 
 class MovimientoInsumo(models.Model):
     """Historial de movimientos de insumos (entradas, salidas, ajustes)"""
