@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'visualizacion',
     'equipos',  # Nueva app
     'insumos',  # Nueva app
+    'guias',    # Nueva app para guías de laboratorio
     'core',     # Nueva app
 ]
 

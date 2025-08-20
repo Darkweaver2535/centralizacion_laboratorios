@@ -331,6 +331,7 @@ urlpatterns = [
     path('login/', include('login.urls')),
     path('equipos/', include('equipos.urls')),
     path('insumos/', include('insumos.urls')),
+    path('guias/', include('guias.urls')),
     path('dashboard/', include('core.urls')),
     # API endpoints
     path('api/carreras/', api_carreras, name='api_carreras'),

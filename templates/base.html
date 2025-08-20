@@ -450,12 +450,23 @@
                         </a>
                     </div>
                 </li>
-                <!-- Nueva opción: Guías de Laboratorio -->
+                <!-- Guías de Laboratorio -->
                 <li>
-                    <a href="#" class="menu-item">
-                        <i class="fas fa-book"></i>
-                        Guías de Laboratorio
+                    <a href="#" class="menu-item" onclick="toggleSubmenu(this)">
+                        <i class="fas fa-book-open"></i>
+                        <span>Guías de Laboratorio</span>
+                        <i class="fas fa-chevron-down submenu-icon"></i>
                     </a>
+                    <div class="submenu">
+                        <a href="{% url 'guias:nueva' %}" class="submenu-item {% if request.resolver_match.namespace == 'guias' and request.resolver_match.url_name == 'nueva' %}active{% endif %}">
+                            <i class="fas fa-plus"></i>
+                            Generar Nueva Guía
+                        </a>
+                        <a href="{% url 'guias:lista' %}" class="submenu-item {% if request.resolver_match.namespace == 'guias' and request.resolver_match.url_name == 'lista' %}active{% endif %}">
+                            <i class="fas fa-list"></i>
+                            Lista de Guías
+                        </a>
+                    </div>
                 </li>
                 <!-- Gestión de Información -->
                 <li>
