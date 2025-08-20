@@ -418,8 +418,8 @@
                             Visualización / Análisis
                         </a>
                         <!-- Nueva opción: Reordenamiento Equipos -->
-                        <a href="#" class="submenu-item">
-                            <i class="fas fa-sort"></i>
+                        <a href="{% url 'equipos:reordenamiento' %}" class="submenu-item {% if request.resolver_match.namespace == 'equipos' and 'reordenamiento' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-tasks"></i>
                             Reordenamiento
                         </a>
                     </div>

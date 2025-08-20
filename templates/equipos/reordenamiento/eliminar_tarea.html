@@ -1,0 +1,984 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Tarea - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Eliminar Tarea de Reordenamiento{% endblock %}
+
+{% block page_description %}Confirmación de eliminación de la tarea{% endblock %}
+
+{% block content %}
+<div class="eliminar-tarea-container">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb-section">
+        <div class="breadcrumb-nav">
+            <a href="{% url 'equipos:reordenamiento' %}" class="breadcrumb-link">
+                <i class="fas fa-tasks"></i> Reordenamiento
+            </a>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <a href="{% url 'equipos:detalle_tarea' tarea.pk %}" class="breadcrumb-link">
+                {{ tarea.titulo|truncatechars:20 }}
+            </a>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <span class="breadcrumb-current">Eliminar</span>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-content">
+            <div class="header-info">
+                <h1><i class="fas fa-trash-alt"></i> Eliminar Tarea de Reordenamiento</h1>
+                <p>Confirmación de eliminación permanente</p>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'equipos:detalle_tarea' tarea.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al Detalle
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Panel -->
+    <div class="warning-panel">
+        <div class="warning-header">
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2>¡Atención! Esta acción es permanente</h2>
+            <p>La eliminación de la tarea no se puede deshacer</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-grid">
+        <!-- Task Information -->
+        <div class="info-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-info-circle"></i> Información de la Tarea</h3>
+            </div>
+            <div class="panel-content">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Título:</label>
+                        <span>{{ tarea.titulo }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Tipo:</label>
+                        <span class="badge-tipo">{{ tarea.get_tipo_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Estado:</label>
+                        <span class="badge-estado estado-{{ tarea.estado }}">{{ tarea.get_estado_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Prioridad:</label>
+                        <span class="badge-prioridad prioridad-{{ tarea.prioridad }}">{{ tarea.get_prioridad_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Fecha Creación:</label>
+                        <span>{{ tarea.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Progreso:</label>
+                        <span class="progress-info">{{ tarea.porcentaje_completado }}%</span>
+                    </div>
+                    {% if tarea.usuario_asignado %}
+                    <div class="info-item">
+                        <label>Asignada a:</label>
+                        <span>{{ tarea.usuario_asignado.get_full_name|default:tarea.usuario_asignado.username }}</span>
+                    </div>
+                    {% endif %}
+                    {% if tarea.descripcion %}
+                    <div class="info-item full-width">
+                        <label>Descripción:</label>
+                        <span class="description">{{ tarea.descripcion|truncatechars:200 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Deletion Form -->
+        <div class="form-panel">
+            <div class="panel-header danger">
+                <h3><i class="fas fa-skull-crossbones"></i> Confirmar Eliminación</h3>
+            </div>
+            <div class="panel-content">
+                <!-- Consequences Alert -->
+                <div class="consequences-alert">
+                    <div class="alert-header">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Esta acción eliminará permanentemente:</h4>
+                    </div>
+                    <ul class="consequences-list">
+                        <li><i class="fas fa-times"></i> La tarea y toda su información</li>
+                        <li><i class="fas fa-times"></i> Todas las asignaciones de equipos a esta tarea</li>
+                        <li><i class="fas fa-times"></i> El historial completo de cambios (logs)</li>
+                        <li><i class="fas fa-times"></i> Los registros de procesamiento de equipos</li>
+                    </ul>
+                </div>
+
+                <!-- Equipment Warning -->
+                {% if tarea.equipos_involucrados.count > 0 %}
+                <div class="equipment-warning">
+                    <div class="warning-content">
+                        <h4><i class="fas fa-cogs"></i> Equipos Involucrados</h4>
+                        <p>Esta tarea tiene <strong>{{ tarea.equipos_involucrados.count }} equipos</strong> asignados.</p>
+                        <div class="note">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Los equipos no serán eliminados, solo se removerá su asignación a esta tarea. Si ya fueron procesados, los cambios realizados se mantendrán.</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Confirmation Form -->
+                <form method="post" id="formEliminarTarea" class="confirmation-form">
+                    {% csrf_token %}
+                    
+                    <!-- Security Steps -->
+                    <div class="security-steps">
+                        <div class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <div class="checkbox-container">
+                                    <input type="checkbox" id="confirmarLectura" class="custom-checkbox">
+                                    <label for="confirmarLectura">
+                                        He leído y entiendo las consecuencias de esta acción
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <div class="checkbox-container">
+                                    <input type="checkbox" id="confirmarPermanente" class="custom-checkbox">
+                                    <label for="confirmarPermanente">
+                                        Confirmo que esta eliminación es permanente e irreversible
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <label for="palabraConfirmacion" class="confirmation-label">
+                                    Escriba <strong>"ELIMINAR"</strong> para confirmar:
+                                </label>
+                                <input type="text" id="palabraConfirmacion" class="confirmation-input" 
+                                       placeholder="Escriba ELIMINAR en mayúsculas" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Final Warning -->
+                    <div class="final-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>ÚLTIMA ADVERTENCIA:</strong> Esta acción NO SE PUEDE DESHACER
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <a href="{% url 'equipos:detalle_tarea' tarea.pk %}" class="btn btn-safe">
+                            <i class="fas fa-shield-alt"></i> Mantener Tarea Segura
+                        </a>
+                        <button type="submit" class="btn btn-danger" id="btnEliminar" disabled>
+                            <i class="fas fa-trash-alt"></i> Eliminar Permanentemente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .eliminar-tarea-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-section {
+        margin-bottom: 25px;
+    }
+
+    .breadcrumb-nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    .breadcrumb-link {
+        color: #3b82f6;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb-link:hover {
+        color: #1e40af;
+    }
+
+    .breadcrumb-separator {
+        color: #cbd5e0;
+        font-size: 12px;
+    }
+
+    .breadcrumb-current {
+        color: #374151;
+        font-weight: 500;
+    }
+
+    /* Header Section */
+    .header-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 25px;
+        border-left: 4px solid #ef4444;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .header-info h1 {
+        margin: 0 0 8px 0;
+        color: #dc2626;
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-info p {
+        margin: 0;
+        color: #64748b;
+        font-size: 16px;
+    }
+
+    .header-actions {
+        flex-shrink: 0;
+    }
+
+    /* Warning Panel */
+    .warning-panel {
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        border: 2px solid #fecaca;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(239, 68, 68, 0.1);
+    }
+
+    .warning-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        color: white;
+        font-size: 32px;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    .warning-panel h2 {
+        color: #dc2626;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .warning-panel p {
+        color: #7f1d1d;
+        font-size: 16px;
+        margin: 0;
+    }
+
+    /* Content Grid */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+    }
+
+    /* Panel Styles */
+    .info-panel,
+    .form-panel {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        padding: 20px 25px;
+        border-bottom: 2px solid #f1f5f9;
+        background: #f8fafc;
+    }
+
+    .panel-header.danger {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        border-bottom-color: #fca5a5;
+    }
+
+    .panel-header h3 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 18px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .panel-header.danger h3 {
+        color: #dc2626;
+    }
+
+    .panel-content {
+        padding: 25px;
+    }
+
+    /* Info Grid */
+    .info-grid {
+        display: grid;
+        gap: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 12px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .info-item.full-width {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-item label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+        flex-shrink: 0;
+        width: 120px;
+    }
+
+    .info-item span {
+        color: #64748b;
+        font-size: 14px;
+        text-align: right;
+        flex: 1;
+    }
+
+    .info-item.full-width span {
+        text-align: left;
+    }
+
+    .description {
+        line-height: 1.5;
+        font-style: italic;
+    }
+
+    .progress-info {
+        font-weight: 600;
+        color: #3b82f6 !important;
+    }
+
+    /* Badges */
+    .badge-tipo,
+    .badge-estado,
+    .badge-prioridad {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-tipo {
+        background: #e0f2fe;
+        color: #0c4a6e;
+    }
+
+    .badge-estado.estado-pendiente { background: #fef3c7; color: #92400e; }
+    .badge-estado.estado-en_proceso { background: #dbeafe; color: #1e40af; }
+    .badge-estado.estado-completada { background: #dcfce7; color: #166534; }
+    .badge-estado.estado-cancelada { background: #f3f4f6; color: #6b7280; }
+    .badge-estado.estado-pausada { background: #f0f0ff; color: #5b21b6; }
+
+    .badge-prioridad.prioridad-alta { background: #fee2e2; color: #dc2626; }
+    .badge-prioridad.prioridad-media { background: #fef3c7; color: #92400e; }
+    .badge-prioridad.prioridad-baja { background: #dcfce7; color: #166534; }
+    .badge-prioridad.prioridad-urgente { background: #fdf2f8; color: #be185d; }
+
+    /* Consequences Alert */
+    .consequences-alert {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .alert-header h4 {
+        color: #dc2626;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 15px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .consequences-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 8px;
+    }
+
+    .consequences-list li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #7f1d1d;
+        font-size: 14px;
+    }
+
+    .consequences-list li i {
+        color: #dc2626;
+        font-size: 12px;
+    }
+
+    /* Equipment Warning */
+    .equipment-warning {
+        background: #fffbeb;
+        border: 1px solid #fed7aa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .warning-content h4 {
+        color: #92400e;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .warning-content p {
+        color: #78350f;
+        font-size: 14px;
+        margin: 0 0 10px 0;
+    }
+
+    .note {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px;
+        background: #fef3c7;
+        border-radius: 6px;
+    }
+
+    .note i {
+        color: #92400e;
+        font-size: 14px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    .note span {
+        color: #78350f;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    /* Security Steps */
+    .security-steps {
+        margin-bottom: 25px;
+    }
+
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .step-item:hover {
+        border-color: #d1d5db;
+        background: #f9fafb;
+    }
+
+    .step-item.completed {
+        border-color: #10b981;
+        background: #ecfdf5;
+    }
+
+    .step-number {
+        width: 30px;
+        height: 30px;
+        background: #e5e7eb;
+        color: #6b7280;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+    }
+
+    .step-item.completed .step-number {
+        background: #10b981;
+        color: white;
+    }
+
+    .step-content {
+        flex: 1;
+    }
+
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .custom-checkbox {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #d1d5db;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        position: relative;
+        appearance: none;
+        transition: all 0.2s ease;
+    }
+
+    .custom-checkbox:checked {
+        background: #10b981;
+        border-color: #10b981;
+    }
+
+    .custom-checkbox:checked::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .checkbox-container label {
+        font-size: 14px;
+        color: #374151;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .confirmation-label {
+        display: block;
+        font-size: 14px;
+        color: #374151;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .confirmation-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: monospace;
+        background: white;
+        transition: all 0.2s ease;
+    }
+
+    .confirmation-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .confirmation-input.valid {
+        border-color: #10b981;
+        background: #f0fdf4;
+    }
+
+    .confirmation-input.invalid {
+        border-color: #ef4444;
+        background: #fef2f2;
+    }
+
+    /* Final Warning */
+    .final-warning {
+        background: linear-gradient(135deg, #fef2f2, #fee2e2);
+        border: 2px solid #fca5a5;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        margin-bottom: 25px;
+        color: #7f1d1d;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .final-warning i {
+        color: #dc2626;
+        font-size: 18px;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .btn-safe {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-safe:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    .btn-danger:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
+        opacity: 1;
+    }
+
+    .btn-danger:not(:disabled) {
+        opacity: 1;
+        cursor: pointer;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+        box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
+    }
+
+    .btn-secondary:hover {
+        background: #4b5563;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(107, 114, 128, 0.4);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+    }
+
+    /* Loading State */
+    .btn.loading {
+        opacity: 0.7;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .btn.loading::after {
+        content: '';
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 8px;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .eliminar-tarea-container {
+            padding: 15px;
+        }
+
+        .content-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .header-content {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .header-actions {
+            align-self: stretch;
+        }
+
+        .form-actions {
+            flex-direction: column-reverse;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .warning-panel {
+            padding: 20px;
+        }
+
+        .warning-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+        }
+
+        .info-item {
+            flex-direction: column;
+            gap: 5px;
+            align-items: flex-start;
+        }
+
+        .info-item label {
+            width: auto;
+        }
+
+        .info-item span {
+            text-align: left;
+        }
+    }
+
+    /* Smooth animations */
+    .info-panel,
+    .form-panel,
+    .header-section,
+    .warning-panel {
+        animation: fadeInUp 0.5s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formEliminarTarea');
+    const btnEliminar = document.getElementById('btnEliminar');
+    const confirmarLectura = document.getElementById('confirmarLectura');
+    const confirmarPermanente = document.getElementById('confirmarPermanente');
+    const palabraConfirmacion = document.getElementById('palabraConfirmacion');
+    
+    function updateStepStatus() {
+        // Actualizar paso 1
+        const step1 = confirmarLectura.closest('.step-item');
+        if (confirmarLectura.checked) {
+            step1.classList.add('completed');
+        } else {
+            step1.classList.remove('completed');
+        }
+        
+        // Actualizar paso 2
+        const step2 = confirmarPermanente.closest('.step-item');
+        if (confirmarPermanente.checked) {
+            step2.classList.add('completed');
+        } else {
+            step2.classList.remove('completed');
+        }
+        
+        // Actualizar paso 3
+        const step3 = palabraConfirmacion.closest('.step-item');
+        if (palabraConfirmacion.value.trim() === 'ELIMINAR') {
+            step3.classList.add('completed');
+            palabraConfirmacion.classList.add('valid');
+            palabraConfirmacion.classList.remove('invalid');
+        } else {
+            step3.classList.remove('completed');
+            if (palabraConfirmacion.value.trim()) {
+                palabraConfirmacion.classList.add('invalid');
+                palabraConfirmacion.classList.remove('valid');
+            } else {
+                palabraConfirmacion.classList.remove('valid', 'invalid');
+            }
+        }
+        
+        // Habilitar/deshabilitar botón
+        const allCompleted = confirmarLectura.checked && 
+                           confirmarPermanente.checked && 
+                           palabraConfirmacion.value.trim() === 'ELIMINAR';
+        
+        btnEliminar.disabled = !allCompleted;
+    }
+    
+    // Event listeners para los checkboxes
+    confirmarLectura.addEventListener('change', updateStepStatus);
+    confirmarPermanente.addEventListener('change', updateStepStatus);
+    palabraConfirmacion.addEventListener('input', updateStepStatus);
+    
+    // Envío del formulario
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Verificación final
+        if (!confirmarLectura.checked || !confirmarPermanente.checked || palabraConfirmacion.value.trim() !== 'ELIMINAR') {
+            alert('Debe completar todos los pasos de confirmación.');
+            return;
+        }
+        
+        // Confirmación adicional
+        const confirmacion = confirm(
+            '🚨 ÚLTIMA CONFIRMACIÓN 🚨\n\n' +
+            '¿Está ABSOLUTAMENTE SEGURO de eliminar esta tarea?\n\n' +
+            '⚠️  Esta acción ES PERMANENTE E IRREVERSIBLE\n' +
+            '⚠️  Todos los datos se perderán para siempre\n' +
+            '⚠️  No podrá recuperar la información\n\n' +
+            'Haga clic en "Aceptar" SOLO si está completamente seguro.'
+        );
+        
+        if (!confirmacion) {
+            return;
+        }
+        
+        // Cambiar estado del botón a cargando
+        btnEliminar.classList.add('loading');
+        btnEliminar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando Tarea...';
+        btnEliminar.disabled = true;
+        
+        // Deshabilitar todos los inputs
+        const inputs = form.querySelectorAll('input, button');
+        inputs.forEach(input => input.disabled = true);
+        
+        // Enviar formulario después de un breve delay
+        setTimeout(() => {
+            form.submit();
+        }, 1000);
+    });
+    
+    // Advertencia al intentar salir
+    let formModified = false;
+    [confirmarLectura, confirmarPermanente, palabraConfirmacion].forEach(input => {
+        input.addEventListener('change', () => { formModified = true; });
+        input.addEventListener('input', () => { formModified = true; });
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formModified && !form.submitted) {
+            e.preventDefault();
+            e.returnValue = '¿Está seguro de salir? Los cambios no se guardarán.';
+        }
+    });
+    
+    // Marcar formulario como enviado al enviar
+    form.addEventListener('submit', () => { form.submitted = true; });
+    
+    // Auto-focus en el primer checkbox
+    setTimeout(() => {
+        confirmarLectura.focus();
+    }, 500);
+    
+    // Efectos de sonido para advertencias (opcional)
+    function playWarningSound() {
+        // Crear un tono de advertencia
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+    }
+    
+    // Reproducir sonido de advertencia al cargar la página
+    setTimeout(playWarningSound, 1000);
+});
+</script>
+{% endblock %}

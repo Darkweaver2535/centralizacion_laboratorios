@@ -1,0 +1,744 @@
+{% extends 'base.html' %}
+
+{% block title %}Reordenamiento de Equipos - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Reordenamiento de Equipos{% endblock %}
+
+{% block page_description %}Gestión integral de tareas para reasignación y reubicación de equipos de laboratorio{% endblock %}
+
+{% block content %}
+<div class="reordenamiento-container">
+    <!-- Panel de Estadísticas -->
+    <div class="stats-panel">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="total-tareas">{{ stats.total|default:"0" }}</h3>
+                    <p>Total Tareas</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ffd166 0%, #f77f00 100%);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="tareas-pendientes">{{ stats.pendientes|default:"0" }}</h3>
+                    <p>Pendientes</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #06d6a0 0%, #118ab2 100%);">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="tareas-proceso">{{ stats.en_proceso|default:"0" }}</h3>
+                    <p>En Proceso</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="tareas-completadas">{{ stats.completadas|default:"0" }}</h3>
+                    <p>Completadas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Filtros -->
+    <div class="filters-panel">
+        <div class="filter-header">
+            <h3><i class="fas fa-filter"></i> Filtros de Búsqueda</h3>
+            <div class="filter-actions">
+                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
+                    <i class="fas fa-undo"></i> Limpiar
+                </button>
+                <a href="{% url 'equipos:nueva_tarea' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva Tarea
+                </a>
+                <a href="{% url 'equipos:buscar_equipos' %}" class="btn btn-success">
+                    <i class="fas fa-search"></i> Buscar Equipos
+                </a>
+            </div>
+        </div>
+        
+        <form method="GET" id="filtrosForm" class="filters-grid">
+            <div class="filter-group">
+                <label>Estado</label>
+                <select name="estado" class="filter-select" onchange="aplicarFiltros()">
+                    <option value="">Todos los estados</option>
+                    {% for key, value in estados_tarea %}
+                        <option value="{{ key }}" {% if filtros.estado == key %}selected{% endif %}>
+                            {{ value }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Tipo de Tarea</label>
+                <select name="tipo" class="filter-select" onchange="aplicarFiltros()">
+                    <option value="">Todos los tipos</option>
+                    {% for key, value in tipos_tarea %}
+                        <option value="{{ key }}" {% if filtros.tipo == key %}selected{% endif %}>
+                            {{ value }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Prioridad</label>
+                <select name="prioridad" class="filter-select" onchange="aplicarFiltros()">
+                    <option value="">Todas las prioridades</option>
+                    {% for key, value in prioridades %}
+                        <option value="{{ key }}" {% if filtros.prioridad == key %}selected{% endif %}>
+                            {{ value }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group search-group">
+                <label>Búsqueda General</label>
+                <input type="text" name="busqueda" class="filter-select" placeholder="Buscar por título, descripción..." 
+                       value="{{ filtros.busqueda }}" onkeyup="buscarEnTiempoReal(this.value)">
+            </div>
+        </form>
+    </div>
+
+    <!-- Panel de Resultados -->
+    <div class="results-panel">
+        <div class="results-header">
+            <h3>Lista de Tareas de Reordenamiento</h3>
+            <div class="results-info">
+                {% if tareas %}
+                    Mostrando {{ tareas.start_index }}-{{ tareas.end_index }} de {{ tareas.paginator.count }} tareas
+                {% else %}
+                    No hay tareas registradas
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if tareas %}
+            <div class="tareas-grid">
+                {% for tarea in tareas %}
+                    <div class="tarea-card">
+                        <div class="tarea-header">
+                            <div class="tarea-title">
+                                <h4>
+                                    <a href="{% url 'equipos:detalle_tarea' tarea.pk %}">
+                                        {{ tarea.titulo|truncatechars:50 }}
+                                    </a>
+                                </h4>
+                                <div class="tarea-badges">
+                                    <span class="badge badge-{{ tarea.prioridad }}">
+                                        {{ tarea.get_prioridad_display }}
+                                    </span>
+                                    <span class="badge badge-estado-{{ tarea.estado }}">
+                                        {{ tarea.get_estado_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="tarea-content">
+                            <p class="tarea-description">{{ tarea.descripcion|truncatechars:120 }}</p>
+                            
+                            <div class="tarea-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill progress-{{ tarea.estado }}" 
+                                         style="width: {{ tarea.porcentaje_completado }}%">
+                                    </div>
+                                </div>
+                                <span class="progress-text">{{ tarea.porcentaje_completado }}% completado</span>
+                            </div>
+                            
+                            <div class="tarea-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-user"></i>
+                                    <span>
+                                        {% if tarea.usuario_asignado %}
+                                            {{ tarea.usuario_asignado.get_full_name|default:tarea.usuario_asignado.username }}
+                                        {% else %}
+                                            Sin asignar
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>{{ tarea.fecha_creacion|date:"d/m/Y" }}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-boxes"></i>
+                                    <span>{{ tarea.equipos_involucrados.count }} equipo{{ tarea.equipos_involucrados.count|pluralize }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="tarea-actions">
+                            <a href="{% url 'equipos:detalle_tarea' tarea.pk %}" class="btn-action btn-info" title="Ver Detalle">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if tarea.estado != 'completada' %}
+                                <a href="{% url 'equipos:editar_tarea' tarea.pk %}" class="btn-action btn-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'equipos:procesar_tarea' tarea.pk %}" class="btn-action btn-success" title="Procesar">
+                                    <i class="fas fa-cogs"></i>
+                                </a>
+                            {% else %}
+                                <span class="btn-action btn-completed" title="Completada">
+                                    <i class="fas fa-check"></i>
+                                </span>
+                            {% endif %}
+                            <a href="{% url 'equipos:eliminar_tarea' tarea.pk %}" class="btn-action btn-danger" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Paginación -->
+            {% if tareas.has_other_pages %}
+            <div class="pagination-container">
+                <div class="pagination">
+                    {% if tareas.has_previous %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1" class="page-link">Primera</a>
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ tareas.previous_page_number }}" class="page-link">Anterior</a>
+                    {% endif %}
+                    
+                    <span class="page-info">
+                        Página {{ tareas.number }} de {{ tareas.paginator.num_pages }}
+                    </span>
+                    
+                    {% if tareas.has_next %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ tareas.next_page_number }}" class="page-link">Siguiente</a>
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ tareas.paginator.num_pages }}" class="page-link">Última</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>No hay tareas de reordenamiento</h3>
+                <p>Crea una nueva tarea para comenzar con el reordenamiento de equipos de laboratorio.</p>
+                <a href="{% url 'equipos:nueva_tarea' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Crear Primera Tarea
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .reordenamiento-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Stats Panel */
+    .stats-panel {
+        margin-bottom: 30px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: transform 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+    }
+
+    .stat-content h3 {
+        margin: 0;
+        font-size: 32px;
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+
+    .stat-content p {
+        margin: 5px 0 0 0;
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Filters Panel */
+    .filters-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .filter-header h3 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .search-group {
+        grid-column: span 2;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-group label {
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    .filter-select {
+        padding: 10px 12px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Results Panel */
+    .results-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .results-header h3 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .results-info {
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    /* Tareas Grid */
+    .tareas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .tarea-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    .tarea-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .tarea-header {
+        margin-bottom: 15px;
+    }
+
+    .tarea-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .tarea-title h4 {
+        margin: 0;
+        flex: 1;
+    }
+
+    .tarea-title h4 a {
+        color: #1e3a8a;
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .tarea-title h4 a:hover {
+        color: #3b82f6;
+    }
+
+    .tarea-badges {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-end;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-alta { background: #fee2e2; color: #dc2626; }
+    .badge-media { background: #fef3c7; color: #92400e; }
+    .badge-baja { background: #dcfce7; color: #166534; }
+    .badge-urgente { background: #fdf2f8; color: #be185d; }
+
+    .badge-estado-pendiente { background: #fef3c7; color: #92400e; }
+    .badge-estado-en_proceso { background: #dbeafe; color: #1e40af; }
+    .badge-estado-completada { background: #dcfce7; color: #166534; }
+    .badge-estado-cancelada { background: #f3f4f6; color: #6b7280; }
+    .badge-estado-pausada { background: #f0f0ff; color: #5b21b6; }
+
+    .tarea-content {
+        flex: 1;
+        margin-bottom: 15px;
+    }
+
+    .tarea-description {
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.4;
+        margin-bottom: 15px;
+    }
+
+    .tarea-progress {
+        margin-bottom: 15px;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #f1f5f9;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 5px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    .progress-pendiente { background: #f59e0b; }
+    .progress-en_proceso { background: #3b82f6; }
+    .progress-completada { background: #10b981; }
+    .progress-cancelada { background: #6b7280; }
+    .progress-pausada { background: #8b5cf6; }
+
+    .progress-text {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .tarea-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .meta-item i {
+        color: #9ca3af;
+    }
+
+    .tarea-actions {
+        display: flex;
+        gap: 5px;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 15px;
+    }
+
+    .btn-action {
+        padding: 8px 10px;
+        border-radius: 6px;
+        color: white;
+        text-decoration: none;
+        font-size: 12px;
+        transition: all 0.2s ease;
+        flex: 1;
+        text-align: center;
+    }
+
+    .btn-action.btn-info { background: #3b82f6; }
+    .btn-action.btn-warning { background: #f59e0b; }
+    .btn-action.btn-success { background: #10b981; }
+    .btn-action.btn-danger { background: #ef4444; }
+    .btn-action.btn-completed { background: #6b7280; cursor: not-allowed; }
+
+    .btn-action:hover:not(.btn-completed) {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+
+    .btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: #64748b;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        margin-bottom: 8px;
+        font-size: 20px;
+    }
+
+    .empty-state p {
+        margin-bottom: 20px;
+        font-size: 16px;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    /* Pagination */
+    .pagination-container {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .pagination {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .page-link {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        color: #374151;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .page-link:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+    }
+
+    .page-info {
+        padding: 8px 12px;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .filters-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .search-group {
+            grid-column: span 1;
+        }
+        
+        .filter-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+        }
+        
+        .filter-actions {
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .results-header {
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .tareas-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .tarea-title {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .tarea-badges {
+            align-items: flex-start;
+            flex-direction: row;
+        }
+        
+        .tarea-meta {
+            flex-direction: column;
+            gap: 8px;
+        }
+    }
+</style>
+
+<script>
+function aplicarFiltros() {
+    document.getElementById('filtrosForm').submit();
+}
+
+function limpiarFiltros() {
+    window.location.href = '{% url "equipos:reordenamiento" %}';
+}
+
+let timeoutId;
+function buscarEnTiempoReal(valor) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+        aplicarFiltros();
+    }, 500);
+}
+
+// Animaciones al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.tarea-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

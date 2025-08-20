@@ -286,3 +286,232 @@ class MantenimientoEquipo(models.Model):
     
     def __str__(self):
         return f"{self.equipo} - {self.get_tipo_display()} - {self.fecha_inicio.strftime('%d/%m/%Y')}"
+
+
+class TareaReordenamiento(models.Model):
+    """Modelo para gestionar tareas de reordenamiento de equipos"""
+    TIPOS_TAREA = [
+        ('reasignacion', 'Reasignación de Equipos'),
+        ('reubicacion', 'Reubicación de Equipos'),
+        ('cambio_caracteristicas', 'Cambio de Características'),
+        ('modificacion_datos', 'Modificación de Datos'),
+        ('transferencia_unidad', 'Transferencia entre Unidades'),
+        ('actualizacion_inventario', 'Actualización de Inventario'),
+    ]
+    
+    ESTADOS_TAREA = [
+        ('pendiente', 'Pendiente'),
+        ('en_proceso', 'En Proceso'),
+        ('completada', 'Completada'),
+        ('cancelada', 'Cancelada'),
+        ('pausada', 'Pausada'),
+    ]
+    
+    PRIORIDADES = [
+        ('baja', 'Baja'),
+        ('media', 'Media'),
+        ('alta', 'Alta'),
+        ('urgente', 'Urgente'),
+    ]
+    
+    # Información básica de la tarea
+    titulo = models.CharField(
+        max_length=200,
+        verbose_name="Título de la Tarea"
+    )
+    descripcion = models.TextField(
+        verbose_name="Descripción",
+        help_text="Descripción detallada de la tarea a realizar"
+    )
+    tipo = models.CharField(
+        max_length=30,
+        choices=TIPOS_TAREA,
+        verbose_name="Tipo de Tarea"
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADOS_TAREA,
+        default='pendiente',
+        verbose_name="Estado"
+    )
+    prioridad = models.CharField(
+        max_length=10,
+        choices=PRIORIDADES,
+        default='media',
+        verbose_name="Prioridad"
+    )
+    
+    # Fechas
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_inicio = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Inicio"
+    )
+    fecha_fin_estimada = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha Fin Estimada"
+    )
+    fecha_fin_real = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha Fin Real"
+    )
+    
+    # Usuarios responsables
+    usuario_creador = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tareas_creadas',
+        verbose_name="Usuario Creador"
+    )
+    usuario_asignado = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tareas_asignadas',
+        null=True,
+        blank=True,
+        verbose_name="Usuario Asignado"
+    )
+    
+    # Datos adicionales
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name="Observaciones"
+    )
+    porcentaje_completado = models.IntegerField(
+        default=0,
+        verbose_name="Porcentaje Completado (%)"
+    )
+    
+    class Meta:
+        verbose_name = "Tarea de Reordenamiento"
+        verbose_name_plural = "Tareas de Reordenamiento"
+        ordering = ['-fecha_creacion']
+    
+    def __str__(self):
+        return f"{self.titulo} - {self.get_estado_display()}"
+    
+    def get_color_prioridad(self):
+        """Retorna el color CSS según la prioridad"""
+        colores = {
+            'baja': '#22c55e',    # Verde
+            'media': '#f59e0b',   # Amarillo
+            'alta': '#ef4444',    # Rojo
+            'urgente': '#dc2626'  # Rojo oscuro
+        }
+        return colores.get(self.prioridad, '#6b7280')
+    
+    def get_color_estado(self):
+        """Retorna el color CSS según el estado"""
+        colores = {
+            'pendiente': '#6b7280',   # Gris
+            'en_proceso': '#3b82f6', # Azul
+            'completada': '#22c55e', # Verde
+            'cancelada': '#ef4444',  # Rojo
+            'pausada': '#f59e0b'     # Amarillo
+        }
+        return colores.get(self.estado, '#6b7280')
+
+
+class EquipoTarea(models.Model):
+    """Relación entre equipos y tareas de reordenamiento"""
+    tarea = models.ForeignKey(
+        TareaReordenamiento,
+        on_delete=models.CASCADE,
+        related_name='equipos_involucrados'
+    )
+    equipo = models.ForeignKey(
+        Equipo,
+        on_delete=models.CASCADE,
+        related_name='tareas_reordenamiento'
+    )
+    
+    # Datos originales (antes del cambio)
+    unidad_academica_origen = models.ForeignKey(
+        UnidadAcademica,
+        on_delete=models.CASCADE,
+        related_name='equipos_origen',
+        null=True,
+        blank=True,
+        verbose_name="Unidad Académica Origen"
+    )
+    laboratorio_origen = models.ForeignKey(
+        Laboratorio,
+        on_delete=models.CASCADE,
+        related_name='equipos_origen',
+        null=True,
+        blank=True,
+        verbose_name="Laboratorio Origen"
+    )
+    
+    # Datos destino (después del cambio)
+    unidad_academica_destino = models.ForeignKey(
+        UnidadAcademica,
+        on_delete=models.CASCADE,
+        related_name='equipos_destino',
+        null=True,
+        blank=True,
+        verbose_name="Unidad Académica Destino"
+    )
+    laboratorio_destino = models.ForeignKey(
+        Laboratorio,
+        on_delete=models.CASCADE,
+        related_name='equipos_destino',
+        null=True,
+        blank=True,
+        verbose_name="Laboratorio Destino"
+    )
+    
+    # Estado del procesamiento de este equipo específico
+    procesado = models.BooleanField(
+        default=False,
+        verbose_name="Procesado"
+    )
+    fecha_procesado = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Procesado"
+    )
+    observaciones_equipo = models.TextField(
+        blank=True,
+        verbose_name="Observaciones del Equipo"
+    )
+    
+    class Meta:
+        verbose_name = "Equipo en Tarea"
+        verbose_name_plural = "Equipos en Tareas"
+        unique_together = ['tarea', 'equipo']
+    
+    def __str__(self):
+        return f"{self.tarea.titulo} - {self.equipo.equipo_existente}"
+
+
+class LogReordenamiento(models.Model):
+    """Log de acciones realizadas en las tareas de reordenamiento"""
+    tarea = models.ForeignKey(
+        TareaReordenamiento,
+        on_delete=models.CASCADE,
+        related_name='logs'
+    )
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
+    accion = models.CharField(
+        max_length=100,
+        verbose_name="Acción Realizada"
+    )
+    descripcion = models.TextField(
+        verbose_name="Descripción de la Acción"
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Log de Reordenamiento"
+        verbose_name_plural = "Logs de Reordenamiento"
+        ordering = ['-fecha']
+    
+    def __str__(self):
+        return f"{self.tarea.titulo} - {self.accion} - {self.fecha.strftime('%d/%m/%Y %H:%M')}"

@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ tarea.titulo }} - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Detalle de Tarea{% endblock %}
+
+{% block page_description %}{{ tarea.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb y navegación -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'equipos:reordenamiento' %}">Reordenamiento</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ tarea.titulo|truncatechars:30 }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Encabezado de la tarea -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="h3 mb-2 text-primary">{{ tarea.titulo }}</h2>
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                {% if tarea.estado == 'pendiente' %}
+                                    <span class="badge bg-warning">{{ tarea.get_estado_display }}</span>
+                                {% elif tarea.estado == 'en_proceso' %}
+                                    <span class="badge bg-info">{{ tarea.get_estado_display }}</span>
+                                {% elif tarea.estado == 'completada' %}
+                                    <span class="badge bg-success">{{ tarea.get_estado_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ tarea.get_estado_display }}</span>
+                                {% endif %}
+                                
+                                {% if tarea.prioridad == 'alta' %}
+                                    <span class="badge bg-danger">{{ tarea.get_prioridad_display }}</span>
+                                {% elif tarea.prioridad == 'media' %}
+                                    <span class="badge bg-warning">{{ tarea.get_prioridad_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-success">{{ tarea.get_prioridad_display }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-muted mb-0">{{ tarea.descripcion }}</p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'equipos:reordenamiento' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver
+                                </a>
+                                {% if tarea.estado != 'completada' %}
+                                    <a href="{% url 'equipos:editar_tarea' tarea.pk %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-edit me-2"></i>Editar
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .equipment-card {
+        transition: all 0.3s ease;
+    }
+    
+    .equipment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+<div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-clipboard-check text-primary me-2"></i>
+                {{ tarea.titulo }}
+            </h1>
+            <p class="text-muted mb-0">Detalle de la tarea de reordenamiento</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'equipos:reordenamiento' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+            {% if tarea.estado != 'completada' %}
+                <a href="{% url 'equipos:editar_tarea' tarea.pk %}" class="btn btn-primary">
+                    <i class="fas fa-edit me-2"></i>Editar
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-2"></i>Información General
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Estado:</strong>
+                            <span class="status-badge ms-2" 
+                                  style="background-color: {{ tarea.get_color_estado }}; color: white;">
+                                {{ tarea.get_estado_display }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Prioridad:</strong>
+                            <span class="priority-badge ms-2" 
+                                  style="background-color: {{ tarea.get_color_prioridad }}; color: white;">
+                                {{ tarea.get_prioridad_display }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Tipo de Tarea:</strong>
+                            <span class="badge bg-secondary ms-2">{{ tarea.get_tipo_display }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Creado por:</strong>
+                            {{ tarea.usuario_creador.get_full_name|default:tarea.usuario_creador.username }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Asignado a:</strong>
+                            {% if tarea.usuario_asignado %}
+                                {{ tarea.usuario_asignado.get_full_name|default:tarea.usuario_asignado.username }}
+                            {% else %}
+                                <span class="text-muted">Sin asignar</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Fecha de Creación:</strong>
+                            {{ tarea.fecha_creacion|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+
+                    {% if tarea.fecha_fin_estimada %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Fecha Fin Estimada:</strong>
+                                {{ tarea.fecha_fin_estimada|date:"d/m/Y H:i" }}
+                            </div>
+                            {% if tarea.fecha_fin_real %}
+                                <div class="col-md-6">
+                                    <strong>Fecha Fin Real:</strong>
+                                    {{ tarea.fecha_fin_real|date:"d/m/Y H:i" }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <strong>Descripción:</strong>
+                        <p class="mt-2 text-justify">{{ tarea.descripcion|linebreaks }}</p>
+                    </div>
+
+                    {% if tarea.observaciones %}
+                        <div class="mb-3">
+                            <strong>Observaciones:</strong>
+                            <p class="mt-2 text-justify">{{ tarea.observaciones|linebreaks }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Progreso -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-line me-2"></i>Progreso de la Tarea
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="progress-container">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="font-weight-bold">Progreso General</span>
+                            <span class="font-weight-bold">{{ tarea.porcentaje_completado }}%</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 20px;">
+                            <div class="progress-bar" 
+                                 style="width: {{ tarea.porcentaje_completado }}%; background-color: {{ tarea.get_color_estado }}"
+                                 role="progressbar">
+                            </div>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="text-primary font-weight-bold h4">{{ total_equipos }}</div>
+                                <div class="text-muted small">Total Equipos</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-success font-weight-bold h4">{{ equipos_procesados }}</div>
+                                <div class="text-muted small">Procesados</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-warning font-weight-bold h4">{{ total_equipos|add:equipos_procesados|add:"-"|add:equipos_procesados }}</div>
+                                <div class="text-muted small">Pendientes</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if tarea.estado != 'completada' and total_equipos > 0 %}
+                        <div class="text-center">
+                            <a href="{% url 'equipos:procesar_tarea' tarea.pk %}" class="btn btn-success">
+                                <i class="fas fa-play me-2"></i>Procesar Tarea
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Equipos Involucrados -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cogs me-2"></i>Equipos Involucrados ({{ total_equipos }})
+                    </h6>
+                    <a href="{% url 'equipos:buscar_equipos' %}?tarea_id={{ tarea.pk }}" 
+                       class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-2"></i>Agregar Equipos
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if equipos_tarea %}
+                        <div class="row">
+                            {% for equipo_tarea in equipos_tarea %}
+                                <div class="col-lg-6 mb-3">
+                                    <div class="card equipment-card {% if equipo_tarea.procesado %}border-success{% else %}border-warning{% endif %}">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="card-title mb-0">
+                                                    {{ equipo_tarea.equipo.equipo_existente }}
+                                                </h6>
+                                                <span class="badge {% if equipo_tarea.procesado %}bg-success{% else %}bg-warning{% endif %}">
+                                                    {% if equipo_tarea.procesado %}Procesado{% else %}Pendiente{% endif %}
+                                                </span>
+                                            </div>
+                                            
+                                            <p class="card-text small text-muted mb-2">
+                                                <strong>Código:</strong> {{ equipo_tarea.equipo.codigo_inventario|default:"Sin código" }}
+                                                <br>
+                                                <strong>Marca/Modelo:</strong> {{ equipo_tarea.equipo.marca }} {{ equipo_tarea.equipo.modelo }}
+                                            </p>
+
+                                            <div class="small">
+                                                <strong>Origen:</strong>
+                                                <br>{{ equipo_tarea.unidad_academica_origen.nombre }}
+                                                <br>{{ equipo_tarea.laboratorio_origen.get_nombre_display }}
+                                                
+                                                {% if equipo_tarea.unidad_academica_destino or equipo_tarea.laboratorio_destino %}
+                                                    <br><br><strong>Destino:</strong>
+                                                    {% if equipo_tarea.unidad_academica_destino %}
+                                                        <br>{{ equipo_tarea.unidad_academica_destino.nombre }}
+                                                    {% endif %}
+                                                    {% if equipo_tarea.laboratorio_destino %}
+                                                        <br>{{ equipo_tarea.laboratorio_destino.get_nombre_display }}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+
+                                            {% if equipo_tarea.procesado and equipo_tarea.fecha_procesado %}
+                                                <div class="text-success small mt-2">
+                                                    <i class="fas fa-check-circle me-1"></i>
+                                                    Procesado el {{ equipo_tarea.fecha_procesado|date:"d/m/Y H:i" }}
+                                                </div>
+                                            {% endif %}
+
+                                            {% if equipo_tarea.observaciones_equipo %}
+                                                <div class="alert alert-info small mt-2 mb-0">
+                                                    <strong>Observaciones:</strong> {{ equipo_tarea.observaciones_equipo }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-cogs fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-600">No hay equipos asignados</h5>
+                            <p class="text-muted">Agrega equipos a esta tarea para comenzar el reordenamiento.</p>
+                            <a href="{% url 'equipos:buscar_equipos' %}?tarea_id={{ tarea.pk }}" 
+                               class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Buscar Equipos
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="col-lg-4">
+            <!-- Acciones Rápidas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if tarea.estado != 'completada' %}
+                            <a href="{% url 'equipos:editar_tarea' tarea.pk %}" class="btn btn-outline-primary">
+                                <i class="fas fa-edit me-2"></i>Editar Tarea
+                            </a>
+                            
+                            {% if total_equipos > 0 %}
+                                <a href="{% url 'equipos:procesar_tarea' tarea.pk %}" class="btn btn-outline-success">
+                                    <i class="fas fa-play me-2"></i>Procesar Equipos
+                                </a>
+                            {% endif %}
+                            
+                            <a href="{% url 'equipos:buscar_equipos' %}?tarea_id={{ tarea.pk }}" 
+                               class="btn btn-outline-info">
+                                <i class="fas fa-search me-2"></i>Buscar Equipos
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'equipos:eliminar_tarea' tarea.pk %}" 
+                           class="btn btn-outline-danger"
+                           onclick="return confirm('¿Está seguro de eliminar esta tarea?')">
+                            <i class="fas fa-trash me-2"></i>Eliminar Tarea
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de Cambios -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history me-2"></i>Historial de Cambios
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if logs %}
+                        <div class="timeline">
+                            {% for log in logs %}
+                                <div class="timeline-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>{{ log.accion }}</strong>
+                                            <p class="mb-1 small text-muted">{{ log.descripcion }}</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-user me-1"></i>
+                                                {{ log.usuario.get_full_name|default:log.usuario.username }}
+                                            </small>
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ log.fecha|date:"d/m H:i" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-clock fa-2x mb-2"></i>
+                            <p class="mb-0">No hay cambios registrados</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

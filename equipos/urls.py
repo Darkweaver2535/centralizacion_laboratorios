@@ -17,4 +17,18 @@ urlpatterns = [
     path('ajax/guias-laboratorio/', views.get_guias_laboratorio_ajax, name='guias_laboratorio_ajax'),
     path('ajax/practicas/', views.get_practicas_ajax, name='practicas_ajax'),
     path('ajax/laboratorios/', views.get_laboratorios_ajax, name='laboratorios_ajax'),
+    
+    # URLs para el sistema de reordenamiento
+    path('reordenamiento/', views.lista_tareas_reordenamiento, name='reordenamiento'),
+    path('reordenamiento/nueva-tarea/', views.nueva_tarea_reordenamiento, name='nueva_tarea'),
+    path('reordenamiento/tarea/<int:pk>/', views.detalle_tarea_reordenamiento, name='detalle_tarea'),
+    path('reordenamiento/tarea/<int:pk>/editar/', views.editar_tarea_reordenamiento, name='editar_tarea'),
+    path('reordenamiento/tarea/<int:pk>/eliminar/', views.eliminar_tarea_reordenamiento, name='eliminar_tarea'),
+    path('reordenamiento/tarea/<int:pk>/procesar/', views.procesar_tarea_reordenamiento, name='procesar_tarea'),
+    path('reordenamiento/buscar-equipos/', views.buscar_equipos_reordenamiento, name='buscar_equipos'),
+    path('reordenamiento/ajax/laboratorios-unidad/', views.get_laboratorios_unidad_ajax, name='laboratorios_unidad_ajax'),
+    
+    # APIs para selección de equipos en reordenamiento
+    path('api/equipos-disponibles/', views.api_equipos_disponibles, name='api_equipos_disponibles'),
+    path('api/laboratorios-por-unidad/<int:unidad_id>/', views.api_laboratorios_por_unidad, name='api_laboratorios_por_unidad'),
 ]

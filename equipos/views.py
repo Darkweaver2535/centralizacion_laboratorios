@@ -12,7 +12,7 @@ from openpyxl.utils import get_column_letter
 from django.utils import timezone
 import json
 
-from .models import Equipo, HistorialEquipo, MantenimientoEquipo
+from .models import Equipo, HistorialEquipo, MantenimientoEquipo, TareaReordenamiento, EquipoTarea, LogReordenamiento
 from core.models import UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, Practica, Laboratorio
 
 @login_required
@@ -626,3 +626,604 @@ def exportar_equipos_excel(request):
     
     wb.save(response)
     return response
+
+
+# ==========================================
+# VISTAS PARA SISTEMA DE REORDENAMIENTO
+# ==========================================
+
+@login_required
+def lista_tareas_reordenamiento(request):
+    """Vista principal para mostrar la lista de tareas de reordenamiento"""
+    
+    # Obtener filtros
+    filtros = {
+        'estado': request.GET.get('estado', ''),
+        'tipo': request.GET.get('tipo', ''),
+        'prioridad': request.GET.get('prioridad', ''),
+        'usuario_asignado': request.GET.get('usuario_asignado', ''),
+        'busqueda': request.GET.get('busqueda', ''),
+    }
+    
+    # Construir queryset con filtros
+    tareas = TareaReordenamiento.objects.select_related('usuario_creador', 'usuario_asignado')
+    
+    if filtros['estado']:
+        tareas = tareas.filter(estado=filtros['estado'])
+    
+    if filtros['tipo']:
+        tareas = tareas.filter(tipo=filtros['tipo'])
+    
+    if filtros['prioridad']:
+        tareas = tareas.filter(prioridad=filtros['prioridad'])
+    
+    if filtros['usuario_asignado']:
+        tareas = tareas.filter(usuario_asignado_id=filtros['usuario_asignado'])
+    
+    if filtros['busqueda']:
+        tareas = tareas.filter(
+            Q(titulo__icontains=filtros['busqueda']) |
+            Q(descripcion__icontains=filtros['busqueda'])
+        )
+    
+    # Paginación
+    paginator = Paginator(tareas, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Estadísticas
+    stats = {
+        'total': TareaReordenamiento.objects.count(),
+        'pendientes': TareaReordenamiento.objects.filter(estado='pendiente').count(),
+        'en_proceso': TareaReordenamiento.objects.filter(estado='en_proceso').count(),
+        'completadas': TareaReordenamiento.objects.filter(estado='completada').count(),
+    }
+    
+    context = {
+        'tareas': page_obj,
+        'filtros': filtros,
+        'stats': stats,
+        'tipos_tarea': TareaReordenamiento.TIPOS_TAREA,
+        'estados_tarea': TareaReordenamiento.ESTADOS_TAREA,
+        'prioridades': TareaReordenamiento.PRIORIDADES,
+    }
+    
+    return render(request, 'equipos/reordenamiento/lista_tareas.html', context)
+
+
+@login_required
+def api_equipos_disponibles(request):
+    """API para obtener equipos disponibles para reordenamiento"""
+    
+    # Obtener parámetros de filtrado
+    search = request.GET.get('search', '').strip()
+    unidad_id = request.GET.get('unidad_academica', '')
+    laboratorio_id = request.GET.get('laboratorio', '')
+    estado = request.GET.get('estado', '')
+    
+    # Construir queryset base
+    equipos = Equipo.objects.select_related(
+        'unidad_academica', 'carrera', 'laboratorio'
+    ).filter(
+        estado__in=['operativo', 'mantenimiento', 'reparacion', 'nuevo', 'usado']
+    )
+    
+    # Aplicar filtros
+    if search:
+        equipos = equipos.filter(
+            Q(codigo_inventario__icontains=search) |
+            Q(equipo_existente__icontains=search) |
+            Q(marca__icontains=search) |
+            Q(modelo__icontains=search)
+        )
+    
+    if unidad_id:
+        equipos = equipos.filter(unidad_academica_id=unidad_id)
+    
+    if laboratorio_id:
+        equipos = equipos.filter(laboratorio_id=laboratorio_id)
+    
+    if estado:
+        equipos = equipos.filter(estado=estado)
+    
+    # Limitar resultados
+    equipos = equipos[:100]  # Máximo 100 resultados
+    
+    # Serializar datos
+    data = []
+    for equipo in equipos:
+        data.append({
+            'id': equipo.id,
+            'codigo_inventario': equipo.codigo_inventario or f'EQ-{equipo.id:04d}',
+            'equipo_existente': equipo.equipo_existente,
+            'marca': equipo.marca or '',
+            'modelo': equipo.modelo or '',
+            'estado': equipo.estado,
+            'unidad_academica': equipo.unidad_academica.get_nombre_display() if equipo.unidad_academica else '',
+            'laboratorio': equipo.laboratorio.get_nombre_display() if equipo.laboratorio else '',
+        })
+    
+    return JsonResponse({
+        'equipos': data,
+        'total': len(data)
+    })
+
+
+@login_required
+def api_laboratorios_por_unidad(request, unidad_id):
+    """API para obtener laboratorios (simplificado - todos los laboratorios)"""
+    
+    try:
+        # Por ahora devolvemos todos los laboratorios ya que no hay relación directa
+        # En el futuro se podría agregar un campo unidad_academica a Laboratorio
+        laboratorios = Laboratorio.objects.all().order_by('nombre')
+        
+        data = []
+        for lab in laboratorios:
+            data.append({
+                'id': lab.id,
+                'nombre': lab.get_nombre_display(),
+                'descripcion': lab.descripcion or '',
+            })
+        
+        return JsonResponse({
+            'laboratorios': data
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Error al cargar laboratorios: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def nueva_tarea_reordenamiento(request):
+    """Vista para crear una nueva tarea de reordenamiento"""
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Crear la tarea
+                tarea = TareaReordenamiento.objects.create(
+                    titulo=request.POST.get('titulo'),
+                    descripcion=request.POST.get('descripcion'),
+                    tipo=request.POST.get('tipo'),
+                    prioridad=request.POST.get('prioridad'),
+                    fecha_fin_estimada=request.POST.get('fecha_fin_estimada') or None,
+                    usuario_creador=request.user,
+                    usuario_asignado_id=request.POST.get('usuario_asignado') or None,
+                    observaciones=request.POST.get('observaciones', '')
+                )
+                
+                # Procesar equipos seleccionados
+                equipos_seleccionados = request.POST.getlist('equipos_seleccionados')
+                
+                if not equipos_seleccionados:
+                    messages.error(request, 'Debe seleccionar al menos un equipo para la tarea.')
+                    raise ValueError("No se seleccionaron equipos")
+                unidad_destino_id = request.POST.get('unidad_destino')
+                laboratorio_destino_id = request.POST.get('laboratorio_destino')
+                observaciones_destino = request.POST.get('observaciones_destino', '')
+                
+                # Obtener objetos de destino si se proporcionaron
+                unidad_destino = None
+                laboratorio_destino = None
+                
+                if unidad_destino_id:
+                    try:
+                        unidad_destino = UnidadAcademica.objects.get(id=unidad_destino_id)
+                    except UnidadAcademica.DoesNotExist:
+                        pass
+                
+                if laboratorio_destino_id:
+                    try:
+                        laboratorio_destino = Laboratorio.objects.get(id=laboratorio_destino_id)
+                    except Laboratorio.DoesNotExist:
+                        pass
+                
+                # Crear EquipoTarea para cada equipo seleccionado
+                equipos_creados = 0
+                for equipo_id in equipos_seleccionados:
+                    try:
+                        equipo = Equipo.objects.get(id=equipo_id)
+                        
+                        EquipoTarea.objects.create(
+                            tarea=tarea,
+                            equipo=equipo,
+                            unidad_academica_origen=equipo.unidad_academica,
+                            laboratorio_origen=equipo.laboratorio,
+                            unidad_academica_destino=unidad_destino,
+                            laboratorio_destino=laboratorio_destino,
+                            observaciones_equipo=observaciones_destino
+                        )
+                        equipos_creados += 1
+                        
+                    except Equipo.DoesNotExist:
+                        continue
+                
+                # Crear log de creación
+                LogReordenamiento.objects.create(
+                    tarea=tarea,
+                    usuario=request.user,
+                    accion='Tarea Creada',
+                    descripcion=f'Se creó la tarea: {tarea.titulo} con {len(equipos_seleccionados)} equipos'
+                )
+                
+                messages.success(request, f'Tarea de reordenamiento creada exitosamente con {len(equipos_seleccionados)} equipos.')
+                return redirect('equipos:detalle_tarea', pk=tarea.pk)
+                
+        except Exception as e:
+            messages.error(request, f'Error al crear la tarea: {str(e)}')
+    
+    # Obtener usuarios para asignar
+    from django.contrib.auth.models import User
+    usuarios = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+    
+    # Obtener unidades académicas para el formulario de destino
+    unidades_academicas = UnidadAcademica.objects.all().order_by('nombre')
+    
+    context = {
+        'tipos_tarea': TareaReordenamiento.TIPOS_TAREA,
+        'prioridades': TareaReordenamiento.PRIORIDADES,
+        'usuarios': usuarios,
+        'unidades_academicas': unidades_academicas,
+    }
+    
+    return render(request, 'equipos/reordenamiento/nueva_tarea.html', context)
+
+
+@login_required
+def detalle_tarea_reordenamiento(request, pk):
+    """Vista detallada de una tarea de reordenamiento"""
+    
+    tarea = get_object_or_404(TareaReordenamiento, pk=pk)
+    
+    # Obtener equipos involucrados
+    equipos_tarea = EquipoTarea.objects.filter(tarea=tarea).select_related(
+        'equipo', 'unidad_academica_origen', 'laboratorio_origen',
+        'unidad_academica_destino', 'laboratorio_destino'
+    )
+    
+    # Obtener logs de la tarea
+    logs = LogReordenamiento.objects.filter(tarea=tarea).select_related('usuario')
+    
+    # Estadísticas de la tarea
+    total_equipos = equipos_tarea.count()
+    equipos_procesados = equipos_tarea.filter(procesado=True).count()
+    porcentaje_real = (equipos_procesados / total_equipos * 100) if total_equipos > 0 else 0
+    
+    context = {
+        'tarea': tarea,
+        'equipos_tarea': equipos_tarea,
+        'logs': logs,
+        'total_equipos': total_equipos,
+        'equipos_procesados': equipos_procesados,
+        'porcentaje_real': porcentaje_real,
+    }
+    
+    return render(request, 'equipos/reordenamiento/detalle_tarea.html', context)
+
+
+@login_required
+def editar_tarea_reordenamiento(request, pk):
+    """Vista para editar una tarea de reordenamiento"""
+    
+    tarea = get_object_or_404(TareaReordenamiento, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            # Guardar estado anterior para el log
+            estado_anterior = tarea.estado
+            
+            # Actualizar la tarea
+            tarea.titulo = request.POST.get('titulo')
+            tarea.descripcion = request.POST.get('descripcion')
+            tarea.tipo = request.POST.get('tipo')
+            tarea.estado = request.POST.get('estado')
+            tarea.prioridad = request.POST.get('prioridad')
+            tarea.fecha_fin_estimada = request.POST.get('fecha_fin_estimada') or None
+            tarea.usuario_asignado_id = request.POST.get('usuario_asignado') or None
+            tarea.observaciones = request.POST.get('observaciones', '')
+            tarea.porcentaje_completado = int(request.POST.get('porcentaje_completado', 0))
+            
+            # Si se marca como completada, establecer fecha fin real
+            if tarea.estado == 'completada' and not tarea.fecha_fin_real:
+                tarea.fecha_fin_real = timezone.now()
+            
+            tarea.save()
+            
+            # Crear log de modificación
+            cambios = []
+            if estado_anterior != tarea.estado:
+                cambios.append(f'Estado: {estado_anterior} → {tarea.estado}')
+            
+            if cambios:
+                LogReordenamiento.objects.create(
+                    tarea=tarea,
+                    usuario=request.user,
+                    accion='Tarea Modificada',
+                    descripcion=f'Cambios: {", ".join(cambios)}'
+                )
+            
+            messages.success(request, 'Tarea actualizada exitosamente.')
+            return redirect('equipos:detalle_tarea', pk=tarea.pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al actualizar la tarea: {str(e)}')
+    
+    # Obtener usuarios para asignar
+    from django.contrib.auth.models import User
+    usuarios = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+    
+    context = {
+        'tarea': tarea,
+        'tipos_tarea': TareaReordenamiento.TIPOS_TAREA,
+        'estados_tarea': TareaReordenamiento.ESTADOS_TAREA,
+        'prioridades': TareaReordenamiento.PRIORIDADES,
+        'usuarios': usuarios,
+    }
+    
+    return render(request, 'equipos/reordenamiento/editar_tarea.html', context)
+
+
+@login_required
+def eliminar_tarea_reordenamiento(request, pk):
+    """Vista para eliminar una tarea de reordenamiento"""
+    
+    tarea = get_object_or_404(TareaReordenamiento, pk=pk)
+    
+    if request.method == 'POST':
+        titulo_tarea = tarea.titulo
+        tarea.delete()
+        messages.success(request, f'Tarea "{titulo_tarea}" eliminada exitosamente.')
+        return redirect('equipos:reordenamiento')
+    
+    context = {
+        'tarea': tarea,
+    }
+    
+    return render(request, 'equipos/reordenamiento/eliminar_tarea.html', context)
+
+
+@login_required
+def buscar_equipos_reordenamiento(request):
+    """Vista para buscar y seleccionar equipos para reordenamiento"""
+    
+    tarea_id = request.GET.get('tarea_id')
+    tarea = get_object_or_404(TareaReordenamiento, pk=tarea_id) if tarea_id else None
+    
+    # Obtener filtros de búsqueda
+    filtros = {
+        'unidad_academica': request.GET.get('unidad_academica', ''),
+        'carrera': request.GET.get('carrera', ''),
+        'laboratorio': request.GET.get('laboratorio', ''),
+        'estado': request.GET.get('estado', ''),
+        'busqueda': request.GET.get('busqueda', ''),
+    }
+    
+    # Construir queryset
+    equipos = Equipo.objects.select_related(
+        'unidad_academica', 'carrera', 'asignatura', 'laboratorio'
+    )
+    
+    if filtros['unidad_academica']:
+        equipos = equipos.filter(unidad_academica_id=filtros['unidad_academica'])
+    
+    if filtros['carrera']:
+        equipos = equipos.filter(carrera_id=filtros['carrera'])
+    
+    if filtros['laboratorio']:
+        equipos = equipos.filter(laboratorio_id=filtros['laboratorio'])
+    
+    if filtros['estado']:
+        equipos = equipos.filter(estado=filtros['estado'])
+    
+    if filtros['busqueda']:
+        equipos = equipos.filter(
+            Q(equipo_existente__icontains=filtros['busqueda']) |
+            Q(marca__icontains=filtros['busqueda']) |
+            Q(modelo__icontains=filtros['busqueda']) |
+            Q(codigo_inventario__icontains=filtros['busqueda'])
+        )
+    
+    # Si hay una tarea, excluir equipos ya agregados
+    if tarea:
+        equipos_ya_agregados = EquipoTarea.objects.filter(tarea=tarea).values_list('equipo_id', flat=True)
+        equipos = equipos.exclude(id__in=equipos_ya_agregados)
+    
+    # Paginación
+    paginator = Paginator(equipos, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Obtener datos para filtros
+    unidades_academicas = UnidadAcademica.objects.all()
+    carreras = Carrera.objects.all()
+    laboratorios = Laboratorio.objects.all()
+    
+    context = {
+        'equipos': page_obj,
+        'tarea': tarea,
+        'filtros': filtros,
+        'unidades_academicas': unidades_academicas,
+        'carreras': carreras,
+        'laboratorios': laboratorios,
+        'estados': Equipo.ESTADOS,
+    }
+    
+    return render(request, 'equipos/reordenamiento/buscar_equipos.html', context)
+
+
+@login_required
+def procesar_tarea_reordenamiento(request, pk):
+    """Vista para procesar/ejecutar una tarea de reordenamiento"""
+    
+    tarea = get_object_or_404(TareaReordenamiento, pk=pk)
+    
+    if request.method == 'POST':
+        accion = request.POST.get('accion')
+        
+        if accion == 'agregar_equipos':
+            # Agregar equipos seleccionados a la tarea
+            equipos_ids = request.POST.getlist('equipos_seleccionados')
+            unidad_destino_id = request.POST.get('unidad_destino')
+            laboratorio_destino_id = request.POST.get('laboratorio_destino')
+            
+            try:
+                with transaction.atomic():
+                    for equipo_id in equipos_ids:
+                        equipo = get_object_or_404(Equipo, pk=equipo_id)
+                        
+                        EquipoTarea.objects.create(
+                            tarea=tarea,
+                            equipo=equipo,
+                            unidad_academica_origen=equipo.unidad_academica,
+                            laboratorio_origen=equipo.laboratorio,
+                            unidad_academica_destino_id=unidad_destino_id or None,
+                            laboratorio_destino_id=laboratorio_destino_id or None,
+                        )
+                    
+                    # Crear log
+                    LogReordenamiento.objects.create(
+                        tarea=tarea,
+                        usuario=request.user,
+                        accion='Equipos Agregados',
+                        descripcion=f'Se agregaron {len(equipos_ids)} equipos a la tarea'
+                    )
+                    
+                    messages.success(request, f'Se agregaron {len(equipos_ids)} equipos a la tarea.')
+                    
+            except Exception as e:
+                messages.error(request, f'Error al agregar equipos: {str(e)}')
+        
+        elif accion == 'ejecutar_reordenamiento':
+            # Ejecutar el reordenamiento de equipos
+            try:
+                with transaction.atomic():
+                    equipos_tarea = EquipoTarea.objects.filter(tarea=tarea, procesado=False)
+                    equipos_procesados = 0
+                    
+                    for equipo_tarea in equipos_tarea:
+                        equipo = equipo_tarea.equipo
+                        
+                        # Guardar estado anterior para historial
+                        estado_anterior = {
+                            'unidad_academica': equipo.unidad_academica,
+                            'laboratorio': equipo.laboratorio,
+                        }
+                        
+                        # Aplicar cambios según el tipo de tarea
+                        if tarea.tipo == 'reasignacion' or tarea.tipo == 'transferencia_unidad':
+                            if equipo_tarea.unidad_academica_destino:
+                                equipo.unidad_academica = equipo_tarea.unidad_academica_destino
+                            if equipo_tarea.laboratorio_destino:
+                                equipo.laboratorio = equipo_tarea.laboratorio_destino
+                        
+                        elif tarea.tipo == 'reubicacion':
+                            if equipo_tarea.laboratorio_destino:
+                                equipo.laboratorio = equipo_tarea.laboratorio_destino
+                        
+                        # Guardar equipo
+                        equipo.save()
+                        
+                        # Crear historial
+                        HistorialEquipo.objects.create(
+                            equipo=equipo,
+                            estado_anterior=equipo.estado,
+                            estado_nuevo=equipo.estado,
+                            usuario=request.user,
+                            observaciones=f'Reordenamiento por tarea: {tarea.titulo}'
+                        )
+                        
+                        # Marcar como procesado
+                        equipo_tarea.procesado = True
+                        equipo_tarea.fecha_procesado = timezone.now()
+                        equipo_tarea.save()
+                        
+                        equipos_procesados += 1
+                    
+                    # Actualizar estado de la tarea
+                    if equipos_procesados > 0:
+                        total_equipos = EquipoTarea.objects.filter(tarea=tarea).count()
+                        equipos_procesados_total = EquipoTarea.objects.filter(tarea=tarea, procesado=True).count()
+                        
+                        tarea.porcentaje_completado = int((equipos_procesados_total / total_equipos) * 100)
+                        
+                        if equipos_procesados_total == total_equipos:
+                            tarea.estado = 'completada'
+                            tarea.fecha_fin_real = timezone.now()
+                        elif tarea.estado == 'pendiente':
+                            tarea.estado = 'en_proceso'
+                            tarea.fecha_inicio = timezone.now()
+                        
+                        tarea.save()
+                        
+                        # Crear log
+                        LogReordenamiento.objects.create(
+                            tarea=tarea,
+                            usuario=request.user,
+                            accion='Reordenamiento Ejecutado',
+                            descripcion=f'Se procesaron {equipos_procesados} equipos. Progreso: {tarea.porcentaje_completado}%'
+                        )
+                        
+                        messages.success(request, f'Se procesaron {equipos_procesados} equipos exitosamente.')
+                    else:
+                        messages.warning(request, 'No hay equipos pendientes para procesar.')
+                    
+            except Exception as e:
+                messages.error(request, f'Error al ejecutar reordenamiento: {str(e)}')
+        
+        return redirect('equipos:detalle_tarea', pk=tarea.pk)
+    
+    # GET request - mostrar formulario de procesamiento
+    equipos_tarea = EquipoTarea.objects.filter(tarea=tarea).select_related('equipo')
+    unidades_academicas = UnidadAcademica.objects.all()
+    laboratorios = Laboratorio.objects.all()
+    
+    context = {
+        'tarea': tarea,
+        'equipos_tarea': equipos_tarea,
+        'unidades_academicas': unidades_academicas,
+        'laboratorios': laboratorios,
+    }
+    
+    return render(request, 'equipos/reordenamiento/procesar_tarea.html', context)
+
+
+@csrf_exempt
+@login_required
+def get_laboratorios_unidad_ajax(request):
+    """Obtener laboratorios por unidad académica via AJAX"""
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            unidad_id = data.get('unidad_id')
+            
+            if unidad_id:
+                laboratorios = Laboratorio.objects.filter(unidad_academica_id=unidad_id)
+                laboratorios_data = [
+                    {
+                        'id': lab.id,
+                        'nombre': lab.get_nombre_display()
+                    }
+                    for lab in laboratorios
+                ]
+                
+                return JsonResponse({
+                    'success': True,
+                    'laboratorios': laboratorios_data
+                })
+            else:
+                return JsonResponse({
+                    'success': True,
+                    'laboratorios': []
+                })
+                
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
