@@ -99,7 +99,7 @@ def nuevo_insumo(request):
             if request.user.is_authenticated:
                 insumo.usuario_creador = request.user
             insumo.save()
-            messages.success(request, f'Insumo "{insumo.nombre_elemento}" creado exitosamente.')
+            messages.success(request, 'Insumo agregado correctamente.')
             return redirect('insumos:lista')
         else:
             # Mostrar errores específicos para debugging
@@ -142,7 +142,7 @@ def editar_insumo(request, insumo_id):
         form = InsumoForm(request.POST, instance=insumo)
         if form.is_valid():
             insumo = form.save()
-            messages.success(request, f'Insumo "{insumo.nombre_elemento}" actualizado exitosamente.')
+            messages.success(request, 'Insumo actualizado correctamente.')
             return redirect('insumos:detalle', insumo_id=insumo.id)
         else:
             messages.error(request, 'Error al actualizar el insumo. Verifique los datos ingresados.')
@@ -170,7 +170,7 @@ def eliminar_insumo(request, insumo_id):
         
         return JsonResponse({
             'success': True,
-            'message': f'Insumo "{nombre}" eliminado exitosamente.'
+            'message': 'Insumo eliminado correctamente.'
         })
     except Exception as e:
         return JsonResponse({

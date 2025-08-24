@@ -141,7 +141,7 @@ def nueva_guia(request):
                         save=True
                     )
                 
-                messages.success(request, f'Guía "{guia.titulo}" creada exitosamente.')
+                messages.success(request, 'Guía creada correctamente.')
                 return redirect('guias:detalle', guia_id=guia.id)
                 
             except Exception as e:

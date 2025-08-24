@@ -136,7 +136,7 @@ def nuevo_equipo_view(request):
                 
                 equipo.save()
                 
-                messages.success(request, f'Equipo "{equipo.equipo_existente}" creado exitosamente.')
+                messages.success(request, 'Equipo agregado correctamente.')
                 return redirect('equipos:detalle', pk=equipo.pk)
                 
         except Exception as e:
@@ -229,7 +229,7 @@ def editar_equipo_view(request, pk):
                 
                 equipo.save()
                 
-                messages.success(request, f'Equipo "{equipo.equipo_existente}" actualizado exitosamente.')
+                messages.success(request, 'Equipo actualizado correctamente.')
                 return redirect('equipos:detalle', pk=equipo.pk)
                 
         except Exception as e:
@@ -269,7 +269,7 @@ def eliminar_equipo_view(request, pk):
     if request.method == 'POST':
         nombre_equipo = equipo.equipo_existente
         equipo.delete()
-        messages.success(request, f'Equipo "{nombre_equipo}" eliminado exitosamente.')
+        messages.success(request, 'Equipo eliminado correctamente.')
         return redirect('equipos:lista')
     
     context = {'equipo': equipo}

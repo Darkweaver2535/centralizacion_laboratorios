@@ -444,8 +444,8 @@
                             Lista de Insumos
                         </a>
                         <!-- Nueva opción: Reordenamiento Insumos -->
-                        <a href="#" class="submenu-item">
-                            <i class="fas fa-sort"></i>
+                        <a href="{% url 'insumos:reordenamiento_insumos' %}" class="submenu-item {% if request.resolver_match.namespace == 'insumos' and 'reordenamiento' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-tasks"></i>
                             Reordenamiento
                         </a>
                     </div>

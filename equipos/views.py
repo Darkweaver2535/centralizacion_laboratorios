@@ -155,7 +155,7 @@ def nuevo_equipo_view(request):
                 
                 print(f"=== EQUIPO CREADO: {equipo.pk} - {equipo.equipo_existente} ===")
                 
-                messages.success(request, f'Equipo "{equipo.equipo_existente}" creado exitosamente.')
+                messages.success(request, 'Equipo agregado correctamente.')
                 return redirect('visualizacion:analisis')  # Redirigir a la vista de visualización con 20 columnas
                 
         except ValueError as e:
@@ -252,7 +252,7 @@ def editar_equipo_view(request, pk):
                 
                 equipo.save()
                 
-                messages.success(request, f'Equipo "{equipo.equipo_existente}" actualizado exitosamente.')
+                messages.success(request, 'Equipo actualizado correctamente.')
                 return redirect('equipos:detalle', pk=equipo.pk)
                 
         except Exception as e:
@@ -292,7 +292,7 @@ def eliminar_equipo_view(request, pk):
     if request.method == 'POST':
         nombre_equipo = equipo.equipo_existente
         equipo.delete()
-        messages.success(request, f'Equipo "{nombre_equipo}" eliminado exitosamente.')
+        messages.success(request, 'Equipo eliminado correctamente.')
         return redirect('visualizacion:analisis')
     
     context = {'equipo': equipo}
@@ -846,10 +846,10 @@ def nueva_tarea_reordenamiento(request):
                     tarea=tarea,
                     usuario=request.user,
                     accion='Tarea Creada',
-                    descripcion=f'Se creó la tarea: {tarea.titulo} con {len(equipos_seleccionados)} equipos'
+                    descripcion=f'Nueva tarea de reordenamiento con {len(equipos_seleccionados)} equipos'
                 )
                 
-                messages.success(request, f'Tarea de reordenamiento creada exitosamente con {len(equipos_seleccionados)} equipos.')
+                messages.success(request, 'Tarea de reordenamiento creada correctamente.')
                 return redirect('equipos:detalle_tarea', pk=tarea.pk)
                 
         except Exception as e:

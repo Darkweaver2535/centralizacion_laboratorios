@@ -373,3 +373,266 @@ class SolicitudInsumo(models.Model):
     
     def __str__(self):
         return f"Solicitud de {self.insumo.nombre} - {self.solicitante.username} - {self.get_estado_display()}"
+
+
+# ================================
+# MODELOS PARA REORDENAMIENTO DE INSUMOS
+# ================================
+
+class TareaReordenamientoInsumo(models.Model):
+    """Modelo para gestionar tareas de reordenamiento de insumos"""
+    TIPOS_TAREA = [
+        ('reasignacion', 'Reasignación de Insumos'),
+        ('reubicacion', 'Reubicación de Insumos'),
+        ('cambio_categoria', 'Cambio de Categoría'),
+        ('modificacion_datos', 'Modificación de Datos'),
+        ('transferencia_unidad', 'Transferencia entre Unidades'),
+        ('actualizacion_inventario', 'Actualización de Inventario'),
+        ('control_stock', 'Control de Stock'),
+        ('verificacion_vencimientos', 'Verificación de Vencimientos'),
+    ]
+    
+    ESTADOS_TAREA = [
+        ('pendiente', 'Pendiente'),
+        ('en_proceso', 'En Proceso'),
+        ('completada', 'Completada'),
+        ('cancelada', 'Cancelada'),
+        ('pausada', 'Pausada'),
+    ]
+    
+    PRIORIDADES = [
+        ('baja', 'Baja'),
+        ('media', 'Media'),
+        ('alta', 'Alta'),
+        ('urgente', 'Urgente'),
+    ]
+    
+    # Información básica de la tarea
+    titulo = models.CharField(
+        max_length=200,
+        verbose_name="Título de la Tarea"
+    )
+    descripcion = models.TextField(
+        verbose_name="Descripción",
+        help_text="Descripción detallada de la tarea a realizar"
+    )
+    tipo = models.CharField(
+        max_length=30,
+        choices=TIPOS_TAREA,
+        verbose_name="Tipo de Tarea"
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADOS_TAREA,
+        default='pendiente',
+        verbose_name="Estado"
+    )
+    prioridad = models.CharField(
+        max_length=10,
+        choices=PRIORIDADES,
+        default='media',
+        verbose_name="Prioridad"
+    )
+    
+    # Fechas
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_inicio = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Inicio"
+    )
+    fecha_fin_estimada = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha Fin Estimada"
+    )
+    fecha_fin_real = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha Fin Real"
+    )
+    
+    # Usuarios responsables
+    usuario_creador = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tareas_insumos_creadas',
+        verbose_name="Usuario Creador"
+    )
+    usuario_asignado = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tareas_insumos_asignadas',
+        null=True,
+        blank=True,
+        verbose_name="Usuario Asignado"
+    )
+    
+    # Datos adicionales
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name="Observaciones"
+    )
+    porcentaje_completado = models.IntegerField(
+        default=0,
+        verbose_name="Porcentaje Completado (%)"
+    )
+    
+    class Meta:
+        verbose_name = "Tarea de Reordenamiento de Insumo"
+        verbose_name_plural = "Tareas de Reordenamiento de Insumos"
+        ordering = ['-fecha_creacion']
+    
+    def __str__(self):
+        return f"{self.titulo} - {self.get_estado_display()}"
+    
+    def get_color_prioridad(self):
+        """Retorna el color CSS según la prioridad"""
+        colores = {
+            'baja': '#22c55e',    # Verde
+            'media': '#f59e0b',   # Amarillo
+            'alta': '#ef4444',    # Rojo
+            'urgente': '#dc2626'  # Rojo oscuro
+        }
+        return colores.get(self.prioridad, '#6b7280')
+    
+    def get_color_estado(self):
+        """Retorna el color CSS según el estado"""
+        colores = {
+            'pendiente': '#6b7280',   # Gris
+            'en_proceso': '#3b82f6', # Azul
+            'completada': '#22c55e', # Verde
+            'cancelada': '#ef4444',  # Rojo
+            'pausada': '#f59e0b'     # Amarillo
+        }
+        return colores.get(self.estado, '#6b7280')
+
+
+class InsumoTarea(models.Model):
+    """Relación entre insumos y tareas de reordenamiento"""
+    tarea = models.ForeignKey(
+        TareaReordenamientoInsumo,
+        on_delete=models.CASCADE,
+        related_name='insumos'
+    )
+    insumo = models.ForeignKey(
+        Insumo,
+        on_delete=models.CASCADE,
+        related_name='tareas_reordenamiento'
+    )
+    
+    # Datos originales (antes del reordenamiento)
+    unidad_academica_original = models.ForeignKey(
+        'core.UnidadAcademica',
+        on_delete=models.CASCADE,
+        related_name='insumos_tareas_origen',
+        null=True,
+        blank=True,
+        verbose_name="Unidad Académica Original"
+    )
+    carrera_original = models.ForeignKey(
+        'core.Carrera',
+        on_delete=models.CASCADE,
+        related_name='insumos_tareas_origen',
+        null=True,
+        blank=True,
+        verbose_name="Carrera Original"
+    )
+    laboratorio_original = models.ForeignKey(
+        'core.Laboratorio',
+        on_delete=models.CASCADE,
+        related_name='insumos_tareas_origen',
+        null=True,
+        blank=True,
+        verbose_name="Laboratorio Original"
+    )
+    categoria_original = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Categoría Original"
+    )
+    
+    # Datos objetivo (después del reordenamiento)
+    unidad_academica_objetivo = models.ForeignKey(
+        'core.UnidadAcademica',
+        on_delete=models.CASCADE,
+        related_name='insumos_tareas_destino',
+        null=True,
+        blank=True,
+        verbose_name="Unidad Académica Objetivo"
+    )
+    carrera_objetivo = models.ForeignKey(
+        'core.Carrera',
+        on_delete=models.CASCADE,
+        related_name='insumos_tareas_destino',
+        null=True,
+        blank=True,
+        verbose_name="Carrera Objetivo"
+    )
+    laboratorio_objetivo = models.ForeignKey(
+        'core.Laboratorio',
+        on_delete=models.CASCADE,
+        related_name='insumos_tareas_destino',
+        null=True,
+        blank=True,
+        verbose_name="Laboratorio Objetivo"
+    )
+    categoria_objetivo = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Categoría Objetivo"
+    )
+    
+    # Estado de procesamiento
+    procesado = models.BooleanField(
+        default=False,
+        verbose_name="Procesado"
+    )
+    fecha_procesamiento = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Procesamiento"
+    )
+    observaciones_procesamiento = models.TextField(
+        blank=True,
+        verbose_name="Observaciones del Procesamiento"
+    )
+    
+    class Meta:
+        verbose_name = "Insumo en Tarea"
+        verbose_name_plural = "Insumos en Tareas"
+        unique_together = ['tarea', 'insumo']
+    
+    def __str__(self):
+        return f"{self.insumo.nombre_elemento} - {self.tarea.titulo}"
+
+
+class LogReordenamientoInsumo(models.Model):
+    """Log de acciones realizadas en las tareas de reordenamiento de insumos"""
+    tarea = models.ForeignKey(
+        TareaReordenamientoInsumo,
+        on_delete=models.CASCADE,
+        related_name='logs'
+    )
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Usuario"
+    )
+    accion = models.CharField(
+        max_length=200,
+        verbose_name="Acción Realizada"
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name="Descripción Detallada"
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Log de Reordenamiento de Insumo"
+        verbose_name_plural = "Logs de Reordenamiento de Insumos"
+        ordering = ['-fecha']
+    
+    def __str__(self):
+        return f"{self.tarea.titulo} - {self.accion} - {self.usuario.username}"

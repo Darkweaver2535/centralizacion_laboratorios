@@ -1,0 +1,1217 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar {{ tarea.titulo }} - Reordenamiento{% endblock %}
+
+{% block content %}
+<div class="eliminar-tarea-insumos-container">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb-section">
+        <div class="breadcrumb-nav">
+            <a href="{% url 'insumos:reordenamiento_insumos' %}" class="breadcrumb-link">
+                <i class="fas fa-vials"></i> Reordenamiento
+            </a>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <a href="{% url 'insumos:detalle_tarea_reordenamiento' tarea.pk %}" class="breadcrumb-link">
+                {{ tarea.titulo|truncatechars:20 }}
+            </a>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <span class="breadcrumb-current">Eliminar</span>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="header-section danger">
+        <div class="header-content">
+            <div class="header-info">
+                <h1>
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Eliminar Tarea de Reordenamiento
+                </h1>
+                <p>Esta acción es permanente y no se puede deshacer</p>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'insumos:detalle_tarea_reordenamiento' tarea.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al Detalle
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-container">
+        <div class="danger-zone">
+            <!-- Danger Alert -->
+            <div class="danger-alert">
+                <div class="alert-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>¡Atención! Acción Irreversible</h3>
+                </div>
+                <div class="alert-content">
+                    <p>
+                        Estás a punto de eliminar permanentemente esta tarea de reordenamiento. 
+                        <strong>Esta acción no se puede deshacer</strong> y afectará todos los datos asociados.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Task Information Card -->
+            <div class="task-info-card">
+                <div class="card-header">
+                    <h4><i class="fas fa-info-circle"></i> Información de la Tarea a Eliminar</h4>
+                </div>
+                <div class="card-content">
+                    <div class="info-grid">
+                        <div class="info-section">
+                            <div class="info-item">
+                                <label>Título:</label>
+                                <span class="task-title">{{ tarea.titulo }}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Tipo:</label>
+                                <span class="badge-tipo">{{ tarea.get_tipo_display }}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Estado:</label>
+                                <span class="badge-estado estado-{{ tarea.estado }}">{{ tarea.get_estado_display }}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Prioridad:</label>
+                                <span class="badge-prioridad prioridad-{{ tarea.prioridad }}">{{ tarea.get_prioridad_display }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-section">
+                            <div class="info-item">
+                                <label>Creada por:</label>
+                                <span>{{ tarea.usuario_creador.get_full_name|default:tarea.usuario_creador.username }}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Fecha de creación:</label>
+                                <span>{{ tarea.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                            </div>
+                            {% if tarea.usuario_asignado %}
+                            <div class="info-item">
+                                <label>Asignada a:</label>
+                                <span>{{ tarea.usuario_asignado.get_full_name|default:tarea.usuario_asignado.username }}</span>
+                            </div>
+                            {% endif %}
+                            {% if tarea.fecha_fin_estimada %}
+                            <div class="info-item">
+                                <label>Fecha fin estimada:</label>
+                                <span>{{ tarea.fecha_fin_estimada|date:"d/m/Y" }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if tarea.descripcion %}
+                    <div class="description-section">
+                        <label>Descripción:</label>
+                        <div class="description-text">{{ tarea.descripcion|linebreaks }}</div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Progress Section -->
+                    <div class="progress-section">
+                        <label>Progreso actual:</label>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ tarea.porcentaje_completado }}%"></div>
+                            </div>
+                            <span class="progress-text">{{ tarea.porcentaje_completado }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insumos Impact Card -->
+            <div class="impact-card">
+                <div class="card-header warning">
+                    <h4><i class="fas fa-vials"></i> Impacto en Insumos Asociados</h4>
+                </div>
+                <div class="card-content">
+                    {% if tarea.insumos_tarea.count > 0 %}
+                        <div class="impact-stats">
+                            <div class="stat-item">
+                                <div class="stat-number">{{ tarea.insumos_tarea.count }}</div>
+                                <div class="stat-label">Insumo{{ tarea.insumos_tarea.count|pluralize }} Asociado{{ tarea.insumos_tarea.count|pluralize }}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">{{ insumos_procesados|default:0 }}</div>
+                                <div class="stat-label">Procesado{{ insumos_procesados|default:0|pluralize }}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">{{ insumos_pendientes|default:0 }}</div>
+                                <div class="stat-label">Pendiente{{ insumos_pendientes|default:0|pluralize }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="impact-consequences">
+                            <h5><i class="fas fa-list-check"></i> Consecuencias de la eliminación:</h5>
+                            <ul class="consequences-list">
+                                <li class="consequence-item safe">
+                                    <i class="fas fa-check-circle"></i>
+                                    Los insumos <strong>NO serán eliminados</strong> del sistema
+                                </li>
+                                <li class="consequence-item neutral">
+                                    <i class="fas fa-unlink"></i>
+                                    Se eliminará la asociación con esta tarea
+                                </li>
+                                <li class="consequence-item safe">
+                                    <i class="fas fa-save"></i>
+                                    Los cambios ya procesados se mantendrán
+                                </li>
+                                <li class="consequence-item warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Los insumos pendientes quedarán en estado original
+                                </li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="no-impact">
+                            <i class="fas fa-check-circle"></i>
+                            <p>Esta tarea no tiene insumos asociados, por lo que no habrá impacto en el inventario.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Confirmation Form -->
+            <div class="confirmation-card">
+                <div class="card-header danger">
+                    <h4><i class="fas fa-shield-alt"></i> Confirmación de Eliminación</h4>
+                </div>
+                <div class="card-content">
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        
+                        {% if tarea.estado == 'en_proceso' %}
+                        <div class="process-warning">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>Nota importante:</strong> Esta tarea está en proceso. Si tiene insumos 
+                                parcialmente procesados, considera cancelar la tarea en lugar de eliminarla 
+                                para mantener el historial completo.
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="confirmation-steps">
+                            <div class="step-item">
+                                <div class="step-checkbox">
+                                    <input type="checkbox" id="step1" class="confirmation-checkbox">
+                                    <label for="step1"></label>
+                                </div>
+                                <div class="step-content">
+                                    <strong>He leído y entiendo las consecuencias</strong>
+                                    <p>Comprendo que esta acción eliminará permanentemente la tarea y sus asociaciones.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="step-item">
+                                <div class="step-checkbox">
+                                    <input type="checkbox" id="step2" class="confirmation-checkbox">
+                                    <label for="step2"></label>
+                                </div>
+                                <div class="step-content">
+                                    <strong>Confirmo que no hay alternativas viables</strong>
+                                    <p>He considerado editar, cancelar o completar la tarea como alternativas.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="step-item">
+                                <div class="step-checkbox">
+                                    <input type="checkbox" id="step3" class="confirmation-checkbox">
+                                    <label for="step3"></label>
+                                </div>
+                                <div class="step-content">
+                                    <strong>Acepto la responsabilidad de esta acción</strong>
+                                    <p>Entiendo que esta eliminación será registrada y no puede deshacerse.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <div class="actions-left">
+                                <a href="{% url 'insumos:detalle_tarea_reordenamiento' tarea.pk %}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                            </div>
+                            <div class="actions-right">
+                                {% if tarea.estado != 'completada' and tarea.estado != 'cancelada' %}
+                                    <a href="{% url 'insumos:editar_tarea_reordenamiento' tarea.pk %}" 
+                                       class="btn btn-warning">
+                                        <i class="fas fa-ban"></i> Cancelar Tarea (Recomendado)
+                                    </a>
+                                {% endif %}
+                                <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                                    <i class="fas fa-trash"></i> Eliminar Permanentemente
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Alternatives Card -->
+            <div class="alternatives-card">
+                <div class="card-header info">
+                    <h4><i class="fas fa-lightbulb"></i> ¿No estás seguro? Considera estas alternativas</h4>
+                </div>
+                <div class="card-content">
+                    <div class="alternatives-grid">
+                        <div class="alternative-item">
+                            <div class="alternative-icon edit">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="alternative-content">
+                                <h5>Editar la Tarea</h5>
+                                <p>Modifica la información, cambia el estado o actualiza la asignación.</p>
+                                <a href="{% url 'insumos:editar_tarea_reordenamiento' tarea.pk %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="alternative-item">
+                            <div class="alternative-icon cancel">
+                                <i class="fas fa-ban"></i>
+                            </div>
+                            <div class="alternative-content">
+                                <h5>Cancelar la Tarea</h5>
+                                <p>Mantiene el historial pero marca la tarea como cancelada.</p>
+                                <a href="{% url 'insumos:editar_tarea_reordenamiento' tarea.pk %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-ban"></i> Cancelar
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="alternative-item">
+                            <div class="alternative-icon complete">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="alternative-content">
+                                <h5>Completar la Tarea</h5>
+                                <p>Si la tarea ya no es necesaria, márcala como completada.</p>
+                                <a href="{% url 'insumos:editar_tarea_reordenamiento' tarea.pk %}" class="btn btn-outline-success">
+                                    <i class="fas fa-check"></i> Completar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .eliminar-tarea-insumos-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-section {
+        margin-bottom: 25px;
+    }
+
+    .breadcrumb-nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    .breadcrumb-link {
+        color: #3b82f6;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb-link:hover {
+        color: #1e3a8a;
+        text-decoration: none;
+    }
+
+    .breadcrumb-separator {
+        color: #cbd5e0;
+        font-size: 12px;
+    }
+
+    .breadcrumb-current {
+        color: #374151;
+        font-weight: 500;
+    }
+
+    /* Header Section */
+    .header-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 25px;
+    }
+
+    .header-section.danger {
+        border-left: 4px solid #ef4444;
+        background: linear-gradient(135deg, #fef2f2, #ffffff);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .header-info h1 {
+        margin: 0 0 8px 0;
+        color: #dc2626;
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-info p {
+        margin: 0;
+        color: #7f1d1d;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    /* Content Container */
+    .content-container {
+        display: grid;
+        gap: 25px;
+    }
+
+    .danger-zone {
+        display: grid;
+        gap: 20px;
+    }
+
+    /* Card Styles */
+    .danger-alert,
+    .task-info-card,
+    .impact-card,
+    .confirmation-card,
+    .alternatives-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 20px 25px;
+        border-bottom: 2px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card-header.danger {
+        background: linear-gradient(135deg, #fef2f2, #fee2e2);
+        border-bottom-color: #fecaca;
+    }
+
+    .card-header.warning {
+        background: linear-gradient(135deg, #fffbeb, #fef3c7);
+        border-bottom-color: #fed7aa;
+    }
+
+    .card-header.info {
+        background: linear-gradient(135deg, #f0f9ff, #dbeafe);
+        border-bottom-color: #bfdbfe;
+    }
+
+    .card-header h4 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card-header.danger h4 { color: #dc2626; }
+    .card-header.warning h4 { color: #d97706; }
+    .card-header.info h4 { color: #2563eb; }
+
+    .card-content {
+        padding: 25px;
+    }
+
+    /* Danger Alert */
+    .danger-alert {
+        border: 2px solid #fca5a5;
+        background: linear-gradient(135deg, #fef2f2, #ffffff);
+    }
+
+    .alert-header {
+        padding: 20px 25px;
+        background: linear-gradient(135deg, #dc2626, #ef4444);
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .alert-header h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .alert-header i {
+        font-size: 24px;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.05); }
+    }
+
+    .alert-content {
+        padding: 25px;
+    }
+
+    .alert-content p {
+        margin: 0;
+        color: #7f1d1d;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    /* Task Info */
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        margin-bottom: 20px;
+    }
+
+    .info-section {
+        display: grid;
+        gap: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .info-item label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    .info-item span {
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .task-title {
+        color: #1e3a8a !important;
+        font-weight: 600 !important;
+        font-size: 16px !important;
+    }
+
+    .description-section {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .description-section label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .description-text {
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.6;
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 3px solid #3b82f6;
+    }
+
+    /* Progress */
+    .progress-section {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .progress-section label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .progress-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .progress-bar {
+        flex: 1;
+        height: 20px;
+        background: #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #1e3a8a);
+        border-radius: 10px;
+        transition: width 0.3s ease;
+        position: relative;
+    }
+
+    .progress-text {
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+        min-width: 40px;
+        text-align: right;
+    }
+
+    /* Badges */
+    .badge-estado,
+    .badge-tipo,
+    .badge-prioridad {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+    }
+
+    .badge-tipo {
+        background: #f0f9ff;
+        color: #1e3a8a;
+    }
+
+    .badge-estado.estado-pendiente { background: #fef3c7; color: #92400e; }
+    .badge-estado.estado-en_proceso { background: #dbeafe; color: #1e40af; }
+    .badge-estado.estado-completada { background: #dcfce7; color: #166534; }
+    .badge-estado.estado-cancelada { background: #f3f4f6; color: #6b7280; }
+
+    .badge-prioridad.prioridad-alta { background: #fee2e2; color: #dc2626; }
+    .badge-prioridad.prioridad-media { background: #fef3c7; color: #92400e; }
+    .badge-prioridad.prioridad-baja { background: #dcfce7; color: #166534; }
+
+    /* Impact Stats */
+    .impact-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 20px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .stat-number {
+        font-size: 32px;
+        font-weight: 700;
+        color: #d97706;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 500;
+    }
+
+    /* Consequences */
+    .impact-consequences h5 {
+        color: #374151;
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .consequences-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 12px;
+    }
+
+    .consequence-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 15px;
+        border-radius: 6px;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .consequence-item.safe {
+        background: #f0fdf4;
+        color: #166534;
+        border-left: 3px solid #22c55e;
+    }
+
+    .consequence-item.neutral {
+        background: #f8fafc;
+        color: #475569;
+        border-left: 3px solid #64748b;
+    }
+
+    .consequence-item.warning {
+        background: #fffbeb;
+        color: #92400e;
+        border-left: 3px solid #f59e0b;
+    }
+
+    .consequence-item i {
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    /* No Impact */
+    .no-impact {
+        text-align: center;
+        padding: 40px 20px;
+        color: #10b981;
+    }
+
+    .no-impact i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        opacity: 0.8;
+    }
+
+    .no-impact p {
+        margin: 0;
+        font-size: 16px;
+        color: #166534;
+        font-weight: 500;
+    }
+
+    /* Process Warning */
+    .process-warning {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 15px;
+        background: #f0f9ff;
+        border-radius: 8px;
+        border-left: 4px solid #0ea5e9;
+        margin-bottom: 25px;
+    }
+
+    .process-warning i {
+        color: #0ea5e9;
+        font-size: 20px;
+        margin-top: 2px;
+    }
+
+    .process-warning div {
+        flex: 1;
+        color: #0c4a6e;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    /* Confirmation Steps */
+    .confirmation-steps {
+        margin-bottom: 30px;
+        display: grid;
+        gap: 20px;
+    }
+
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 20px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        transition: all 0.2s ease;
+    }
+
+    .step-item:has(.confirmation-checkbox:checked) {
+        background: #f0fdf4;
+        border-color: #22c55e;
+    }
+
+    .step-checkbox {
+        position: relative;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .confirmation-checkbox {
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .confirmation-checkbox + label {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .confirmation-checkbox:checked + label {
+        background: #22c55e;
+        border-color: #22c55e;
+    }
+
+    .confirmation-checkbox:checked + label::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .step-content {
+        flex: 1;
+    }
+
+    .step-content strong {
+        color: #374151;
+        font-size: 16px;
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .step-content p {
+        margin: 0;
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+        color: white;
+        box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+        box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
+    }
+
+    .btn-secondary:hover {
+        background: #4b5563;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(107, 114, 128, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-warning:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(245, 158, 11, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-outline-primary {
+        background: transparent;
+        color: #3b82f6;
+        border: 2px solid #3b82f6;
+    }
+
+    .btn-outline-primary:hover {
+        background: #3b82f6;
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-outline-warning {
+        background: transparent;
+        color: #f59e0b;
+        border: 2px solid #f59e0b;
+    }
+
+    .btn-outline-warning:hover {
+        background: #f59e0b;
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-outline-success {
+        background: transparent;
+        color: #10b981;
+        border: 2px solid #10b981;
+    }
+
+    .btn-outline-success:hover {
+        background: #10b981;
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding-top: 25px;
+        border-top: 2px solid #f1f5f9;
+    }
+
+    .actions-left,
+    .actions-right {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    /* Alternatives */
+    .alternatives-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .alternative-item {
+        display: flex;
+        gap: 15px;
+        padding: 20px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+    }
+
+    .alternative-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .alternative-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .alternative-icon.edit {
+        background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+    }
+
+    .alternative-icon.cancel {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .alternative-icon.complete {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .alternative-content {
+        flex: 1;
+    }
+
+    .alternative-content h5 {
+        margin: 0 0 8px 0;
+        color: #374151;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .alternative-content p {
+        margin: 0 0 15px 0;
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .eliminar-tarea-insumos-container {
+            padding: 15px;
+        }
+
+        .header-content {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .header-actions {
+            align-self: stretch;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .impact-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .actions-left,
+        .actions-right {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .alternatives-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Animations */
+    .danger-alert,
+    .task-info-card,
+    .impact-card,
+    .confirmation-card,
+    .alternatives-card,
+    .header-section {
+        animation: fadeInUp 0.5s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Loading state */
+    .btn.loading {
+        position: relative;
+        color: transparent !important;
+    }
+
+    .btn.loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-left: -10px;
+        margin-top: -10px;
+        width: 20px;
+        height: 20px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.confirmation-checkbox');
+    const deleteButton = document.getElementById('deleteButton');
+    const deleteForm = document.getElementById('deleteForm');
+    
+    // Función para verificar si todos los checkboxes están marcados
+    function checkAllConfirmed() {
+        const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+        deleteButton.disabled = !allChecked;
+        
+        if (allChecked) {
+            deleteButton.classList.add('btn-danger');
+            deleteButton.classList.remove('btn-secondary');
+        } else {
+            deleteButton.classList.remove('btn-danger');
+            deleteButton.classList.add('btn-secondary');
+        }
+    }
+    
+    // Event listeners para los checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', checkAllConfirmed);
+    });
+    
+    // Confirmación adicional al enviar el formulario
+    deleteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Verificación final
+        if (!Array.from(checkboxes).every(cb => cb.checked)) {
+            alert('Debes confirmar todos los puntos antes de proceder.');
+            return false;
+        }
+        
+        // Confirmación final con diálogo personalizado
+        const confirmacion = confirm(
+            '⚠️ CONFIRMACIÓN FINAL ⚠️\n\n' +
+            '¿ESTÁS COMPLETAMENTE SEGURO?\n\n' +
+            'Esta acción eliminará permanentemente la tarea "{{ tarea.titulo }}" y:\n' +
+            '• Se perderá toda la información de la tarea\n' +
+            '• Se eliminarán las asociaciones con insumos\n' +
+            '• Esta acción NO se puede deshacer\n\n' +
+            'Haz clic en "Aceptar" SOLO si estás 100% seguro.\n' +
+            'Haz clic en "Cancelar" para volver atrás.'
+        );
+        
+        if (!confirmacion) {
+            return false;
+        }
+        
+        // Mostrar estado de carga
+        deleteButton.disabled = true;
+        deleteButton.classList.add('loading');
+        deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+        
+        // Prevenir múltiples envíos
+        setTimeout(() => {
+            this.submit();
+        }, 1000);
+    });
+    
+    // Inicializar estado del botón
+    checkAllConfirmed();
+    
+    // Efecto de escritura en el título
+    const title = document.querySelector('.header-info h1');
+    const originalText = title.textContent;
+    title.style.borderRight = '2px solid #dc2626';
+    
+    // Animación sutil de peligro
+    setInterval(() => {
+        const dangerElements = document.querySelectorAll('.alert-header i');
+        dangerElements.forEach(el => {
+            el.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                el.style.transform = 'scale(1)';
+            }, 200);
+        });
+    }, 3000);
+});
+</script>
+{% endblock %}
