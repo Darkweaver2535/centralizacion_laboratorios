@@ -35,18 +35,11 @@ class Insumo(models.Model):
     Modelo para insumos de laboratorio con 19 columnas según especificación oficial
     """
     
-    # Categorías de insumos (equivalente a los tipos anteriores)
+    # Categorías de insumos (simplificadas a 3 opciones principales)
     CATEGORIAS = [
-        ('reactivos', 'Reactivos Químicos'),
-        ('materiales_laboratorio', 'Materiales de Laboratorio'),
+        ('reactivos', 'Reactivos'),
+        ('materiales', 'Materiales'),
         ('herramientas', 'Herramientas'),
-        ('consumibles', 'Consumibles'),
-        ('material_vidrio', 'Material de Vidrio'),
-        ('equipos_proteccion', 'Equipos de Protección'),
-        ('material_electronico', 'Material Electrónico'),
-        ('software', 'Software'),
-        ('licencias', 'Licencias'),
-        ('otros', 'Otros'),
     ]
     
     ESTADOS = [

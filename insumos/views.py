@@ -294,16 +294,46 @@ def exportar_excel(request):
 def api_carreras(request):
     """API para obtener carreras filtradas por unidad académica"""
     
-    unidad_academica_id = request.GET.get('unidad_academica')
+    unidad_academica = request.GET.get('unidad_academica')
     
-    if unidad_academica_id:
-        carreras = Carrera.objects.filter(unidad_academica_id=unidad_academica_id)
+    if unidad_academica:
+        # Mapear los valores del formulario a los nombres en la base de datos
+        mapeo_unidades = {
+            'la_paz': 'UALP',
+            'santa_cruz': 'UASC', 
+            'cochabamba': 'UACB',
+            'riberalta': 'UCRB',
+            'tropico': 'UATP'
+        }
+        
+        # Obtener la unidad académica por ID o por nombre mapeado
+        unidad = None
+        
+        # Si es un número, buscar por ID
+        if unidad_academica.isdigit():
+            try:
+                unidad = UnidadAcademica.objects.get(id=int(unidad_academica))
+            except UnidadAcademica.DoesNotExist:
+                return JsonResponse({'error': 'Unidad académica no encontrada'}, status=404)
+        else:
+            # Si es texto, mapear a nombre oficial
+            nombre_unidad = mapeo_unidades.get(unidad_academica)
+            if nombre_unidad:
+                try:
+                    unidad = UnidadAcademica.objects.get(nombre=nombre_unidad)
+                except UnidadAcademica.DoesNotExist:
+                    return JsonResponse({'error': f'Unidad académica {nombre_unidad} no encontrada'}, status=404)
+        
+        if unidad:
+            carreras = Carrera.objects.filter(unidad_academica=unidad)
+        else:
+            carreras = Carrera.objects.all()
     else:
         carreras = Carrera.objects.all()
     
     data = {
         'carreras': [
-            {'id': carrera.id, 'nombre': carrera.nombre}
+            {'id': carrera.id, 'nombre': carrera.get_nombre_display()}
             for carrera in carreras
         ]
     }

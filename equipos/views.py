@@ -156,7 +156,7 @@ def nuevo_equipo_view(request):
                 print(f"=== EQUIPO CREADO: {equipo.pk} - {equipo.equipo_existente} ===")
                 
                 messages.success(request, f'Equipo "{equipo.equipo_existente}" creado exitosamente.')
-                return redirect('equipos:lista')  # Cambiar a lista en lugar de detalle
+                return redirect('visualizacion:analisis')  # Redirigir a la vista de visualización con 20 columnas
                 
         except ValueError as e:
             print(f"=== ERROR VALOR: {str(e)} ===")
@@ -293,7 +293,7 @@ def eliminar_equipo_view(request, pk):
         nombre_equipo = equipo.equipo_existente
         equipo.delete()
         messages.success(request, f'Equipo "{nombre_equipo}" eliminado exitosamente.')
-        return redirect('equipos:lista')
+        return redirect('visualizacion:analisis')
     
     context = {'equipo': equipo}
     return render(request, 'equipos/eliminar.html', context)

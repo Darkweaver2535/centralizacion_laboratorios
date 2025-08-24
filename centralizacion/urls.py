@@ -38,11 +38,34 @@ def api_carreras(request):
     try:
         from core.models import UnidadAcademica, Carrera
         
-        # Obtener la unidad académica por ID
-        try:
-            unidad = UnidadAcademica.objects.get(id=unidad_academica)
-        except UnidadAcademica.DoesNotExist:
-            return JsonResponse({'error': 'Unidad académica no encontrada'}, status=404)
+        # Mapear los valores del formulario a los nombres en la base de datos
+        mapeo_unidades = {
+            'la_paz': 'UALP',
+            'santa_cruz': 'UASC', 
+            'cochabamba': 'UACB',
+            'riberalta': 'UCRB',
+            'tropico': 'UATP'
+        }
+        
+        # Obtener la unidad académica por ID o por nombre mapeado
+        unidad = None
+        
+        # Si es un número, buscar por ID
+        if unidad_academica.isdigit():
+            try:
+                unidad = UnidadAcademica.objects.get(id=int(unidad_academica))
+            except UnidadAcademica.DoesNotExist:
+                return JsonResponse({'error': 'Unidad académica no encontrada'}, status=404)
+        else:
+            # Si es texto, mapear a nombre oficial
+            nombre_unidad = mapeo_unidades.get(unidad_academica)
+            if not nombre_unidad:
+                return JsonResponse({'error': 'Unidad académica no válida'}, status=400)
+                
+            try:
+                unidad = UnidadAcademica.objects.get(nombre=nombre_unidad)
+            except UnidadAcademica.DoesNotExist:
+                return JsonResponse({'error': f'Unidad académica {nombre_unidad} no encontrada'}, status=404)
         
         # Obtener carreras de esa unidad
         carreras = Carrera.objects.filter(unidad_academica=unidad).order_by('nombre')

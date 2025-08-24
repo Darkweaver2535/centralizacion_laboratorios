@@ -352,11 +352,11 @@ def get_carreras_por_unidad(request):
             
             # Mapear los valores del formulario a los nombres en la base de datos
             mapeo_unidades = {
-                'la_paz': 'UASC',
+                'la_paz': 'UALP',
                 'santa_cruz': 'UASC', 
-                'cochabamba': 'UACBBA',
-                'riberalta': 'UARIBE',
-                'tropico': 'UATROP'
+                'cochabamba': 'UACB',
+                'riberalta': 'UCRB',
+                'tropico': 'UATP'
             }
             
             nombre_unidad = mapeo_unidades.get(unidad_academica)

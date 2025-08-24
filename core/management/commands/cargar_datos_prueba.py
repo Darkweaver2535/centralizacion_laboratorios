@@ -35,10 +35,11 @@ class Command(BaseCommand):
     def create_unidades_academicas(self):
         """Crear unidades académicas"""
         unidades = [
-            ('UASC', 'UASC - Unidad Académica Santa Cruz'),
-            ('UARIBE', 'UARIBE - Unidad Académica Riberalta'), 
-            ('UATROP', 'UATROP - Unidad Académica Trinidad'),
-            ('UACBBA', 'UACBBA - Unidad Académica Cochabamba'),
+            ('UALP', 'UALP - La Paz'),
+            ('UACB', 'UACB - Cochabamba'),
+            ('UASC', 'UASC - Santa Cruz'),
+            ('UATP', 'UATP - Trópico'),
+            ('UCRB', 'UCRB - Riberalta'),
         ]
         
         for codigo, nombre in unidades:
@@ -62,21 +63,21 @@ class Command(BaseCommand):
                 ('ING_MECATRONICA', 'Ingeniería Mecatrónica'),
                 ('LIC_BIOTECNOLOGIA', 'Licenciatura en Biotecnología'),
             ],
-            'UARIBE': [
+            'UCRB': [
                 ('ING_FORESTAL', 'Ingeniería Forestal'),
-                ('ING_SISTEMAS_RIBE', 'Ingeniería de Sistemas'),
-                ('ING_COMERCIAL_RIBE', 'Ingeniería Comercial'),
+                ('ING_SISTEMAS', 'Ingeniería de Sistemas'),
+                ('ING_COMERCIAL', 'Ingeniería Comercial'),
                 ('LIC_TURISMO', 'Licenciatura en Turismo'),
             ],
-            'UATROP': [
+            'UATP': [
                 ('ING_ZOOTECNIA', 'Ingeniería Zootécnica'),
-                ('ING_SISTEMAS_TROP', 'Ingeniería de Sistemas'),
+                ('ING_SISTEMAS', 'Ingeniería de Sistemas'),
                 ('MED_VETERINARIA', 'Medicina Veterinaria y Zootecnia'),
             ],
-            'UACBBA': [
-                ('ING_SISTEMAS_CBBA', 'Ingeniería de Sistemas'),
-                ('ING_INDUSTRIAL_CBBA', 'Ingeniería Industrial'),
-                ('ING_COMERCIAL_CBBA', 'Ingeniería Comercial'),
+            'UACB': [
+                ('ING_SISTEMAS', 'Ingeniería de Sistemas'),
+                ('ING_INDUSTRIAL', 'Ingeniería Industrial'),
+                ('ING_COMERCIAL', 'Ingeniería Comercial'),
             ]
         }
         

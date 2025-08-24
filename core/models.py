@@ -4,10 +4,11 @@ from django.contrib.auth.models import User
 class UnidadAcademica(models.Model):
     """Modelo base para las unidades académicas"""
     UNIDADES = [
-        ('UASC', 'UASC - Unidad Académica Santa Cruz'),
-        ('UARIBE', 'UARIBE - Unidad Académica Riberalta'),
-        ('UATROP', 'UATROP - Unidad Académica Trinidad'),
-        ('UACBBA', 'UACBBA - Unidad Académica Cochabamba'),
+        ('UALP', 'UALP - La Paz'),
+        ('UACB', 'UACB - Cochabamba'),
+        ('UASC', 'UASC - Santa Cruz'),
+        ('UATP', 'UATP - Trópico'),
+        ('UCRB', 'UCRB - Riberalta'),
     ]
     
     nombre = models.CharField(max_length=20, choices=UNIDADES, unique=True)
@@ -26,20 +27,24 @@ class UnidadAcademica(models.Model):
 class Carrera(models.Model):
     """Modelo base para las carreras"""
     CARRERAS = [
-        ('ING_SISTEMAS', 'Ingeniería de Sistemas'),
+        ('ING_CIVIL', 'Ingeniería Civil'),
+        ('ING_GEOGRAFICA', 'Ingeniería Geográfica'),
+        ('ING_SISTEMAS_ELECTRONICOS', 'Ingeniería en Sistemas Electrónicos'),
         ('ING_INDUSTRIAL', 'Ingeniería Industrial'),
         ('ING_COMERCIAL', 'Ingeniería Comercial'),
-        ('ING_CIVIL', 'Ingeniería Civil'),
+        ('ING_SISTEMAS', 'Ingeniería de Sistemas'),
+        ('ING_AMBIENTAL', 'Ingeniería Ambiental'),
         ('ING_PETROLERA', 'Ingeniería Petrolera'),
-        ('ING_QUIMICA', 'Ingeniería Química'),
         ('ING_MECATRONICA', 'Ingeniería Mecatrónica'),
-        ('LIC_BIOTECNOLOGIA', 'Licenciatura en Biotecnología'),
-        ('ING_SISTEMAS_RIBE', 'Ingeniería de Sistemas (Riberalta)'),
-        ('ING_COMERCIAL_RIBE', 'Ingeniería Comercial (Riberalta)'),
-        ('ING_SISTEMAS_TROP', 'Ingeniería de Sistemas (Trópico)'),
-        ('ING_SISTEMAS_CBBA', 'Ingeniería de Sistemas (Cochabamba)'),
-        ('ING_INDUSTRIAL_CBBA', 'Ingeniería Industrial (Cochabamba)'),
-        ('ING_COMERCIAL_CBBA', 'Ingeniería Comercial (Cochabamba)'),
+        ('ING_TELECOMUNICACIONES', 'Ingeniería en Telecomunicaciones'),
+        ('ING_FINANCIERA', 'Ingeniería Financiera'),
+        ('ING_AGROINDUSTRIAL', 'Ingeniería Agroindustrial'),
+        ('ING_AGRONOMICA', 'Ingeniería Agronómica'),
+        ('INFORMATICA', 'Informática'),
+        ('SISTEMAS_ELECTRONICOS', 'Sistemas Electrónicos'),
+        ('ENERGIAS_RENOVABLES', 'Energías Renovables'),
+        ('CONSTRUCCION_CIVIL', 'Construcción Civil'),
+        ('DISENO_GRAFICO', 'Diseño Gráfico y Comunicación Audiovisual'),
     ]
     
     unidad_academica = models.ForeignKey(UnidadAcademica, on_delete=models.CASCADE, related_name='carreras')
@@ -60,95 +65,92 @@ class Carrera(models.Model):
 class Asignatura(models.Model):
     """Modelo base para las asignaturas"""
     
-    # Asignaturas comunes organizadas por semestre
-    ASIGNATURAS_POR_SEMESTRE = {
-        1: [
-            ('matematica_i', 'Matemática I'),
-            ('fisica_i', 'Física I'),
-            ('quimica_general', 'Química General'),
-            ('dibujo_tecnico', 'Dibujo Técnico'),
-            ('introduccion_ingenieria', 'Introducción a la Ingeniería'),
-        ],
-        2: [
-            ('matematica_ii', 'Matemática II'),
-            ('fisica_ii', 'Física II'),
-            ('quimica_organica', 'Química Orgánica'),
-            ('programacion_i', 'Programación I'),
-            ('metodologia_investigacion', 'Metodología de la Investigación'),
-        ],
-        3: [
-            ('matematica_iii', 'Matemática III'),
-            ('fisica_iii', 'Física III'),
-            ('mecanica_materiales', 'Mecánica de Materiales'),
-            ('programacion_ii', 'Programación II'),
-            ('estadistica_probabilidades', 'Estadística y Probabilidades'),
-        ],
-        4: [
-            ('matematica_iv', 'Matemática IV'),
-            ('termodinamica', 'Termodinámica'),
-            ('resistencia_materiales', 'Resistencia de Materiales'),
-            ('circuitos_electricos', 'Circuitos Eléctricos'),
-            ('economia_ingenieria', 'Economía para Ingeniería'),
-        ],
-        5: [
-            ('ecuaciones_diferenciales', 'Ecuaciones Diferenciales'),
-            ('mecanica_fluidos', 'Mecánica de Fluidos'),
-            ('analisis_sistemas', 'Análisis de Sistemas'),
-            ('electronica_basica', 'Electrónica Básica'),
-            ('gestion_proyectos', 'Gestión de Proyectos'),
-        ],
-        6: [
-            ('metodos_numericos', 'Métodos Numéricos'),
-            ('transferencia_calor', 'Transferencia de Calor'),
-            ('bases_datos', 'Bases de Datos'),
-            ('sistemas_control', 'Sistemas de Control'),
-            ('investigacion_operativa', 'Investigación Operativa'),
-        ],
-        7: [
-            ('simulacion_sistemas', 'Simulación de Sistemas'),
-            ('ingenieria_software', 'Ingeniería de Software'),
-            ('automatizacion_industrial', 'Automatización Industrial'),
-            ('gestion_calidad', 'Gestión de Calidad'),
-            ('evaluacion_proyectos', 'Evaluación de Proyectos'),
-        ],
-        8: [
-            ('inteligencia_artificial', 'Inteligencia Artificial'),
-            ('redes_computadoras', 'Redes de Computadoras'),
-            ('procesos_industriales', 'Procesos Industriales'),
-            ('seguridad_industrial', 'Seguridad Industrial'),
-            ('formulacion_proyectos', 'Formulación de Proyectos'),
-        ],
-        9: [
-            ('proyecto_grado_i', 'Proyecto de Grado I'),
-            ('sistemas_distribuidos', 'Sistemas Distribuidos'),
-            ('optimizacion_procesos', 'Optimización de Procesos'),
-            ('gestion_ambiental', 'Gestión Ambiental'),
-            ('practica_profesional', 'Práctica Profesional'),
-        ],
-        10: [
-            ('proyecto_grado_ii', 'Proyecto de Grado II'),
-            ('auditoria_sistemas', 'Auditoría de Sistemas'),
-            ('mantenimiento_industrial', 'Mantenimiento Industrial'),
-            ('legislacion_profesional', 'Legislación Profesional'),
-            ('seminario_titulacion', 'Seminario de Titulación'),
-        ],
-    }
+    # Asignaturas básicas comunes
+    ASIGNATURAS_CHOICES = [
+        # Matemáticas y Ciencias Básicas
+        ('matematica_i', 'Matemática I'),
+        ('matematica_ii', 'Matemática II'),
+        ('matematica_iii', 'Matemática III'),
+        ('matematica_iv', 'Matemática IV'),
+        ('fisica_i', 'Física I'),
+        ('fisica_ii', 'Física II'),
+        ('fisica_iii', 'Física III'),
+        ('quimica_general', 'Química General'),
+        ('quimica_organica', 'Química Orgánica'),
+        ('estadistica_probabilidades', 'Estadística y Probabilidades'),
+        ('ecuaciones_diferenciales', 'Ecuaciones Diferenciales'),
+        ('metodos_numericos', 'Métodos Numéricos'),
+        
+        # Programación y Sistemas
+        ('programacion_i', 'Programación I'),
+        ('programacion_ii', 'Programación II'),
+        ('bases_datos', 'Bases de Datos'),
+        ('analisis_sistemas', 'Análisis de Sistemas'),
+        ('ingenieria_software', 'Ingeniería de Software'),
+        ('redes_computadoras', 'Redes de Computadoras'),
+        ('sistemas_distribuidos', 'Sistemas Distribuidos'),
+        ('inteligencia_artificial', 'Inteligencia Artificial'),
+        ('simulacion_sistemas', 'Simulación de Sistemas'),
+        ('auditoria_sistemas', 'Auditoría de Sistemas'),
+        
+        # Ingeniería Básica
+        ('dibujo_tecnico', 'Dibujo Técnico'),
+        ('mecanica_materiales', 'Mecánica de Materiales'),
+        ('resistencia_materiales', 'Resistencia de Materiales'),
+        ('termodinamica', 'Termodinámica'),
+        ('mecanica_fluidos', 'Mecánica de Fluidos'),
+        ('transferencia_calor', 'Transferencia de Calor'),
+        ('circuitos_electricos', 'Circuitos Eléctricos'),
+        ('electronica_basica', 'Electrónica Básica'),
+        ('sistemas_control', 'Sistemas de Control'),
+        ('automatizacion_industrial', 'Automatización Industrial'),
+        
+        # Gestión y Administración
+        ('economia_ingenieria', 'Economía para Ingeniería'),
+        ('gestion_proyectos', 'Gestión de Proyectos'),
+        ('evaluacion_proyectos', 'Evaluación de Proyectos'),
+        ('formulacion_proyectos', 'Formulación de Proyectos'),
+        ('investigacion_operativa', 'Investigación Operativa'),
+        ('gestion_calidad', 'Gestión de Calidad'),
+        ('calidad_procesos', 'Calidad de Procesos'),
+        ('liderazgo_equipos', 'Liderazgo de Equipos'),
+        ('emprendimiento', 'Emprendimiento'),
+        
+        # Procesos Industriales
+        ('procesos_industriales', 'Procesos Industriales'),
+        ('optimizacion_procesos', 'Optimización de Procesos'),
+        ('mantenimiento_industrial', 'Mantenimiento Industrial'),
+        ('seguridad_industrial', 'Seguridad Industrial'),
+        ('gestion_ambiental', 'Gestión Ambiental'),
+        ('desarrollo_sostenible', 'Desarrollo Sostenible'),
+        ('innovacion_tecnologica', 'Innovación Tecnológica'),
+        
+        # Idiomas y Comunicación
+        ('ingles_tecnico_i', 'Inglés Técnico I'),
+        ('ingles_tecnico_ii', 'Inglés Técnico II'),
+        ('comunicacion_tecnica', 'Comunicación Técnica'),
+        ('metodologia_investigacion', 'Metodología de la Investigación'),
+        
+        # Formación General
+        ('introduccion_ingenieria', 'Introducción a la Ingeniería'),
+        ('etica_profesional', 'Ética Profesional'),
+        ('legislacion_profesional', 'Legislación Profesional'),
+        ('responsabilidad_social', 'Responsabilidad Social'),
+        
+        # Proyecto de Grado
+        ('proyecto_grado_i', 'Proyecto de Grado I'),
+        ('proyecto_grado_ii', 'Proyecto de Grado II'),
+        ('seminario_titulacion', 'Seminario de Titulación'),
+        ('practica_profesional', 'Práctica Profesional'),
+    ]
     
-    nombre = models.CharField(max_length=50, choices=[])
-    carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE)
+    nombre = models.CharField(max_length=50, choices=ASIGNATURAS_CHOICES)
+    carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE, related_name='asignaturas')
     semestre = models.IntegerField(choices=[(i, f"{i}° Semestre") for i in range(1, 11)])
-    carga_horaria_semanal = models.IntegerField(help_text="Horas por semana")
-    carga_horaria_semestral = models.IntegerField(help_text="Total de horas en el semestre")
+    carga_horaria_semanal = models.IntegerField(default=4, help_text="Horas por semana")
+    carga_horaria_semestral = models.IntegerField(default=80, help_text="Total de horas en el semestre")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Construir choices dinámicamente
-        choices = []
-        for semestre, materias in self.ASIGNATURAS_POR_SEMESTRE.items():
-            choices.extend(materias)
-        self._meta.get_field('nombre').choices = choices
     
     class Meta:
         verbose_name = "Asignatura"
@@ -158,11 +160,6 @@ class Asignatura(models.Model):
     
     def __str__(self):
         return f"{self.get_nombre_display()} - {self.carrera} - {self.semestre}° Semestre"
-    
-    @classmethod
-    def get_asignaturas_por_semestre(cls, semestre):
-        """Obtener asignaturas disponibles para un semestre específico"""
-        return cls.ASIGNATURAS_POR_SEMESTRE.get(semestre, [])
 
 class UnidadTematica(models.Model):
     """Unidades temáticas dentro de una asignatura"""
