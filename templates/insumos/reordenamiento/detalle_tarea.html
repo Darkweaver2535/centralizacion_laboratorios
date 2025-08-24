@@ -165,14 +165,6 @@
                             <div class="progress-fill" style="width: {{ tarea.porcentaje_completado }}%"></div>
                         </div>
                     </div>
-
-                    {% if tarea.estado != 'completada' and tarea.estado != 'cancelada' and insumos_tarea.count > 0 %}
-                    <div class="action-center">
-                        <a href="{% url 'insumos:procesar_tarea_reordenamiento' tarea.pk %}" 
-                           class="btn btn-process" onclick="return confirm('¿Estás seguro de procesar esta tarea?')">
-                            <i class="fas fa-play"></i> Procesar Tarea
-                        </div>
-                    {% endif %}
                 </div>
             </div>
 

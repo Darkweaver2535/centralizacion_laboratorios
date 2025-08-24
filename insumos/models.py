@@ -108,7 +108,7 @@ class Insumo(models.Model):
     categoria = models.CharField(
         max_length=50,
         choices=CATEGORIAS,
-        default='consumible',
+        default='reactivos',
         verbose_name="Categoría"
     )
     

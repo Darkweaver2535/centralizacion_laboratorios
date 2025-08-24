@@ -270,6 +270,125 @@
             </div>
         </div>
     </div>
+
+    <!-- Insumos Section -->
+    <div class="insumos-container">
+        <div class="insumos-card">
+            <div class="insumos-header">
+                <h3><i class="fas fa-vials"></i> Insumos Asociados ({{ insumos_tarea.count }})</h3>
+                <div class="insumos-actions">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="openAgregarInsumosModal()">
+                        <i class="fas fa-plus"></i> Agregar Insumos
+                    </button>
+                    <a href="{% url 'insumos:detalle_tarea_reordenamiento' tarea.pk %}" class="btn btn-sm btn-outline">
+                        <i class="fas fa-eye"></i> Ver Detalles Completos
+                    </a>
+                </div>
+            </div>
+            <div class="insumos-content">
+                {% if insumos_tarea %}
+                    <div class="insumos-grid">
+                        {% for insumo_tarea in insumos_tarea %}
+                            <div class="insumo-item {% if insumo_tarea.procesado %}processed{% else %}pending{% endif %}" id="insumo-item-{{ insumo_tarea.id }}">
+                                <div class="insumo-info">
+                                    <h4>{{ insumo_tarea.insumo.nombre_elemento }}</h4>
+                                    <div class="insumo-details">
+                                        <span class="detail">
+                                            <strong>Categoría:</strong> 
+                                            <span class="badge-categoria">{{ insumo_tarea.insumo.get_categoria_display }}</span>
+                                        </span>
+                                        {% if insumo_tarea.insumo.marca_modelo %}
+                                        <span class="detail">
+                                            <strong>Marca:</strong> {{ insumo_tarea.insumo.marca_modelo }}
+                                        </span>
+                                        {% endif %}
+                                        <span class="detail">
+                                            <strong>Ubicación:</strong> 
+                                            {{ insumo_tarea.insumo.unidad_academica.nombre }} - 
+                                            {{ insumo_tarea.insumo.laboratorio.get_nombre_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="insumo-actions">
+                                    <div class="insumo-status">
+                                        {% if insumo_tarea.procesado %}
+                                            <span class="status-badge status-processed">
+                                                <i class="fas fa-check-circle"></i> Procesado
+                                            </span>
+                                        {% else %}
+                                            <span class="status-badge status-pending">
+                                                <i class="fas fa-clock"></i> Pendiente
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if not insumo_tarea.procesado %}
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn-action btn-remove" 
+                                                onclick="removeInsumoFromTarea({{ insumo_tarea.id }})"
+                                                title="Quitar de la tarea">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-vials"></i>
+                        <h4>No hay insumos asignados</h4>
+                        <p>Agrega insumos a esta tarea para comenzar el reordenamiento.</p>
+                        <button type="button" class="btn btn-primary" onclick="openAgregarInsumosModal()">
+                            <i class="fas fa-plus"></i> Agregar Insumos
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Agregar Insumos -->
+<div id="agregarInsumosModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-search"></i> Buscar y Agregar Insumos</h3>
+            <button type="button" class="btn-close" onclick="closeAgregarInsumosModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Filtros de búsqueda -->
+            <div class="search-filters">
+                <div class="filter-row">
+                    <input type="text" id="buscarInsumos" placeholder="Buscar por nombre, código o descripción..." class="form-input">
+                    <select id="laboratorioFiltro" class="form-input">
+                        <option value="">Todos los laboratorios</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Lista de insumos disponibles -->
+            <div class="modal-insumos-list">
+                <div id="modalInsumosContainer">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Cargando insumos...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <span id="contadorSeleccionados" style="margin-right: auto; color: #6b7280;">0 insumos seleccionados</span>
+            <button type="button" class="btn btn-secondary" onclick="closeAgregarInsumosModal()">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button type="button" class="btn btn-primary" onclick="agregarInsumosSeleccionados()">
+                <i class="fas fa-plus"></i> Agregar Seleccionados
+            </button>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -837,7 +956,621 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
+
+    /* Insumos Section */
+    .insumos-container {
+        margin-top: 30px;
+    }
+
+    .insumos-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .insumos-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        padding: 20px;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .insumos-header h3 {
+        color: #374151;
+        font-size: 1.1em;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .insumos-header h3 i {
+        color: #6366f1;
+    }
+
+    .insumos-actions .btn {
+        font-size: 0.875em;
+        padding: 6px 12px;
+    }
+
+    .insumos-content {
+        padding: 20px;
+    }
+
+    .insumos-grid {
+        display: grid;
+        gap: 15px;
+    }
+
+    .insumo-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 15px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: white;
+        transition: all 0.2s ease;
+    }
+
+    .insumo-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+    }
+
+    .btn-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875em;
+    }
+
+    .btn-remove {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .btn-remove:hover {
+        background: #fecaca;
+        transform: scale(1.05);
+    }
+
+    .insumo-item.processed {
+        border-color: #10b981;
+        background: #f0fdf4;
+    }
+
+    .insumo-item.pending {
+        border-color: #f59e0b;
+        background: #fffbeb;
+    }
+
+    .insumo-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .insumo-info h4 {
+        color: #1f2937;
+        font-size: 1em;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .insumo-details {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .insumo-details .detail {
+        font-size: 0.875em;
+        color: #6b7280;
+    }
+
+    .insumo-details .detail strong {
+        color: #374151;
+    }
+
+    .badge-categoria {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75em;
+        font-weight: 500;
+    }
+
+    .insumo-status {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.875em;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .status-processed {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6b7280;
+    }
+
+    .empty-state i {
+        font-size: 3em;
+        color: #d1d5db;
+        margin-bottom: 15px;
+    }
+
+    .empty-state h4 {
+        color: #374151;
+        font-size: 1.1em;
+        margin: 0 0 8px 0;
+    }
+
+    .empty-state p {
+        margin: 0;
+        font-size: 0.95em;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .insumos-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .insumo-item {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .insumo-actions {
+            align-items: flex-start;
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%;
+        }
+    }
+
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-close:hover {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .modal-body {
+        padding: 20px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .search-filters {
+        margin-bottom: 20px;
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 15px;
+    }
+
+    .modal-insumos-list {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .modal-insumo-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        border-bottom: 1px solid #f3f4f6;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .modal-insumo-item:hover {
+        background: #f9fafb;
+    }
+
+    .modal-insumo-item.selected {
+        background: #eff6ff;
+        border-color: #3b82f6;
+    }
+
+    .modal-insumo-info h5 {
+        margin: 0 0 4px 0;
+        color: #374151;
+        font-size: 0.95em;
+    }
+
+    .modal-insumo-info p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.85em;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 20px;
+        border-top: 1px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    .loading-state {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: #6b7280;
+        gap: 10px;
+    }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales para el modal
+    let insumosSeleccionados = [];
+    let insumosDisponibles = [];
+    
+    // Referencias al modal
+    const modal = document.getElementById('agregarInsumosModal');
+    const modalInsumosContainer = document.getElementById('modalInsumosContainer');
+    const buscarInsumosInput = document.getElementById('buscarInsumos');
+    const laboratorioFiltroSelect = document.getElementById('laboratorioFiltro');
+    const contadorSeleccionados = document.getElementById('contadorSeleccionados');
+    
+    // Función para abrir el modal
+    window.openAgregarInsumosModal = function() {
+        insumosSeleccionados = [];
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        cargarLaboratoriosFiltro();
+        cargarInsumosDisponibles();
+    };
+    
+    // Función para cerrar el modal
+    window.closeAgregarInsumosModal = function() {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        limpiarModal();
+    };
+    
+    // Función para limpiar el modal
+    function limpiarModal() {
+        buscarInsumosInput.value = '';
+        laboratorioFiltroSelect.value = '';
+        insumosSeleccionados = [];
+        actualizarContadorSeleccionados();
+        modalInsumosContainer.innerHTML = '';
+    }
+    
+    // Función para cargar laboratorios en el filtro
+    function cargarLaboratoriosFiltro() {
+        {% if unidad %}
+        const unidadId = {{ unidad.id }};
+        {% else %}
+        console.error('No hay unidad disponible');
+        return;
+        {% endif %}
+        
+        fetch(`/insumos/api/laboratorios-por-unidad/${unidadId}/`)
+            .then(response => response.json())
+            .then(data => {
+                laboratorioFiltroSelect.innerHTML = '<option value="">Todos los laboratorios</option>';
+                if (data.success && data.laboratorios) {
+                    data.laboratorios.forEach(laboratorio => {
+                        const option = document.createElement('option');
+                        option.value = laboratorio.id;
+                        option.textContent = laboratorio.nombre;
+                        laboratorioFiltroSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar laboratorios:', error);
+            });
+    }
+    
+    // Función para cargar insumos disponibles
+    function cargarInsumosDisponibles() {
+        modalInsumosContainer.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Cargando insumos...</div>';
+        
+        {% if unidad %}
+        const unidadId = {{ unidad.id }};
+        {% else %}
+        modalInsumosContainer.innerHTML = '<div class="alert alert-danger">Error: No hay unidad académica disponible</div>';
+        return;
+        {% endif %}
+        const busqueda = buscarInsumosInput.value.trim();
+        const laboratorioId = laboratorioFiltroSelect.value;
+        
+        let url = `/insumos/api/insumos-disponibles/${unidadId}/`;
+        const params = new URLSearchParams();
+        
+        if (busqueda) params.append('busqueda', busqueda);
+        if (laboratorioId) params.append('laboratorio_id', laboratorioId);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                insumosDisponibles = data;
+                mostrarInsumosEnModal(data);
+            })
+            .catch(error => {
+                console.error('Error al cargar insumos:', error);
+                modalInsumosContainer.innerHTML = '<div class="alert alert-danger">Error al cargar los insumos</div>';
+            });
+    }
+    
+    // Función para mostrar insumos en el modal
+    function mostrarInsumosEnModal(insumos) {
+        if (insumos.length === 0) {
+            modalInsumosContainer.innerHTML = '<div class="alert alert-info">No se encontraron insumos disponibles</div>';
+            return;
+        }
+        
+        modalInsumosContainer.innerHTML = '';
+        
+        insumos.forEach(insumo => {
+            const insumoDiv = document.createElement('div');
+            insumoDiv.className = 'modal-insumo-item';
+            insumoDiv.dataset.insumoId = insumo.id;
+            
+            insumoDiv.innerHTML = `
+                <div class="modal-insumo-info">
+                    <h5>${insumo.nombre}</h5>
+                    <p><strong>Categoría:</strong> ${insumo.categoria_nombre}</p>
+                    <p><strong>Laboratorio:</strong> ${insumo.laboratorio_nombre}</p>
+                    <p><strong>Cantidad:</strong> ${insumo.cantidad} ${insumo.unidad_medida || ''}</p>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="insumo_${insumo.id}">
+                    <label class="form-check-label" for="insumo_${insumo.id}">
+                        Seleccionar
+                    </label>
+                </div>
+            `;
+            
+            // Event listener para selección
+            insumoDiv.addEventListener('click', function(e) {
+                if (e.target.type !== 'checkbox') {
+                    const checkbox = insumoDiv.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    toggleInsumoSeleccion(insumo, checkbox.checked);
+                }
+            });
+            
+            const checkbox = insumoDiv.querySelector('input[type="checkbox"]');
+            checkbox.addEventListener('change', function() {
+                toggleInsumoSeleccion(insumo, this.checked);
+            });
+            
+            modalInsumosContainer.appendChild(insumoDiv);
+        });
+    }
+    
+    // Función para toggle selección de insumo
+    function toggleInsumoSeleccion(insumo, seleccionado) {
+        const insumoDiv = document.querySelector(`[data-insumo-id="${insumo.id}"]`);
+        
+        if (seleccionado) {
+            if (!insumosSeleccionados.find(i => i.id === insumo.id)) {
+                insumosSeleccionados.push(insumo);
+                insumoDiv.classList.add('selected');
+            }
+        } else {
+            insumosSeleccionados = insumosSeleccionados.filter(i => i.id !== insumo.id);
+            insumoDiv.classList.remove('selected');
+        }
+        
+        actualizarContadorSeleccionados();
+    }
+    
+    // Función para actualizar contador de seleccionados
+    function actualizarContadorSeleccionados() {
+        const cantidad = insumosSeleccionados.length;
+        contadorSeleccionados.textContent = `${cantidad} insumo${cantidad !== 1 ? 's' : ''} seleccionado${cantidad !== 1 ? 's' : ''}`;
+    }
+    
+    // Función para agregar insumos seleccionados
+    window.agregarInsumosSeleccionados = function() {
+        if (insumosSeleccionados.length === 0) {
+            alert('Por favor selecciona al menos un insumo');
+            return;
+        }
+        
+        const tareaId = {{ tarea.id }};
+        const insumosIds = insumosSeleccionados.map(i => i.id);
+        
+        // Mostrar loading
+        const btnAgregar = document.querySelector('.btn-primary[onclick="agregarInsumosSeleccionados()"]');
+        const textoOriginal = btnAgregar.textContent;
+        btnAgregar.disabled = true;
+        btnAgregar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Agregando...';
+        
+        fetch(`/insumos/reordenamiento/api/agregar-insumos-tarea/${tareaId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                insumos_ids: insumosIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeAgregarInsumosModal();
+                location.reload(); // Recargar para mostrar los nuevos insumos
+            } else {
+                alert('Error al agregar insumos: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al agregar insumos');
+        })
+        .finally(() => {
+            btnAgregar.disabled = false;
+            btnAgregar.textContent = textoOriginal;
+        });
+    };
+    
+    // Función para remover insumo de la tarea
+    window.removeInsumoFromTarea = function(insumoTareaId, insumoNombre) {
+        if (!confirm(`¿Estás seguro de que quieres remover "${insumoNombre}" de esta tarea?`)) {
+            return;
+        }
+        
+        const tareaId = {{ tarea.id }};
+        
+        fetch(`/insumos/reordenamiento/api/remover-insumo-tarea/${tareaId}/${insumoTareaId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload(); // Recargar para actualizar la lista
+            } else {
+                alert('Error al remover insumo: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al remover insumo');
+        });
+    };
+    
+    // Event listeners para el modal
+    buscarInsumosInput.addEventListener('input', function() {
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            cargarInsumosDisponibles();
+        }, 300);
+    });
+    
+    laboratorioFiltroSelect.addEventListener('change', function() {
+        cargarInsumosDisponibles();
+    });
+    
+    // Cerrar modal al hacer click fuera
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeAgregarInsumosModal();
+        }
+    });
+    
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.style.display === 'flex') {
+            closeAgregarInsumosModal();
+        }
+    });
+});
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

@@ -11,7 +11,7 @@
     <!-- Breadcrumb Navigation -->
     <div class="breadcrumb-section">
         <div class="breadcrumb-nav">
-            <a href="{% url 'insumos:reordenamiento_insumos' %}" class="breadcrumb-link">
+            <a href="{% url 'insumos:reordenamiento' %}" class="breadcrumb-link">
                 <i class="fas fa-tasks"></i> Reordenamiento
             </a>
             <span class="breadcrumb-separator">
@@ -29,7 +29,7 @@
                 <p>Complete la información para crear una nueva tarea de gestión de insumos</p>
             </div>
             <div class="header-actions">
-                <a href="{% url 'insumos:reordenamiento_insumos' %}" class="btn btn-secondary">
+                <a href="{% url 'insumos:reordenamiento' %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver a Lista
                 </a>
             </div>
@@ -323,7 +323,7 @@
 
             <!-- Form Actions -->
             <div class="form-actions">
-                <a href="{% url 'insumos:reordenamiento_insumos' %}" class="btn btn-secondary">
+                <a href="{% url 'insumos:reordenamiento' %}" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary">
@@ -1111,24 +1111,12 @@ let insumoManager = {
         const loadingState = document.getElementById('loadingState');
         const insumoList = document.getElementById('insumoList');
         
-        console.log('Loading insumos...');
-        
         // Load insumos from API
         fetch('{% url "insumos:api_insumos_disponibles" %}')
-            .then(response => {
-                console.log('Response status:', response.status);
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('API Response:', data);
-                console.log('Number of insumos:', data.insumos ? data.insumos.length : 0);
-                
                 this.allInsumos = data.insumos || [];
                 this.filteredInsumos = [...this.allInsumos];
-                
-                console.log('allInsumos length:', this.allInsumos.length);
-                console.log('filteredInsumos length:', this.filteredInsumos.length);
-                
                 this.renderInsumoList();
                 this.updateResultsCount();
                 loadingState.style.display = 'none';
@@ -1149,12 +1137,7 @@ let insumoManager = {
     renderInsumoList: function() {
         const insumoList = document.getElementById('insumoList');
         
-        console.log('renderInsumoList called');
-        console.log('filteredInsumos:', this.filteredInsumos);
-        console.log('filteredInsumos.length:', this.filteredInsumos.length);
-        
         if (this.filteredInsumos.length === 0) {
-            console.log('No insumos found, showing no results message');
             insumoList.innerHTML = `
                 <div class="loading-state">
                     <i class="fas fa-search"></i>
@@ -1164,7 +1147,6 @@ let insumoManager = {
             return;
         }
 
-        console.log('Rendering', this.filteredInsumos.length, 'insumos');
         insumoList.innerHTML = this.filteredInsumos.map(insumo => `
             <div class="insumo-item ${this.selectedInsumos.has(insumo.id) ? 'selected' : ''}" 
                  onclick="insumoManager.toggleInsumoSelection(${insumo.id})">
