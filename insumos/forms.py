@@ -35,7 +35,27 @@ class InsumoForm(forms.ModelForm):
         required=True,
         widget=forms.Select(attrs={
             'class': 'form-control',
-            'required': True
+            'required': True,
+            'data-api-url': '/insumos/api/guias-laboratorio/'
+        })
+    )
+    
+    guia_laboratorio = forms.ModelChoiceField(
+        queryset=GuiaLaboratorio.objects.none(),
+        empty_label="Seleccione una guía de laboratorio",
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'data-api-url': '/insumos/api/practicas/'
+        })
+    )
+    
+    practica = forms.ModelChoiceField(
+        queryset=Practica.objects.none(),
+        empty_label="Seleccione una práctica",
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-control'
         })
     )
     
@@ -84,6 +104,36 @@ class InsumoForm(forms.ModelForm):
             self.fields['unidad_tematica'].queryset = UnidadTematica.objects.filter(
                 asignatura=self.instance.asignatura
             ).order_by('nombre')
+        
+        # Cargar guías de laboratorio basándose en la unidad temática
+        if 'unidad_tematica' in self.data:
+            try:
+                unidad_tematica_id = int(self.data.get('unidad_tematica'))
+                self.fields['guia_laboratorio'].queryset = GuiaLaboratorio.objects.filter(
+                    unidad_tematica_id=unidad_tematica_id
+                ).order_by('numero', 'nombre')
+            except (ValueError, TypeError):
+                self.fields['guia_laboratorio'].queryset = GuiaLaboratorio.objects.none()
+        elif self.instance.pk and self.instance.unidad_tematica:
+            # Para edición, cargar las guías de la unidad temática del objeto
+            self.fields['guia_laboratorio'].queryset = GuiaLaboratorio.objects.filter(
+                unidad_tematica=self.instance.unidad_tematica
+            ).order_by('numero', 'nombre')
+        
+        # Cargar prácticas basándose en la guía de laboratorio
+        if 'guia_laboratorio' in self.data:
+            try:
+                guia_laboratorio_id = int(self.data.get('guia_laboratorio'))
+                self.fields['practica'].queryset = Practica.objects.filter(
+                    guia_laboratorio_id=guia_laboratorio_id
+                ).order_by('numero', 'nombre')
+            except (ValueError, TypeError):
+                self.fields['practica'].queryset = Practica.objects.none()
+        elif self.instance.pk and self.instance.guia_laboratorio:
+            # Para edición, cargar las prácticas de la guía del objeto
+            self.fields['practica'].queryset = Practica.objects.filter(
+                guia_laboratorio=self.instance.guia_laboratorio
+            ).order_by('numero', 'nombre')
     
     def clean_carrera(self):
         """Validación personalizada para carrera"""
@@ -121,10 +171,61 @@ class InsumoForm(forms.ModelForm):
         
         return unidad_tematica
     
+    def clean_guia_laboratorio(self):
+        """Validación personalizada para guía de laboratorio"""
+        guia_laboratorio = self.cleaned_data.get('guia_laboratorio')
+        unidad_tematica = self.cleaned_data.get('unidad_tematica')
+        
+        # Si no se selecciona guía, está bien (campo opcional)
+        if not guia_laboratorio:
+            return None
+            
+        # Validar solo si se proporcionó una guía
+        if guia_laboratorio:
+            # Verificar que existe en la base de datos
+            if not GuiaLaboratorio.objects.filter(id=guia_laboratorio.id).exists():
+                raise forms.ValidationError("La guía de laboratorio seleccionada no es válida.")
+            
+            # Si también hay unidad temática, verificar relación
+            if unidad_tematica:
+                if not GuiaLaboratorio.objects.filter(id=guia_laboratorio.id, unidad_tematica=unidad_tematica).exists():
+                    raise forms.ValidationError("La guía de laboratorio seleccionada no pertenece a la unidad temática.")
+        
+        return guia_laboratorio
+    
+    def clean_practica(self):
+        """Validación personalizada para práctica"""
+        practica = self.cleaned_data.get('practica')
+        guia_laboratorio = self.cleaned_data.get('guia_laboratorio')
+        
+        # Si no se selecciona práctica, está bien (campo opcional)
+        if not practica:
+            return None
+            
+        # Validar solo si se proporcionó una práctica
+        if practica:
+            # Verificar que existe en la base de datos
+            if not Practica.objects.filter(id=practica.id).exists():
+                raise forms.ValidationError("La práctica seleccionada no es válida.")
+            
+            # Si también hay guía, verificar relación
+            if guia_laboratorio:
+                if not Practica.objects.filter(id=practica.id, guia_laboratorio=guia_laboratorio).exists():
+                    raise forms.ValidationError("La práctica seleccionada no pertenece a la guía de laboratorio.")
+        
+        return practica
+    
+    def clean_codigo_inventario(self):
+        """Convert empty string to None to avoid unique constraint issues"""
+        codigo = self.cleaned_data.get('codigo_inventario')
+        if codigo == '':
+            return None
+        return codigo
+
     class Meta:
         model = Insumo
         fields = [
-            # Las 19 columnas oficiales
+            # Las 21 columnas oficiales (agregamos Guía y Práctica)
             'unidad_academica',           # 1. UNIDAD ACADÉMICA
             'laboratorio',                # 2. LABORATORIO
             'categoria',                  # 3. CATEGORÍA
@@ -141,9 +242,11 @@ class InsumoForm(forms.ModelForm):
             'carrera',                    # 14. CARRERA
             'asignatura',                 # 15. ASIGNATURA
             'unidad_tematica',            # 16. UNIDAD TEMÁTICA
-            'condiciones_almacenamiento', # 17. CONDICIONES DE ALMACENAMIENTO
-            'observaciones',              # 18. OBSERVACIONES
-            'link_fotografia',            # 19. LINK DE LA FOTOGRAFÍA
+            'guia_laboratorio',           # 17. GUÍA DE LABORATORIO
+            'practica',                   # 18. PRÁCTICA
+            'condiciones_almacenamiento', # 19. CONDICIONES DE ALMACENAMIENTO
+            'observaciones',              # 20. OBSERVACIONES
+            'link_fotografia',            # 21. LINK DE LA FOTOGRAFÍA
         ]
         
         widgets = {

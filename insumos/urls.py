@@ -16,6 +16,8 @@ urlpatterns = [
     path('api/carreras/', views.api_carreras, name='api_carreras'),
     path('api/asignaturas/', views.api_asignaturas, name='api_asignaturas'),
     path('api/unidades-tematicas/', views.api_unidades_tematicas, name='api_unidades_tematicas'),
+    path('api/guias-laboratorio/', views.api_guias_laboratorio, name='api_guias_laboratorio'),
+    path('api/practicas/', views.api_practicas, name='api_practicas'),
     
     # URLs de reordenamiento de insumos
     path('reordenamiento/', views_reordenamiento.lista_tareas_reordenamiento_insumos, name='reordenamiento_insumos'),

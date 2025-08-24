@@ -137,6 +137,7 @@ class Insumo(models.Model):
         max_length=100,
         unique=True,
         blank=True,
+        null=True,
         verbose_name="Código de Inventario (Interno)"
     )
     
@@ -207,7 +208,25 @@ class Insumo(models.Model):
         verbose_name="Unidad Temática"
     )
     
-    # 17. CONDICIONES DE ALMACENAMIENTO
+    # 17. GUÍA DE LABORATORIO
+    guia_laboratorio = models.ForeignKey(
+        GuiaLaboratorio, 
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name="Guía de Laboratorio"
+    )
+    
+    # 18. PRÁCTICA
+    practica = models.ForeignKey(
+        Practica, 
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name="Práctica"
+    )
+    
+    # 19. CONDICIONES DE ALMACENAMIENTO
     condiciones_almacenamiento = models.CharField(
         max_length=30,
         choices=CONDICIONES_ALMACENAMIENTO,
@@ -216,13 +235,13 @@ class Insumo(models.Model):
         verbose_name="Condiciones de Almacenamiento"
     )
     
-    # 18. OBSERVACIONES
+    # 20. OBSERVACIONES
     observaciones = models.TextField(
         blank=True,
         verbose_name="Observaciones"
     )
     
-    # 19. INGRESE EL LINK DE LA FOTOGRAFÍA DEL ELEMENTO
+    # 21. INGRESE EL LINK DE LA FOTOGRAFÍA DEL ELEMENTO
     link_fotografia = models.URLField(
         blank=True,
         verbose_name="Link de la Fotografía del Elemento",
@@ -252,6 +271,10 @@ class Insumo(models.Model):
         return f"{self.nombre_elemento} - {self.categoria} - {self.laboratorio}"
     
     def save(self, *args, **kwargs):
+        # Convertir string vacío a None para evitar problemas de unique constraint
+        if self.codigo_inventario == '':
+            self.codigo_inventario = None
+            
         # Generar código de inventario automáticamente si no existe
         if not self.codigo_inventario and self.unidad_academica and self.laboratorio:
             self.codigo_inventario = self.generar_codigo_inventario()
@@ -263,26 +286,34 @@ class Insumo(models.Model):
     
     def generar_codigo_inventario(self):
         """Generar código de inventario único para insumos"""
-        # Formato: INS-UA-LAB-NUM
-        ua_code = self.unidad_academica.nombre[:3].upper()
-        lab_code = self.laboratorio.nombre[:3].upper()
+        # Formato: INS-UA-LAB-NUM (usando IDs para evitar conflictos de nombres)
+        ua_id = self.unidad_academica.id
+        lab_id = self.laboratorio.id
         
-        # Obtener el siguiente número secuencial
-        ultimo_insumo = Insumo.objects.filter(
+        # Obtener todos los códigos existentes para esta combinación
+        existing_codes = Insumo.objects.filter(
             unidad_academica=self.unidad_academica,
-            laboratorio=self.laboratorio
-        ).order_by('-id').first()
+            laboratorio=self.laboratorio,
+            codigo_inventario__isnull=False
+        ).values_list('codigo_inventario', flat=True)
         
-        if ultimo_insumo and ultimo_insumo.codigo_inventario:
-            try:
-                ultimo_num = int(ultimo_insumo.codigo_inventario.split('-')[-1])
-                nuevo_num = ultimo_num + 1
-            except (ValueError, IndexError):
-                nuevo_num = 1
-        else:
-            nuevo_num = 1
+        # Extraer números de los códigos existentes
+        prefix = f"INS-UA{ua_id}-LAB{lab_id}-"
+        existing_nums = []
+        for code in existing_codes:
+            if code and code.startswith(prefix):
+                try:
+                    num_part = code.replace(prefix, '')
+                    existing_nums.append(int(num_part))
+                except ValueError:
+                    continue
         
-        return f"INS-{ua_code}-{lab_code}-{nuevo_num:04d}"
+        # Encontrar el siguiente número disponible
+        nuevo_num = 1
+        while nuevo_num in existing_nums:
+            nuevo_num += 1
+        
+        return f"INS-UA{ua_id}-LAB{lab_id}-{nuevo_num:04d}"
     
     def get_estado_badge_class(self):
         """Devuelve la clase CSS para el badge del estado"""

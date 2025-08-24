@@ -13,7 +13,7 @@ from openpyxl.utils import get_column_letter
 
 from .models import Insumo
 from .forms import InsumoForm
-from core.models import UnidadAcademica, Laboratorio, Carrera, Asignatura, UnidadTematica
+from core.models import UnidadAcademica, Laboratorio, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, Practica
 
 
 def lista_insumos(request):
@@ -342,19 +342,32 @@ def api_carreras(request):
 
 
 def api_asignaturas(request):
-    """API para obtener asignaturas filtradas por carrera"""
+    """API para obtener asignaturas filtradas por carrera y semestre"""
     
     carrera_id = request.GET.get('carrera')
+    semestre = request.GET.get('semestre')
     
     if carrera_id:
         asignaturas = Asignatura.objects.filter(carrera_id=carrera_id)
+        
+        # Si se especifica semestre, filtrar también por semestre
+        if semestre:
+            try:
+                semestre_int = int(semestre)
+                asignaturas = asignaturas.filter(semestre=semestre_int)
+            except ValueError:
+                pass  # Si el semestre no es un número válido, ignorar el filtro
     else:
         asignaturas = Asignatura.objects.all()
     
     data = {
         'asignaturas': [
-            {'id': asignatura.id, 'nombre': asignatura.nombre}
-            for asignatura in asignaturas
+            {
+                'id': asignatura.id, 
+                'nombre': asignatura.nombre,
+                'semestre': asignatura.semestre
+            }
+            for asignatura in asignaturas.order_by('nombre')
         ]
     }
     
@@ -374,7 +387,47 @@ def api_unidades_tematicas(request):
     data = {
         'unidades_tematicas': [
             {'id': unidad.id, 'nombre': unidad.nombre}
-            for unidad in unidades
+            for unidad in unidades.order_by('numero', 'nombre')
+        ]
+    }
+    
+    return JsonResponse(data)
+
+
+def api_guias_laboratorio(request):
+    """API para obtener guías de laboratorio filtradas por unidad temática"""
+    
+    unidad_tematica_id = request.GET.get('unidad_tematica')
+    
+    if unidad_tematica_id:
+        guias = GuiaLaboratorio.objects.filter(unidad_tematica_id=unidad_tematica_id)
+    else:
+        guias = GuiaLaboratorio.objects.all()
+    
+    data = {
+        'guias_laboratorio': [
+            {'id': guia.id, 'nombre': guia.nombre}
+            for guia in guias.order_by('numero', 'nombre')
+        ]
+    }
+    
+    return JsonResponse(data)
+
+
+def api_practicas(request):
+    """API para obtener prácticas filtradas por guía de laboratorio"""
+    
+    guia_laboratorio_id = request.GET.get('guia_laboratorio')
+    
+    if guia_laboratorio_id:
+        practicas = Practica.objects.filter(guia_laboratorio_id=guia_laboratorio_id)
+    else:
+        practicas = Practica.objects.all()
+    
+    data = {
+        'practicas': [
+            {'id': practica.id, 'nombre': practica.nombre}
+            for practica in practicas.order_by('numero', 'nombre')
         ]
     }
     

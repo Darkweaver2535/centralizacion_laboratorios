@@ -13,7 +13,11 @@
             <h2><i class="fas fa-plus-circle"></i> {{ title }}</h2>
             <p>{{ subtitle }}</p>
         </div>
-        <div class="header-actions">
+        <div cla        // Limpiar select dependiente
+        asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+        unidadTematicaSelect.innerHTML = '<option value="">Seleccione una unidad temática</option>';
+        guiaLaboratorioSelect.innerHTML = '<option value="">Seleccione una guía de laboratorio</option>';
+        practicaSelect.innerHTML = '<option value="">Seleccione una práctica</option>';"header-actions">
             <a href="{% url 'insumos:lista' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Volver a Lista de Insumos
             </a>
@@ -64,6 +68,18 @@
                     {{ form.unidad_tematica.label_tag }}
                     {{ form.unidad_tematica }}
                     <small class="form-help">Unidad temática específica</small>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.guia_laboratorio.label_tag }}
+                    {{ form.guia_laboratorio }}
+                    <small class="form-help">Guía de laboratorio relacionada</small>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.practica.label_tag }}
+                    {{ form.practica }}
+                    <small class="form-help">Práctica específica</small>
                 </div>
             </div>
         </div>
@@ -418,6 +434,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const carreraSelect = document.getElementById('id_carrera');
     const asignaturaSelect = document.getElementById('id_asignatura');
     const unidadTematicaSelect = document.getElementById('id_unidad_tematica');
+    const guiaLaboratorioSelect = document.getElementById('id_guia_laboratorio');
+    const practicaSelect = document.getElementById('id_practica');
     
     // Cargar carreras cuando cambie la unidad académica
     unidadSelect.addEventListener('change', function() {
@@ -427,6 +445,8 @@ document.addEventListener('DOMContentLoaded', function() {
         carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
         asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
         unidadTematicaSelect.innerHTML = '<option value="">Seleccione una unidad temática</option>';
+        guiaLaboratorioSelect.innerHTML = '<option value="">Seleccione una guía de laboratorio</option>';
+        practicaSelect.innerHTML = '<option value="">Seleccione una práctica</option>';
         
         if (unidadId) {
             fetch(`/insumos/api/carreras/?unidad_academica=${unidadId}`)
@@ -472,6 +492,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Limpiar select dependiente
         unidadTematicaSelect.innerHTML = '<option value="">Seleccione una unidad temática</option>';
+        guiaLaboratorioSelect.innerHTML = '<option value="">Seleccione una guía de laboratorio</option>';
+        practicaSelect.innerHTML = '<option value="">Seleccione una práctica</option>';
         
         if (asignaturaId) {
             fetch(`/insumos/api/unidades-tematicas/?asignatura=${asignaturaId}`)
@@ -485,6 +507,51 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 })
                 .catch(error => console.error('Error cargando unidades temáticas:', error));
+        }
+    });
+    
+    // Cargar guías de laboratorio cuando cambie la unidad temática
+    unidadTematicaSelect.addEventListener('change', function() {
+        const unidadTematicaId = this.value;
+        
+        // Limpiar selects dependientes
+        guiaLaboratorioSelect.innerHTML = '<option value="">Seleccione una guía de laboratorio</option>';
+        practicaSelect.innerHTML = '<option value="">Seleccione una práctica</option>';
+        
+        if (unidadTematicaId) {
+            fetch(`/insumos/api/guias-laboratorio/?unidad_tematica=${unidadTematicaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.guias_laboratorio.forEach(guia => {
+                        const option = document.createElement('option');
+                        option.value = guia.id;
+                        option.textContent = guia.nombre;
+                        guiaLaboratorioSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error cargando guías de laboratorio:', error));
+        }
+    });
+    
+    // Cargar prácticas cuando cambie la guía de laboratorio
+    guiaLaboratorioSelect.addEventListener('change', function() {
+        const guiaLaboratorioId = this.value;
+        
+        // Limpiar select dependiente
+        practicaSelect.innerHTML = '<option value="">Seleccione una práctica</option>';
+        
+        if (guiaLaboratorioId) {
+            fetch(`/insumos/api/practicas/?guia_laboratorio=${guiaLaboratorioId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.practicas.forEach(practica => {
+                        const option = document.createElement('option');
+                        option.value = practica.id;
+                        option.textContent = practica.nombre;
+                        practicaSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error cargando prácticas:', error));
         }
     });
     
