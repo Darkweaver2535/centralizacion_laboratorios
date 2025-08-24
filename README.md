@@ -306,7 +306,7 @@ python manage.py shell
 
 #### 5. Crear datos iniciales en el shell de Django:
 ```python
-from core.models import UnidadAcademica
+from core.models import UnidadAcademica, Carrera
 from insumos.models import TipoInsumo
 from django.contrib.auth.models import User
 
@@ -321,6 +321,37 @@ unidades = [
 
 for unidad_data in unidades:
     UnidadAcademica.objects.get_or_create(**unidad_data)
+
+# Carreras oficiales EMI
+carreras_licenciatura = [
+    "Ingeniería Civil", "Ingeniería Geográfica", "Ingeniería en Sistemas Electrónicos",
+    "Ingeniería Industrial", "Ingeniería Comercial", "Ingeniería de Sistemas",
+    "Ingeniería Ambiental", "Ingeniería Petrolera", "Ingeniería Mecatrónica",
+    "Ingeniería en Telecomunicaciones", "Ingeniería Financiera", 
+    "Ingeniería Agroindustrial", "Ingeniería Agronómica"
+]
+
+carreras_tecnicas = [
+    "Informática", "Sistemas Electrónicos", "Energías Renovables",
+    "Construcción Civil", "Diseño Gráfico y Comunicación Audiovisual"
+]
+
+# Obtener unidad académica por defecto
+unidad_default = UnidadAcademica.objects.first()
+
+# Crear carreras de licenciatura
+for nombre in carreras_licenciatura:
+    Carrera.objects.get_or_create(
+        nombre=nombre,
+        defaults={'descripcion': f'Carrera de {nombre}', 'unidad_academica': unidad_default}
+    )
+
+# Crear carreras técnicas
+for nombre in carreras_tecnicas:
+    Carrera.objects.get_or_create(
+        nombre=nombre,
+        defaults={'descripcion': f'Carrera técnica de {nombre}', 'unidad_academica': unidad_default}
+    )
 
 # Tipos de insumo
 tipos = [
