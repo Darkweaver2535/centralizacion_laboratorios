@@ -1,4 +1,4 @@
-# Sistema de Reordenamiento de Laboratorios - EMI
+# Sistema de Centralización de Laboratorios - EMI
 
 ## "TRANSFORMANDO EL EJERCITO RUMBO AL BICENTENARIO"
 
@@ -8,10 +8,10 @@
 
 ## 📋 Descripción del Proyecto
 
-El Sistema de Reordenamiento de Laboratorios es una solución integral desarrollada por la Dirección Nacional de Investigación, Ciencia y Tecnología (DNICYT) de la Escuela Militar de Ingeniería (EMI), diseñada para centralizar, gestionar y optimizar la información sobre laboratorios, equipos y recursos académicos a nivel nacional.
+El Sistema de Centralización de Laboratorios es una solución integral desarrollada por la Dirección Nacional de Investigación, Ciencia y Tecnología (DNICYT) de la Escuela Militar de Ingeniería (EMI), diseñada para centralizar, gestionar y optimizar la información sobre laboratorios, equipos e insumos académicos a nivel nacional.
 
 ### 🎯 Objetivo Principal
-Centralizar la información de los laboratorios a nivel nacional, permitiendo una visión completa y actualizada del equipamiento disponible, su estado, ubicación y utilización, para tomar decisiones basadas en datos reales y garantizar la asignación eficiente de recursos institucionales.
+Centralizar la información de los laboratorios a nivel nacional, permitiendo una visión completa y actualizada del equipamiento e insumos disponibles, su estado, ubicación y utilización, para tomar decisiones basadas en datos reales y garantizar la asignación eficiente de recursos institucionales.
 
 ---
 
@@ -268,11 +268,125 @@ centralizacion_laboratorios/
 
 ---
 
-## 📞 Contacto y Soporte
+## �️ Instalación y Configuración
+
+### 📋 Requisitos del Sistema
+- Python 3.13.5+
+- Django 5.2.4
+- SQLite3
+- Navegador web moderno
+
+### 🚀 Instalación Rápida
+
+#### 1. Clonar el repositorio
+```bash
+git clone https://github.com/Darkweaver2535/centralizacion_laboratorios.git
+cd centralizacion_laboratorios
+```
+
+#### 2. Configurar entorno virtual
+```bash
+python -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
+```
+
+#### 3. Instalar dependencias
+```bash
+pip install -r requirements.txt
+```
+
+#### 4. Configurar base de datos
+```bash
+# Aplicar migraciones
+python manage.py migrate
+
+# Crear datos básicos
+python manage.py shell
+```
+
+#### 5. Crear datos iniciales en el shell de Django:
+```python
+from core.models import UnidadAcademica
+from insumos.models import TipoInsumo
+from django.contrib.auth.models import User
+
+# Unidades académicas
+unidades = [
+    {'nombre': 'UASC', 'descripcion': 'UASC - Unidad Académica Santa Cruz'},
+    {'nombre': 'UCRB', 'descripcion': 'UARIBE - Unidad Académica Riberalta'},
+    {'nombre': 'UATP', 'descripcion': 'UATROP - Unidad Académica Trinidad'},
+    {'nombre': 'UACB', 'descripcion': 'UACBBA - Unidad Académica Cochabamba'},
+    {'nombre': 'UALP', 'descripcion': 'Unidad Académica La Paz'}
+]
+
+for unidad_data in unidades:
+    UnidadAcademica.objects.get_or_create(**unidad_data)
+
+# Tipos de insumo
+tipos = [
+    {'nombre': 'Reactivo Químico', 'descripcion': 'Reactivos químicos para laboratorio'},
+    {'nombre': 'Material de Vidrio', 'descripcion': 'Materiales de vidrio para laboratorio'},
+    {'nombre': 'Instrumental', 'descripcion': 'Instrumentos de laboratorio'},
+    {'nombre': 'Equipo de Protección', 'descripcion': 'Equipos de protección personal'},
+    {'nombre': 'Consumible', 'descripcion': 'Materiales consumibles'}
+]
+
+for tipo_data in tipos:
+    TipoInsumo.objects.get_or_create(**tipo_data)
+
+# Usuario administrador
+User.objects.create_superuser('admin', 'admin@emi.edu.bo', 'admin123')
+exit()
+```
+
+#### 6. Ejecutar el servidor
+```bash
+python manage.py runserver
+```
+
+### 🔑 Acceso al Sistema
+- **URL**: http://127.0.0.1:8000/
+- **Usuario**: admin
+- **Contraseña**: admin123
+
+---
+
+## 🔄 Funcionalidades Actualizadas (v2.0.0)
+
+### ✅ **Nuevas Características**
+- **Sistema de Reordenamiento de Insumos**: Gestión completa de reorganización de insumos
+- **Templates Unificados**: Diseño azul consistente en todo el sistema
+- **Seguridad Mejorada**: Mensajes genéricos sin filtrar información sensible
+- **Base de Datos Optimizada**: Reducción del 99.3% en tamaño para GitHub
+- **Soporte Multi-Unidad**: Gestión simultánea de 5 unidades académicas
+
+### 🔧 **Mejoras Técnicas**
+- Eliminación de datos de prueba innecesarios
+- Optimización de consultas a BD
+- Implementación de .gitignore completo
+- Limpieza de historial de Git
+- Documentación actualizada
+
+---
+
+## 🚨 Notas Importantes
+
+⚠️ **IMPORTANTE**: La base de datos no está incluida en el repositorio por motivos de seguridad y tamaño. Debe ser recreada siguiendo los pasos de instalación.
+
+📌 **Datos Mantenidos**:
+- Unidades Académicas oficiales
+- Tipos de Insumo básicos
+- Estructura completa de tablas
+- Sistema de usuarios y permisos
+
+---
+
+## �📞 Contacto y Soporte
 
 **Desarrollo y Mantenimiento:**
 - **DNICYT - EMI**
 - **Director**: Tcnl. DIM. Jurgen Alberto Bleichner Benítez
+- **Repositorio**: [GitHub](https://github.com/Darkweaver2535/centralizacion_laboratorios)
 - **Correo**: dnicyt@emi.edu.bo
 - **Teléfono**: +591 (2) 2847474
 
