@@ -92,13 +92,8 @@ def get_carreras_por_unidad_ajax(request):
     unidad_id = request.GET.get('unidad_id')
     
     if unidad_id:
-        try:
-            from equipos.models import Equipo
-            carreras = Carrera.objects.filter(
-                id__in=Equipo.objects.filter(unidad_academica_id=unidad_id).values_list('carrera_id', flat=True).distinct()
-            ).distinct()
-        except ImportError:
-            carreras = Carrera.objects.all()
+        # Obtener todas las carreras disponibles para esta unidad académica
+        carreras = Carrera.objects.filter(unidad_academica_id=unidad_id).distinct()
     else:
         carreras = Carrera.objects.all()
     
