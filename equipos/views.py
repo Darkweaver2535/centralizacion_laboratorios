@@ -856,7 +856,8 @@ def nueva_tarea_reordenamiento(request):
             messages.error(request, f'Error al crear la tarea: {str(e)}')
     
     # Obtener usuarios para asignar
-    from django.contrib.auth.models import User
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
     usuarios = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
     
     # Obtener unidades académicas para el formulario de destino
@@ -952,7 +953,8 @@ def editar_tarea_reordenamiento(request, pk):
             messages.error(request, f'Error al actualizar la tarea: {str(e)}')
     
     # Obtener usuarios para asignar
-    from django.contrib.auth.models import User
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
     usuarios = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
     
     context = {

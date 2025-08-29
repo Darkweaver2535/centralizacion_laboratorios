@@ -1,7 +1,9 @@
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from .models import Insumo
 from core.models import UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, Practica, Laboratorio
+
+User = get_user_model()
 
 class InsumoForm(forms.ModelForm):
     """Formulario para el registro de insumos con las 19 columnas oficiales"""

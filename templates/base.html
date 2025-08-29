@@ -535,7 +535,7 @@
                 </li>
                 
                 <!-- Equipos -->
-                <li class="dropdown-menu">
+                <li class="dropdown-menu" data-dropdown="dropdown-0">
                     <button class="dropdown-toggle" onclick="toggleDropdown(this)">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <i class="fas fa-flask dropdown-icon"></i>
@@ -561,7 +561,7 @@
                 </li>
 
                 <!-- Insumos -->
-                <li class="dropdown-menu">
+                <li class="dropdown-menu" data-dropdown="dropdown-1">
                     <button class="dropdown-toggle" onclick="toggleDropdown(this)">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <i class="fas fa-boxes dropdown-icon"></i>
@@ -754,6 +754,15 @@
                 }
             });
         });
+        
+        function toggleDropdown(button) {
+            const content = button.nextElementSibling;
+            const arrow = button.querySelector('.dropdown-arrow');
+            
+            // Toggle current dropdown
+            content.classList.toggle('open');
+            button.classList.toggle('open');
+        }
     </script>
 </body>
 </html>
