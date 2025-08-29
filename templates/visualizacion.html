@@ -115,9 +115,21 @@
                         </div>
                         
                         <div class="filter-group">
+                            <label for="responsable">Responsable</label>
+                            <select id="responsable" name="responsable" class="form-control">
+                                <option value="">Todos los responsables</option>
+                                {% for resp in responsables %}
+                                    <option value="{{ resp }}" {% if filtros.responsable == resp %}selected{% endif %}>
+                                        {{ resp }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
                             <label for="busqueda">Búsqueda</label>
                             <input type="text" id="busqueda" name="busqueda" class="form-control" 
-                                   value="{{ filtros.busqueda }}" placeholder="Buscar por nombre, marca o modelo...">
+                                   value="{{ filtros.busqueda }}" placeholder="Buscar por nombre, marca, modelo o responsable...">
                         </div>
                     </div>
                     
@@ -175,6 +187,7 @@
                                     <th>UBICACIÓN (LABORATORIO)</th>
                                     <th>SECCIÓN/ÁREA</th>
                                     <th>IDENTIFICADOR/Nº AULA</th>
+                                    <th>RESPONSABLE</th>
                                     <th>EQUIPO REQUERIDO</th>
                                     <th>NÚMERO EQUIPOS REQUERIDOS</th>
                                     <th class="actions-column">ACCIONES</th>
@@ -229,6 +242,7 @@
                                     <td>{{ equipo.laboratorio.get_nombre_display }}</td>
                                     <td>{{ equipo.seccion_area|default:"N/A" }}</td>
                                     <td>{{ equipo.identificador_aula|default:"N/A" }}</td>
+                                    <td class="responsable-column">{{ equipo.responsable_excel|default:"Sin asignar" }}</td>
                                     <td>{{ equipo.equipo_requerido|default:"N/A" }}</td>
                                     <td class="text-center">{{ equipo.numero_equipos_requeridos }}</td>
                                     <td class="actions-column">
@@ -1451,6 +1465,26 @@ function mostrarMensajeExito(mensaje) {
     .badge-bueno {
         background: #d4edda;
         color: #155724;
+    }
+    
+    .responsable-column {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .responsable-column:hover {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: initial;
+        z-index: 10;
+        position: relative;
+        background: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .badge-regular {

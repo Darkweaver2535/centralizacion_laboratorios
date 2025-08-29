@@ -197,6 +197,12 @@ class Equipo(models.Model):
         on_delete=models.CASCADE,
         verbose_name="Usuario Creador"
     )
+    responsable_excel = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Responsable (del Excel)",
+        help_text="Nombre del responsable según los datos importados del Excel"
+    )
     observaciones = models.TextField(
         blank=True,
         verbose_name="Observaciones"

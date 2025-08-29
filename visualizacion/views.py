@@ -23,6 +23,7 @@ def visualizacion_view(request):
     semestre = request.GET.get('semestre', '')
     estado = request.GET.get('estado', '')
     laboratorio = request.GET.get('laboratorio', '')
+    responsable = request.GET.get('responsable', '')
     busqueda = request.GET.get('busqueda', '')
     
     # Obtener todos los equipos
@@ -42,11 +43,14 @@ def visualizacion_view(request):
         equipos = equipos.filter(estado=estado)
     if laboratorio:
         equipos = equipos.filter(laboratorio_id=laboratorio)
+    if responsable:
+        equipos = equipos.filter(responsable_excel__icontains=responsable)
     if busqueda:
         equipos = equipos.filter(
             Q(equipo_existente__icontains=busqueda) |
             Q(marca__icontains=busqueda) |
-            Q(modelo__icontains=busqueda)
+            Q(modelo__icontains=busqueda) |
+            Q(responsable_excel__icontains=busqueda)
         )
     
     # Estadísticas
@@ -67,6 +71,9 @@ def visualizacion_view(request):
     carreras = Carrera.objects.all()
     laboratorios = Laboratorio.objects.all()
     
+    # Obtener responsables únicos (solo los que tienen equipos)
+    responsables = Equipo.objects.exclude(responsable_excel='').values_list('responsable_excel', flat=True).distinct().order_by('responsable_excel')
+    
     # Choices para dropdowns
     semestres_choices = [(i, f'{i}°') for i in range(1, 11)]
     estados_choices = [
@@ -83,6 +90,7 @@ def visualizacion_view(request):
         'semestre': semestre,
         'estado': estado,
         'laboratorio': laboratorio,
+        'responsable': responsable,
         'busqueda': busqueda,
     }
     
@@ -92,6 +100,7 @@ def visualizacion_view(request):
         'unidades': unidades,
         'carreras': carreras,
         'laboratorios': laboratorios,
+        'responsables': responsables,
         'semestres_choices': semestres_choices,
         'estados_choices': estados_choices,
         'filtros': filtros,
