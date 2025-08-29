@@ -67,8 +67,10 @@ def visualizacion_view(request):
     page_number = request.GET.get('page')
     equipos_page = paginator.get_page(page_number)
     
-    # Datos para filtros
-    unidades = UnidadAcademica.objects.all()
+    # Datos para filtros - Solo mostrar unidades académicas que tienen equipos
+    unidades = UnidadAcademica.objects.filter(
+        id__in=Equipo.objects.values_list('unidad_academica_id', flat=True).distinct()
+    )
     carreras = Carrera.objects.all()
     laboratorios = Laboratorio.objects.all()
     
