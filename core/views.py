@@ -20,12 +20,14 @@ def dashboard_view(request):
     try:
         from equipos.models import Equipo
         stats['total_equipos'] = Equipo.objects.count()
-        stats['equipos_operativos'] = Equipo.objects.filter(estado='operativo').count()
-        stats['equipos_mantenimiento'] = Equipo.objects.filter(estado='mantenimiento').count()
+        stats['equipos_buenos'] = Equipo.objects.filter(estado='bueno').count()
+        stats['equipos_regulares'] = Equipo.objects.filter(estado='regular').count()
+        stats['equipos_malos'] = Equipo.objects.filter(estado='malo').count()
     except ImportError:
         stats['total_equipos'] = 0
-        stats['equipos_operativos'] = 0
-        stats['equipos_mantenimiento'] = 0
+        stats['equipos_buenos'] = 0
+        stats['equipos_regulares'] = 0
+        stats['equipos_malos'] = 0
     
     try:
         from insumos.models import Insumo

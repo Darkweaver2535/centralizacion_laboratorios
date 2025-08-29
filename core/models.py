@@ -218,6 +218,14 @@ class Practica(models.Model):
 class Laboratorio(models.Model):
     """Laboratorios físicos donde se ubican equipos"""
     LABORATORIOS = [
+        # Laboratorios según Excel de recopilación de materiales
+        ('LAB_TRATAMIENTO_AGUAS', 'Planta de Tratamiento de Aguas'),
+        ('LAB_ASFALTOS', 'Laboratorio de Asfaltos'),
+        ('LAB_HORMIGONES', 'Laboratorio de Hormigones'),
+        ('LAB_RESISTENCIA_MATERIALES', 'Laboratorio de Resistencia de Materiales y Suelos'),
+        ('LAB_LACTEOS', 'Laboratorio de Lácteos'),
+        
+        # Laboratorios adicionales comunes en universidades técnicas
         ('LAB_FISICA_1', 'Laboratorio de Física Piso 1'),
         ('LAB_FISICA_4', 'Laboratorio de Física Piso 4'),
         ('LAB_QUIMICA', 'Laboratorio de Química'),

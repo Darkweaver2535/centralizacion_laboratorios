@@ -57,8 +57,9 @@ def visualizacion_view(request):
     stats = {
         'total_equipos': equipos.count(),
         'total_laboratorios': Laboratorio.objects.count(),
-        'equipos_operativos': equipos.filter(estado='operativo').count(),
-        'equipos_mantenimiento': equipos.filter(estado='mantenimiento').count(),
+        'equipos_buenos': equipos.filter(estado='bueno').count(),
+        'equipos_regulares': equipos.filter(estado='regular').count(),
+        'equipos_malos': equipos.filter(estado='malo').count(),
     }
     
     # Paginación
@@ -77,10 +78,9 @@ def visualizacion_view(request):
     # Choices para dropdowns
     semestres_choices = [(i, f'{i}°') for i in range(1, 11)]
     estados_choices = [
-        ('operativo', 'Operativo'),
-        ('mantenimiento', 'En Mantenimiento'),
-        ('reparacion', 'En Reparación'),
-        ('inoperativo', 'Inoperativo'),
+        ('bueno', 'Bueno'),
+        ('regular', 'Regular'),
+        ('malo', 'Malo'),
     ]
     
     # Filtros aplicados (para mantener en la paginación)

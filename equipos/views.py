@@ -75,10 +75,9 @@ def equipos_view(request):
     # Estadísticas
     stats = {
         'total': equipos.count(),
-        'operativos': equipos.filter(estado='operativo').count(),
-        'mantenimiento': equipos.filter(estado='mantenimiento').count(),
-        'reparacion': equipos.filter(estado='reparacion').count(),
-        'inoperativos': equipos.filter(estado='inoperativo').count(),
+        'bueno': equipos.filter(estado='bueno').count(),
+        'regular': equipos.filter(estado='regular').count(),
+        'malo': equipos.filter(estado='malo').count(),
     }
     
     context = {
@@ -132,7 +131,7 @@ def nuevo_equipo_view(request):
                     equipo_existente=request.POST.get('equipo_existente'),
                     marca=request.POST.get('marca', ''),
                     modelo=request.POST.get('modelo', ''),
-                    estado=request.POST.get('estado', 'operativo'),
+                    estado=request.POST.get('estado', 'bueno'),
                     numero_unidades=int(request.POST.get('numero_unidades', 1)),
                     es_activo_fijo=request.POST.get('es_activo_fijo') == 'on',
                     laboratorio_id=int(request.POST.get('laboratorio')),

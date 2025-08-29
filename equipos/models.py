@@ -30,13 +30,9 @@ class Equipo(models.Model):
     """
     
     ESTADOS = [
-        ('operativo', 'Operativo'),
-        ('mantenimiento', 'En Mantenimiento'),
-        ('reparacion', 'En Reparación'),
-        ('inoperativo', 'Inoperativo'),
-        ('nuevo', 'Nuevo'),
-        ('usado', 'Usado'),
-        ('descartado', 'Descartado'),
+        ('bueno', 'Bueno'),
+        ('regular', 'Regular'),
+        ('malo', 'Malo'),
     ]
     
     # 1. UNIDAD ACADÉMICA
@@ -124,7 +120,7 @@ class Equipo(models.Model):
     estado = models.CharField(
         max_length=20,
         choices=ESTADOS,
-        default='operativo',
+        default='bueno',
         verbose_name="Estado"
     )
     

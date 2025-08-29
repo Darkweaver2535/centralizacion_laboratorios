@@ -30,16 +30,24 @@
             <div class="stat-card">
                 <div class="stat-icon">✅</div>
                 <div class="stat-content">
-                    <h3>{{ stats.equipos_operativos }}</h3>
-                    <p>Operativos</p>
+                    <h3>{{ stats.equipos_buenos }}</h3>
+                    <p>Buenos</p>
                 </div>
             </div>
             
             <div class="stat-card">
-                <div class="stat-icon">🔧</div>
+                <div class="stat-icon">⚠️</div>
                 <div class="stat-content">
-                    <h3>{{ stats.equipos_mantenimiento }}</h3>
-                    <p>En Mantenimiento</p>
+                    <h3>{{ stats.equipos_regulares }}</h3>
+                    <p>Regulares</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">❌</div>
+                <div class="stat-content">
+                    <h3>{{ stats.equipos_malos }}</h3>
+                    <p>Malos</p>
                 </div>
             </div>
         </div>
