@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 class UnidadAcademica(models.Model):
     UNIDADES = [
@@ -280,7 +280,7 @@ class EquipoExistente(models.Model):
     fotografia_placa = models.ImageField(upload_to='equipos/fotos_placas/', blank=True, null=True)
     laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE, related_name='equipos_existentes')
     fecha_registro = models.DateTimeField(auto_now_add=True)
-    usuario_creador = models.ForeignKey(User, on_delete=models.CASCADE)
+    usuario_creador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     
     class Meta:
         verbose_name = 'Equipo Existente'
@@ -314,7 +314,7 @@ class RegistroEquipos(models.Model):
     practica = models.ForeignKey(Practica, on_delete=models.CASCADE)
     laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE)
     
-    usuario_creador = models.ForeignKey(User, on_delete=models.CASCADE)
+    usuario_creador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
     
@@ -390,7 +390,7 @@ class EquipoIndividual(models.Model):
 class RegistroIngreso(models.Model):
     """Mantenido para compatibilidad temporal"""
     laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE, null=True, blank=True)
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     fecha_ingreso = models.DateTimeField(auto_now_add=True)
     datos_completos = models.JSONField()
     

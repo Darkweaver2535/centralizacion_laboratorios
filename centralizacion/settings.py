@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'insumos',  # Nueva app
     'guias',    # Nueva app para guías de laboratorio
     'core',     # Nueva app
+    'usuarios', # App de gestión de usuarios
 ]
 
 MIDDLEWARE = [
@@ -147,6 +148,15 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Modelo de usuario personalizado
+AUTH_USER_MODEL = 'usuarios.Usuario'
+
+# Backends de autenticación
+AUTHENTICATION_BACKENDS = [
+    'usuarios.backends.FlexibleAuthBackend',  # Backend personalizado
+    'django.contrib.auth.backends.ModelBackend',  # Backend por defecto como fallback
+]
 
 # Login URLs
 LOGIN_URL = '/login/'

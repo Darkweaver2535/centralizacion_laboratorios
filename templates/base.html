@@ -57,22 +57,131 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            position: relative;
         }
 
-        .logout-btn {
-            background: #dc2626;
+        .user-menu {
+            position: relative;
+        }
+
+        .user-menu-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
             color: white;
-            padding: 8px 15px;
+            padding: 10px 15px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             text-decoration: none;
             font-size: 14px;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .user-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            margin-top: 8px;
+        }
+
+        .user-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-header {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .dropdown-header .user-name {
+            font-weight: 600;
+            color: #1e3a8a;
+            margin-bottom: 5px;
+        }
+
+        .dropdown-header .user-email {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background: #f3f4f6;
+            color: #1e3a8a;
+        }
+
+        .dropdown-item i {
+            width: 16px;
+            text-align: center;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 5px 0;
+        }
+
+        .logout-btn {
+            color: #dc2626 !important;
         }
 
         .logout-btn:hover {
-            background: #b91c1c;
+            background: #fef2f2 !important;
+            color: #b91c1c !important;
         }
 
         /* Layout */
@@ -379,8 +488,34 @@
             <h1>Sistema de Gestión de Laboratorios</h1>
         </div>
         <div class="user-info">
-            <span>{{ user.get_full_name|default:user.username }}</span>
-            <a href="{% url 'logout' %}" class="logout-btn">Cerrar Sesión</a>
+            <div class="user-menu">
+                <button class="user-menu-btn" onclick="toggleUserMenu()">
+                    <div class="user-avatar">
+                        {{ user.get_full_name|default:user.username|first|upper }}
+                    </div>
+                    <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <i class="fas fa-chevron-down" style="font-size: 12px;"></i>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="dropdown-header">
+                        <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                        <div class="user-email">{{ user.correo_institucional|default:user.email }}</div>
+                    </div>
+                    <a href="{% url 'usuarios:perfil' %}" class="dropdown-item">
+                        <i class="fas fa-user"></i>
+                        Mi Perfil
+                    </a>
+                    <a href="{% url 'usuarios:configuracion' %}" class="dropdown-item">
+                        <i class="fas fa-cog"></i>
+                        Configuración
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'logout' %}" class="dropdown-item logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Cerrar Sesión
+                    </a>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -486,7 +621,7 @@
                 
                 <!-- Usuarios -->
                 <li>
-                    <a href="#" class="menu-item">
+                    <a href="{% url 'usuarios:lista' %}" class="menu-item {% if request.resolver_match.namespace == 'usuarios' %}active{% endif %}">
                         <i class="fas fa-users"></i>
                         Usuarios
                     </a>
@@ -533,6 +668,21 @@
     </div>
 
     <script>
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Cerrar menú de usuario al hacer click fuera
+        document.addEventListener('click', function(event) {
+            const userMenu = document.querySelector('.user-menu');
+            const userDropdown = document.getElementById('userDropdown');
+            
+            if (!userMenu.contains(event.target)) {
+                userDropdown.classList.remove('show');
+            }
+        });
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('mobile-open');

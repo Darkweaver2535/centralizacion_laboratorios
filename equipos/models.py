@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from core.models import UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, Practica, Laboratorio
 
 class Equipo(models.Model):
@@ -193,7 +193,7 @@ class Equipo(models.Model):
     
     # Campos adicionales para auditoría
     usuario_creador = models.ForeignKey(
-        User, 
+        settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE,
         verbose_name="Usuario Creador"
     )
@@ -247,7 +247,7 @@ class HistorialEquipo(models.Model):
     equipo = models.ForeignKey(Equipo, on_delete=models.CASCADE, related_name='historial')
     estado_anterior = models.CharField(max_length=20, choices=Equipo.ESTADOS)
     estado_nuevo = models.CharField(max_length=20, choices=Equipo.ESTADOS)
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     observaciones = models.TextField(blank=True)
     fecha_cambio = models.DateTimeField(auto_now_add=True)
     
@@ -275,7 +275,7 @@ class MantenimientoEquipo(models.Model):
     fecha_fin = models.DateTimeField(null=True, blank=True)
     costo = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     proveedor = models.CharField(max_length=200, blank=True)
-    usuario_responsable = models.ForeignKey(User, on_delete=models.CASCADE)
+    usuario_responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     observaciones = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -361,13 +361,13 @@ class TareaReordenamiento(models.Model):
     
     # Usuarios responsables
     usuario_creador = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='tareas_creadas',
         verbose_name="Usuario Creador"
     )
     usuario_asignado = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='tareas_asignadas',
         null=True,
@@ -496,7 +496,7 @@ class LogReordenamiento(models.Model):
         related_name='logs'
     )
     usuario = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE
     )
     accion = models.CharField(

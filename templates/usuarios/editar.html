@@ -1,0 +1,1604 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Usuario - {{ usuario.nombre_completo }}{% endblock %}
+
+{% block content %}
+<div class="editar-usuario-container">
+    <!-- Header Section -->
+    <div class="editar-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-icon">
+                    <i class="fas fa-user-edit"></i>
+                </div>
+                <div class="header-text">
+                    <h1>Editar Usuario</h1>
+                    <p>Modifica la información y permisos del usuario seleccionado</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'usuarios:detalle' usuario.pk %}" class="btn-header-action">
+                    <i class="fas fa-eye"></i>
+                    Ver Perfil
+                </a>
+                <a href="{% url 'usuarios:lista' %}" class="btn-header-back">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Preview Card -->
+    <div class="user-preview-card">
+        <div class="preview-content">
+            <div class="preview-avatar">
+                {% if usuario.foto_perfil %}
+                    <img src="{{ usuario.foto_perfil.url }}" class="current-avatar" alt="Foto actual">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                {% endif %}
+                <div class="avatar-status status-{{ usuario.estado_usuario }}">
+                    <i class="fas fa-circle"></i>
+                </div>
+            </div>
+            
+            <div class="preview-info">
+                <h3 class="user-name">{{ usuario.nombre_completo }}</h3>
+                <p class="user-role">{{ usuario.get_rol_display }} - {{ usuario.get_sede_asignacion_display }}</p>
+                
+                <div class="user-details">
+                    <div class="detail-item">
+                        <i class="fas fa-envelope"></i>
+                        <span>{{ usuario.correo_institucional }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>Registrado: {{ usuario.date_joined|date:"d/m/Y" }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-circle status-indicator-{{ usuario.estado_usuario }}"></i>
+                        <span>{{ usuario.get_estado_usuario_display }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="form-wrapper">
+        <form method="POST" enctype="multipart/form-data" id="editUserForm" class="edit-form">
+            {% csrf_token %}
+            
+            <!-- Información Personal -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="section-title">Información Personal</h3>
+                </div>
+                
+                <div class="section-content">
+                    <div class="photo-personal-grid">
+                        <!-- Photo Section -->
+                        <div class="photo-section">
+                            <label class="form-label">Foto de Perfil</label>
+                            <div class="photo-upload-area" onclick="document.getElementById('photoInput').click();">
+                                <div class="photo-preview-container">
+                                    <img id="photoPreview" 
+                                         class="photo-preview {% if not usuario.foto_perfil %}hidden{% endif %}" 
+                                         src="{% if usuario.foto_perfil %}{{ usuario.foto_perfil.url }}{% endif %}" 
+                                         alt="Vista previa">
+                                    <div class="photo-placeholder {% if usuario.foto_perfil %}hidden{% endif %}" id="photoPlaceholder">
+                                        <i class="fas fa-camera"></i>
+                                        <span>Cambiar Foto</span>
+                                    </div>
+                                </div>
+                                <input type="file" name="foto_perfil" id="photoInput" accept="image/*" style="display: none;">
+                            </div>
+                            
+                            <div class="photo-actions">
+                                <button type="button" class="btn-photo-change" onclick="document.getElementById('photoInput').click();">
+                                    <i class="fas fa-camera"></i>
+                                    {% if usuario.foto_perfil %}Cambiar{% else %}Seleccionar{% endif %}
+                                </button>
+                                {% if usuario.foto_perfil %}
+                                    <button type="button" class="btn-photo-remove" id="removePhotoBtn">
+                                        <i class="fas fa-trash"></i>
+                                        Eliminar
+                                    </button>
+                                    <input type="hidden" name="remove_photo" id="removePhotoInput" value="false">
+                                {% endif %}
+                            </div>
+                            
+                            {% if form.foto_perfil.errors %}
+                                <div class="field-error">{{ form.foto_perfil.errors.0 }}</div>
+                            {% endif %}
+                            <div class="field-hint">JPG, PNG. Máximo 2MB</div>
+                        </div>
+                        
+                        <!-- Personal Data -->
+                        <div class="personal-data">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Nombres <span class="required">*</span>
+                                    </label>
+                                    <input type="text" name="nombres" 
+                                           class="form-input {% if form.nombres.errors %}error{% endif %}" 
+                                           value="{{ usuario.nombres }}" 
+                                           placeholder="Ingresa los nombres"
+                                           required>
+                                    {% if form.nombres.errors %}
+                                        <div class="field-error">{{ form.nombres.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Apellidos <span class="required">*</span>
+                                    </label>
+                                    <input type="text" name="apellidos" 
+                                           class="form-input {% if form.apellidos.errors %}error{% endif %}" 
+                                           value="{{ usuario.apellidos }}" 
+                                           placeholder="Ingresa los apellidos"
+                                           required>
+                                    {% if form.apellidos.errors %}
+                                        <div class="field-error">{{ form.apellidos.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Número de Carnet de Identidad</label>
+                                    <input type="text" name="numero_documento" 
+                                           class="form-input {% if form.numero_documento.errors %}error{% endif %}" 
+                                           value="{{ usuario.numero_documento }}" 
+                                           placeholder="Número de carnet de identidad">
+                                    {% if form.numero_documento.errors %}
+                                        <div class="field-error">{{ form.numero_documento.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="field-hint">Debe ser único en el sistema</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Teléfono Personal</label>
+                                    <input type="tel" name="telefono_personal" 
+                                           class="form-input {% if form.telefono_personal.errors %}error{% endif %}" 
+                                           value="{{ usuario.telefono_personal }}" 
+                                           placeholder="Número de teléfono">
+                                    {% if form.telefono_personal.errors %}
+                                        <div class="field-error">{{ form.telefono_personal.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Fecha de Nacimiento</label>
+                                    <input type="date" name="fecha_nacimiento" 
+                                           class="form-input {% if form.fecha_nacimiento.errors %}error{% endif %}" 
+                                           value="{{ usuario.fecha_nacimiento|date:'Y-m-d' }}">
+                                    {% if form.fecha_nacimiento.errors %}
+                                        <div class="field-error">{{ form.fecha_nacimiento.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Acceso -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <h3 class="section-title">Información de Acceso</h3>
+                </div>
+                
+                <div class="section-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Correo Institucional <span class="required">*</span>
+                            </label>
+                            <input type="email" name="correo_institucional" 
+                                   class="form-input {% if form.correo_institucional.errors %}error{% endif %}" 
+                                   value="{{ usuario.correo_institucional }}" 
+                                   placeholder="ejemplo@est.emi.edu.bo"
+                                   required>
+                            {% if form.correo_institucional.errors %}
+                                <div class="field-error">{{ form.correo_institucional.errors.0 }}</div>
+                            {% endif %}
+                            <div class="field-hint">
+                                <strong>Dominios permitidos:</strong> @est.emi.edu.bo, @doc.emi.edu.bo, @adm.emi.edu.bo
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Usuario (Username)</label>
+                            <input type="text" name="username" 
+                                   class="form-input readonly" 
+                                   value="{{ usuario.username }}" 
+                                   readonly>
+                            <div class="field-hint">Se genera automáticamente desde el correo</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Password Management Section -->
+                    <div class="password-management">
+                        <div class="password-header">
+                            <h4>
+                                <i class="fas fa-lock"></i>
+                                Gestión de Contraseña
+                            </h4>
+                            <p class="password-info">
+                                Usuario: <strong>{{ usuario.username }}</strong> | 
+                                Último cambio: <span class="last-change">
+                                    {% if usuario.password_changed_date %}
+                                        {{ usuario.password_changed_date|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        Nunca
+                                    {% endif %}
+                                </span>
+                            </p>
+                        </div>
+                        
+                        <div class="password-controls">
+                            <div class="password-checkbox">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="debe_cambiar_password" 
+                                           {% if usuario.debe_cambiar_password %}checked{% endif %}>
+                                    <span class="checkbox-custom"></span>
+                                    Forzar cambio de contraseña en próximo acceso
+                                </label>
+                            </div>
+                            
+                            <button type="button" class="btn-reset-password" id="resetPasswordBtn">
+                                <i class="fas fa-key"></i>
+                                Restablecer Contraseña
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asignación Institucional -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3 class="section-title">Asignación Institucional</h3>
+                </div>
+                
+                <div class="section-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Rol en el Sistema <span class="required">*</span>
+                            </label>
+                            <select name="rol" id="rolSelect" 
+                                    class="form-select {% if form.rol.errors %}error{% endif %}" 
+                                    {% if not puede_cambiar_rol %}disabled{% endif %} 
+                                    required>
+                                {% for key, value in roles_permitidos %}
+                                    <option value="{{ key }}" {% if usuario.rol == key %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.rol.errors %}
+                                <div class="field-error">{{ form.rol.errors.0 }}</div>
+                            {% endif %}
+                            
+                            {% if not puede_cambiar_rol %}
+                                <div class="role-warning restricted">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    No tienes permisos para cambiar el rol de este usuario.
+                                </div>
+                                <input type="hidden" name="rol" value="{{ usuario.rol }}">
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                Sede de Asignación <span class="required">*</span>
+                            </label>
+                            <select name="sede_asignacion" 
+                                    class="form-select {% if form.sede_asignacion.errors %}error{% endif %}" 
+                                    required>
+                                {% for key, value in sedes %}
+                                    <option value="{{ key }}" {% if usuario.sede_asignacion == key %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.sede_asignacion.errors %}
+                                <div class="field-error">{{ form.sede_asignacion.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Cargo/Posición</label>
+                            <input type="text" name="cargo_posicion" 
+                                   class="form-input {% if form.cargo_posicion.errors %}error{% endif %}" 
+                                   value="{{ usuario.cargo_posicion }}" 
+                                   placeholder="Ej: Coordinador de Laboratorio">
+                            {% if form.cargo_posicion.errors %}
+                                <div class="field-error">{{ form.cargo_posicion.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Especialidad/Área</label>
+                            <input type="text" name="especialidad_area" 
+                                   class="form-input {% if form.especialidad_area.errors %}error{% endif %}" 
+                                   value="{{ usuario.especialidad_area }}" 
+                                   placeholder="Ej: Ingeniería de Sistemas">
+                            {% if form.especialidad_area.errors %}
+                                <div class="field-error">{{ form.especialidad_area.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Estado del Usuario</label>
+                            <select name="estado_usuario" 
+                                    class="form-select {% if form.estado_usuario.errors %}error{% endif %}"
+                                    id="estadoSelect">
+                                {% for key, value in estados %}
+                                    <option value="{{ key }}" {% if usuario.estado_usuario == key %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.estado_usuario.errors %}
+                                <div class="field-error">{{ form.estado_usuario.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <!-- Empty for grid balance -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <h3 class="section-title">Información Adicional</h3>
+                </div>
+                
+                <div class="section-content">
+                    <div class="form-group full-width">
+                        <label class="form-label">Observaciones</label>
+                        <textarea name="observaciones" 
+                                  class="form-textarea {% if form.observaciones.errors %}error{% endif %}" 
+                                  rows="4" 
+                                  placeholder="Observaciones adicionales sobre el usuario...">{{ usuario.observaciones }}</textarea>
+                        {% if form.observaciones.errors %}
+                            <div class="field-error">{{ form.observaciones.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Change History -->
+                    {% if cambios_recientes %}
+                        <div class="change-history">
+                            <h5 class="history-title">
+                                <i class="fas fa-history"></i>
+                                Cambios Recientes
+                            </h5>
+                            <div class="history-list">
+                                {% for cambio in cambios_recientes %}
+                                    <div class="history-item">
+                                        <div class="history-date">{{ cambio.fecha|date:"d/m/Y H:i" }}</div>
+                                        <div class="history-description">{{ cambio.descripcion }}</div>
+                                        <div class="history-user">por {{ cambio.usuario_modificador }}</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="{% url 'usuarios:detalle' usuario.pk %}" class="btn-cancel">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </a>
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-save"></i>
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para restablecer contraseña -->
+<div class="modal-overlay" id="resetPasswordModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Restablecer Contraseña</h3>
+            <button type="button" class="modal-close" onclick="closeModal('resetPasswordModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="modal-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <p class="modal-message">¿Estás seguro de que deseas restablecer la contraseña de este usuario?</p>
+            
+            <div class="reset-info">
+                <div class="info-item">
+                    <i class="fas fa-check"></i>
+                    <span>Se generará una nueva contraseña temporal</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-check"></i>
+                    <span>Se enviará por correo al usuario</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-check"></i>
+                    <span>Se forzará el cambio en el próximo acceso</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn-modal-cancel" onclick="closeModal('resetPasswordModal')">
+                Cancelar
+            </button>
+            <button type="button" class="btn-modal-confirm" id="confirmResetPassword">
+                <i class="fas fa-key"></i>
+                Restablecer Contraseña
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Container principal */
+.editar-usuario-container {
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    min-height: calc(100vh - 140px);
+}
+
+/* Header Section */
+.editar-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 25px rgba(30, 58, 138, 0.15);
+    color: white;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.header-text h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.header-text p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-header-action,
+.btn-header-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.btn-header-action {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-header-back {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-header-action:hover,
+.btn-header-back:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-2px);
+}
+
+/* User Preview Card */
+.user-preview-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 30px;
+    margin-bottom: 30px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.user-preview-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+.preview-content {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.preview-avatar {
+    position: relative;
+}
+
+.current-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #f8fafc;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: #64748b;
+    border: 4px solid #f8fafc;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-status {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+
+.avatar-status.status-activo {
+    background: #10b981;
+    color: white;
+}
+
+.avatar-status.status-inactivo {
+    background: #ef4444;
+    color: white;
+}
+
+.avatar-status.status-suspendido {
+    background: #f59e0b;
+    color: white;
+}
+
+.preview-info {
+    flex: 1;
+}
+
+.user-name {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.user-role {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.user-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.detail-item i {
+    color: #1e3a8a;
+    width: 16px;
+}
+
+.status-indicator-activo {
+    color: #10b981 !important;
+}
+
+.status-indicator-inactivo {
+    color: #ef4444 !important;
+}
+
+.status-indicator-suspendido {
+    color: #f59e0b !important;
+}
+
+/* Form Wrapper */
+.form-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.edit-form {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.section-icon {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+}
+
+.section-title {
+    margin: 0;
+    color: #1e293b;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.section-content {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    padding: 25px;
+}
+
+/* Photo Personal Grid */
+.photo-personal-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+/* Photo Section */
+.photo-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.photo-upload-area {
+    width: 160px;
+    height: 160px;
+    border: 3px dashed #cbd5e1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    margin-bottom: 15px;
+}
+
+.photo-upload-area:hover {
+    border-color: #1e3a8a;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.photo-preview-container {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+}
+
+.photo-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.photo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.photo-placeholder i {
+    font-size: 24px;
+    color: #94a3b8;
+}
+
+.photo-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.btn-photo-change,
+.btn-photo-remove {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-photo-change {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+}
+
+.btn-photo-change:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.btn-photo-remove {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-photo-remove:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Form Elements */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-row:last-child {
+    margin-bottom: 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: #1e3a8a;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.form-input.readonly {
+    background: #f8fafc;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.form-input.error,
+.form-select.error,
+.form-textarea.error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Field Hints and Errors */
+.field-hint {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.field-error {
+    font-size: 12px;
+    color: #ef4444;
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+/* Password Management */
+.password-management {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 20px;
+    border-left: 4px solid #1e3a8a;
+}
+
+.password-header h4 {
+    margin: 0 0 10px 0;
+    color: #3730a3;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.password-info {
+    margin: 0 0 20px 0;
+    font-size: 14px;
+    color: #4c1d95;
+}
+
+.last-change {
+    font-weight: 600;
+}
+
+.password-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Checkbox Styles */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #374151;
+    font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.checkbox-custom {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    border-color: #1e3a8a;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.btn-reset-password {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.btn-reset-password:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Role Warning */
+.role-warning {
+    margin-top: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.role-warning.restricted {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+/* Change History */
+.change-history {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 25px;
+    border-left: 4px solid #1e3a8a;
+}
+
+.history-title {
+    margin: 0 0 15px 0;
+    color: #374151;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.history-item {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    border-left: 3px solid #1e3a8a;
+}
+
+.history-date {
+    font-weight: 600;
+    color: #374151;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.history-description {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.history-user {
+    color: #1e3a8a;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.btn-cancel,
+.btn-submit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #4b5563;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-2px);
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 25px 30px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.modal-body {
+    padding: 30px;
+    text-align: center;
+}
+
+.modal-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: white;
+}
+
+.modal-message {
+    font-size: 16px;
+    color: #374151;
+    margin: 0 0 25px 0;
+    line-height: 1.5;
+}
+
+.reset-info {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    color: #166534;
+    font-size: 14px;
+}
+
+.info-item i {
+    color: #16a34a;
+    font-size: 12px;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-modal-cancel,
+.btn-modal-confirm {
+    padding: 12px 24px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-modal-cancel {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-modal-cancel:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+}
+
+.btn-modal-confirm {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.btn-modal-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .editar-usuario-container {
+        padding: 15px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-header-action,
+    .btn-header-back {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .preview-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+    
+    .user-details {
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .edit-form {
+        padding: 25px;
+    }
+    
+    .photo-personal-grid {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .password-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-cancel,
+    .btn-submit {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .modal-container {
+        width: 95%;
+        margin: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-text h1 {
+        font-size: 24px;
+    }
+    
+    .user-name {
+        font-size: 20px;
+    }
+    
+    .edit-form {
+        padding: 20px;
+    }
+    
+    .section-content {
+        padding: 20px;
+    }
+    
+    .photo-upload-area {
+        width: 140px;
+        height: 140px;
+    }
+}
+</style>
+
+<script>
+// Modal functionality
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const photoInput = document.getElementById('photoInput');
+    const photoPreview = document.getElementById('photoPreview');
+    const photoPlaceholder = document.getElementById('photoPlaceholder');
+    const removePhotoBtn = document.getElementById('removePhotoBtn');
+    const removePhotoInput = document.getElementById('removePhotoInput');
+    const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+    const estadoSelect = document.getElementById('estadoSelect');
+
+    // Preview de foto
+    function handlePhotoPreview() {
+        const file = photoInput.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                photoPreview.src = e.target.result;
+                photoPreview.classList.remove('hidden');
+                photoPlaceholder.classList.add('hidden');
+                if (removePhotoInput) {
+                    removePhotoInput.value = 'false';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Eliminar foto
+    if (removePhotoBtn) {
+        removePhotoBtn.addEventListener('click', function() {
+            photoPreview.classList.add('hidden');
+            photoPlaceholder.classList.remove('hidden');
+            photoInput.value = '';
+            removePhotoInput.value = 'true';
+        });
+    }
+
+    // Restablecer contraseña
+    resetPasswordBtn.addEventListener('click', function() {
+        openModal('resetPasswordModal');
+    });
+
+    document.getElementById('confirmResetPassword').addEventListener('click', function() {
+        // Simulación de restablecimiento de contraseña
+        const userId = '{{ usuario.pk }}';
+        
+        fetch(`/usuarios/api/restablecer-password/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Contraseña restablecida exitosamente. Se ha enviado la nueva contraseña por correo.');
+                document.querySelector('input[name="debe_cambiar_password"]').checked = true;
+            } else {
+                alert('Error al restablecer la contraseña: ' + (data.error || 'Error desconocido'));
+            }
+            closeModal('resetPasswordModal');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al restablecer la contraseña');
+            closeModal('resetPasswordModal');
+        });
+    });
+
+    // Confirmación de cambios importantes
+    if (estadoSelect) {
+        const estadoOriginal = estadoSelect.value;
+        estadoSelect.addEventListener('change', function() {
+            if (this.value === 'inactivo' || this.value === 'suspendido') {
+                if (!confirm('¿Estás seguro de cambiar el estado a "' + this.options[this.selectedIndex].text + '"? Esto afectará el acceso del usuario al sistema.')) {
+                    this.value = estadoOriginal;
+                }
+            }
+        });
+    }
+
+    // Event listeners
+    photoInput.addEventListener('change', handlePhotoPreview);
+
+    // Close modal when clicking outside
+    const modalOverlays = document.querySelectorAll('.modal-overlay');
+    modalOverlays.forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
+
+    // Escape key to close modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const openModal = document.querySelector('.modal-overlay.show');
+            if (openModal) {
+                closeModal(openModal.id);
+            }
+        }
+    });
+
+    // Validación antes del envío
+    document.getElementById('editUserForm').addEventListener('submit', function(e) {
+        const requiredFields = this.querySelectorAll('input[required], select[required]');
+        let valid = true;
+
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('error');
+                valid = false;
+            } else {
+                field.classList.remove('error');
+            }
+        });
+
+        if (!valid) {
+            e.preventDefault();
+            alert('Por favor complete todos los campos requeridos');
+            return false;
+        }
+
+        // Mostrar loading en el botón
+        const submitBtn = this.querySelector('.btn-submit');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando cambios...';
+        submitBtn.disabled = true;
+    });
+
+    // Validar correo institucional
+    const correoInput = document.querySelector('input[name="correo_institucional"]');
+    if (correoInput) {
+        correoInput.addEventListener('blur', function() {
+            const correo = this.value;
+            const dominiosValidos = ['est.emi.edu.bo', 'doc.emi.edu.bo', 'adm.emi.edu.bo'];
+            
+            if (correo) {
+                const dominio = correo.split('@')[1];
+                const esValido = dominiosValidos.includes(dominio);
+                
+                if (!esValido) {
+                    this.classList.add('error');
+                    showFieldError(this, 'El correo debe terminar en @est.emi.edu.bo, @doc.emi.edu.bo o @adm.emi.edu.bo');
+                } else {
+                    this.classList.remove('error');
+                    hideFieldError(this);
+                }
+            }
+        });
+    }
+
+    function showFieldError(input, message) {
+        hideFieldError(input);
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'field-error';
+        errorDiv.textContent = message;
+        input.parentNode.appendChild(errorDiv);
+    }
+
+    function hideFieldError(input) {
+        const existingError = input.parentNode.querySelector('.field-error');
+        if (existingError && existingError.textContent.includes('válido')) {
+            existingError.remove();
+        }
+    }
+});
+</script>
+{% endblock %}

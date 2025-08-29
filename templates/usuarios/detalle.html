@@ -1,0 +1,1302 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ usuario.nombre_completo }} - Detalle{% endblock %}
+
+{% block content %}
+<div class="detalle-usuario-container">
+    <!-- Header Section -->
+    <div class="detalle-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="header-text">
+                    <h1>Perfil de Usuario</h1>
+                    <p>Información detallada y actividad del usuario</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'usuarios:lista' %}" class="btn-back-header">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver a la lista
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="detalle-content">
+        <!-- Perfil Principal -->
+        <div class="profile-main-card">
+            <div class="profile-grid">
+                <!-- Avatar Section -->
+                <div class="profile-avatar-section">
+                    <div class="avatar-wrapper">
+                        {% if usuario.foto_perfil %}
+                            <img src="{{ usuario.foto_perfil.url }}" class="profile-avatar" alt="Foto de perfil">
+                        {% else %}
+                            <div class="profile-avatar-placeholder">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                        <div class="avatar-status status-{{ usuario.estado_usuario }}">
+                            <i class="fas fa-circle"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile Info Section -->
+                <div class="profile-info-section">
+                    <div class="profile-header">
+                        <h2 class="profile-name">{{ usuario.nombre_completo }}</h2>
+                        <p class="profile-subtitle">{{ usuario.get_sede_asignacion_display }}</p>
+                        
+                        <div class="status-badges">
+                            <span class="role-badge role-{{ usuario.rol }}">
+                                <i class="fas fa-user-tag"></i>
+                                {{ usuario.get_rol_display }}
+                            </span>
+                            <span class="status-badge status-{{ usuario.estado_usuario }}">
+                                <i class="fas fa-circle"></i>
+                                {{ usuario.get_estado_usuario_display }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>{{ usuario.correo_institucional }}</span>
+                        </div>
+                        {% if usuario.telefono_personal %}
+                            <div class="contact-item">
+                                <i class="fas fa-phone"></i>
+                                <span>{{ usuario.telefono_personal }}</span>
+                            </div>
+                        {% endif %}
+                        {% if usuario.cargo_posicion %}
+                            <div class="contact-item">
+                                <i class="fas fa-briefcase"></i>
+                                <span>{{ usuario.cargo_posicion }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Actions Section -->
+                <div class="profile-actions-section">
+                    <div class="action-buttons">
+                        {% if user.rol == 'administrador' or user.rol == 'jefe_uycit' and usuario.rol == 'auxiliar' %}
+                            <a href="{% url 'usuarios:editar' usuario.pk %}" class="action-btn edit-btn">
+                                <i class="fas fa-edit"></i>
+                                <span>Editar</span>
+                            </a>
+                        {% endif %}
+                        
+                        {% if user.rol == 'administrador' %}
+                            <button type="button" class="action-btn status-btn" data-toggle="modal" data-target="#statusModal">
+                                <i class="fas fa-toggle-on"></i>
+                                <span>Cambiar Estado</span>
+                            </button>
+                            
+                            <a href="{% url 'usuarios:eliminar' usuario.pk %}" class="action-btn delete-btn" onclick="return confirm('¿Estás seguro de eliminar este usuario?')">
+                                <i class="fas fa-trash"></i>
+                                <span>Eliminar</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ usuario.date_joined|timesince }}</div>
+                        <div class="stat-label">En el sistema</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">
+                            {% if usuario.last_login %}
+                                {{ usuario.last_login|timesince }}
+                            {% else %}
+                                Nunca
+                            {% endif %}
+                        </div>
+                        <div class="stat-label">Último acceso</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ actividades_count|default:0 }}</div>
+                        <div class="stat-label">Actividades</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ permisos_count|default:0 }}</div>
+                        <div class="stat-label">Permisos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Sections -->
+        <div class="info-sections-grid">
+            <!-- Información Personal -->
+            <div class="info-section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="section-title">Información Personal</h3>
+                </div>
+                
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Nombres</div>
+                                <div class="info-value">{{ usuario.nombres|default:"No especificado" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Apellidos</div>
+                                <div class="info-value">{{ usuario.apellidos|default:"No especificado" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Tipo de Documento</div>
+                                <div class="info-value">{{ usuario.get_tipo_documento_display|default:"No especificado" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-hashtag"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Número de Documento</div>
+                                <div class="info-value">{{ usuario.numero_documento|default:"No especificado" }}</div>
+                            </div>
+                        </div>
+                        
+                        {% if usuario.fecha_nacimiento %}
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-birthday-cake"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Fecha de Nacimiento</div>
+                                <div class="info-value">{{ usuario.fecha_nacimiento|date:"d/m/Y" }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if usuario.especialidad_area %}
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Especialidad/Área</div>
+                                <div class="info-value">{{ usuario.especialidad_area }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Acceso -->
+            <div class="info-section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <h3 class="section-title">Información de Acceso</h3>
+                </div>
+                
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-at"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Usuario (Username)</div>
+                                <div class="info-value">{{ usuario.username }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Fecha de Registro</div>
+                                <div class="info-value">{{ usuario.date_joined|date:"d/m/Y H:i" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Debe Cambiar Contraseña</div>
+                                <div class="info-value">
+                                    {% if usuario.debe_cambiar_password %}
+                                        <span class="warning-text">
+                                            <i class="fas fa-exclamation-triangle"></i> Sí
+                                        </span>
+                                    {% else %}
+                                        <span class="success-text">
+                                            <i class="fas fa-check"></i> No
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-sign-in-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Último Acceso</div>
+                                <div class="info-value">
+                                    {% if usuario.last_login %}
+                                        {{ usuario.last_login|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        <span class="empty-text">Nunca ha accedido</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observaciones -->
+        {% if usuario.observaciones %}
+        <div class="info-section full-width">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-sticky-note"></i>
+                </div>
+                <h3 class="section-title">Observaciones</h3>
+            </div>
+            
+            <div class="section-content">
+                <div class="observaciones-content">
+                    <p>{{ usuario.observaciones }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Actividad Reciente -->
+        <div class="info-section full-width">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <h3 class="section-title">Actividad Reciente</h3>
+            </div>
+            
+            <div class="section-content">
+                {% if actividades_recientes %}
+                    <div class="activity-timeline">
+                        {% for actividad in actividades_recientes %}
+                            <div class="activity-item">
+                                <div class="activity-dot"></div>
+                                <div class="activity-content">
+                                    <div class="activity-header">
+                                        <div class="activity-title">{{ actividad.accion }}</div>
+                                        <div class="activity-time">
+                                            <i class="fas fa-clock"></i>
+                                            {{ actividad.fecha_hora|date:"d/m/Y H:i" }}
+                                        </div>
+                                    </div>
+                                    <div class="activity-description">
+                                        {{ actividad.detalles|default:"Sin detalles adicionales" }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <h4>Sin actividad registrada</h4>
+                        <p>No hay actividades registradas para este usuario.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cambiar estado -->
+{% if user.rol == 'administrador' %}
+<div class="modal-overlay" id="statusModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Cambiar Estado del Usuario</h3>
+            <button type="button" class="modal-close" onclick="closeModal('statusModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{% url 'usuarios:cambiar_estado' usuario.pk %}">
+            <div class="modal-body">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Nuevo Estado</label>
+                    <select name="nuevo_estado" class="form-select" required>
+                        {% for key, value in estados %}
+                            <option value="{{ key }}" {% if usuario.estado_usuario == key %}selected{% endif %}>
+                                {{ value }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Motivo del cambio</label>
+                    <textarea name="motivo" class="form-textarea" rows="3" 
+                              placeholder="Describe el motivo del cambio de estado..."></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('statusModal')">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-primary">
+                    Cambiar Estado
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<style>
+/* Container principal */
+.detalle-usuario-container {
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    min-height: calc(100vh - 140px);
+}
+
+/* Header */
+.detalle-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
+    color: white;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.header-text h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.header-text p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+.btn-back-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-back-header:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-2px);
+}
+
+/* Main Content */
+.detalle-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Profile Main Card */
+.profile-main-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-main-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 30px;
+    align-items: center;
+}
+
+/* Avatar Section */
+.profile-avatar-section {
+    position: relative;
+}
+
+.avatar-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #f8fafc;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.profile-avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    color: #64748b;
+    border: 4px solid #f8fafc;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-status {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 3px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.avatar-status.status-activo {
+    background: #10b981;
+    color: white;
+}
+
+.avatar-status.status-inactivo {
+    background: #ef4444;
+    color: white;
+}
+
+.avatar-status.status-suspendido {
+    background: #f59e0b;
+    color: white;
+}
+
+/* Profile Info Section */
+.profile-header {
+    margin-bottom: 20px;
+}
+
+.profile-name {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.profile-subtitle {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.status-badges {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.role-badge, .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.role-administrador {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.role-jefe_uycit {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+}
+
+.role-auxiliar {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.status-activo {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.status-inactivo {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.status-suspendido {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    color: #64748b;
+    font-size: 15px;
+}
+
+.contact-item i {
+    width: 20px;
+    color: #3b82f6;
+    font-size: 16px;
+}
+
+/* Profile Actions */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.edit-btn {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.edit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.status-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+}
+
+.status-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.delete-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.delete-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+/* Stats Section */
+.stats-section {
+    margin-bottom: 30px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #64748b;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Info Sections */
+.info-sections-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.info-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.info-section.full-width {
+    grid-column: 1 / -1;
+}
+
+.section-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    padding: 20px 25px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.section-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+}
+
+.section-title {
+    margin: 0;
+    color: #1e293b;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.section-content {
+    padding: 25px;
+}
+
+/* Info Grid */
+.info-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 10px;
+    border-left: 4px solid #3b82f6;
+}
+
+.info-icon {
+    width: 35px;
+    height: 35px;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.info-value {
+    color: #1e293b;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.info-value.empty-text {
+    color: #6b7280;
+    font-style: italic;
+}
+
+.success-text {
+    color: #059669;
+    font-weight: 500;
+}
+
+.warning-text {
+    color: #d97706;
+    font-weight: 500;
+}
+
+.empty-text {
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* Observaciones */
+.observaciones-content {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 10px;
+    padding: 20px;
+    border-left: 4px solid #3b82f6;
+}
+
+.observaciones-content p {
+    margin: 0;
+    color: #374151;
+    line-height: 1.6;
+    font-size: 15px;
+}
+
+/* Activity Timeline */
+.activity-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.activity-timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+}
+
+.activity-item {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.activity-dot {
+    position: absolute;
+    left: -24px;
+    top: 15px;
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.activity-content {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid #3b82f6;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.activity-title {
+    font-weight: 600;
+    color: #374151;
+    font-size: 16px;
+}
+
+.activity-time {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.activity-description {
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #94a3b8;
+}
+
+.empty-state h4 {
+    color: #374151;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 25px 30px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+}
+
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.btn-secondary,
+.btn-primary {
+    padding: 12px 24px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .detalle-usuario-container {
+        padding: 15px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .profile-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 25px;
+    }
+    
+    .profile-actions-section {
+        order: -1;
+    }
+    
+    .action-buttons {
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .info-sections-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .status-badges {
+        justify-content: center;
+    }
+    
+    .activity-timeline {
+        padding-left: 20px;
+    }
+    
+    .activity-dot {
+        left: -18px;
+    }
+    
+    .modal-container {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-name {
+        font-size: 24px;
+    }
+    
+    .profile-avatar,
+    .profile-avatar-placeholder {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .contact-item {
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// Modal functionality
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal triggers
+    const statusBtn = document.querySelector('.status-btn');
+    if (statusBtn) {
+        statusBtn.addEventListener('click', function() {
+            openModal('statusModal');
+        });
+    }
+    
+    // Close modal when clicking outside
+    const modalOverlays = document.querySelectorAll('.modal-overlay');
+    modalOverlays.forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
+    
+    // Escape key to close modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const openModal = document.querySelector('.modal-overlay.show');
+            if (openModal) {
+                closeModal(openModal.id);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

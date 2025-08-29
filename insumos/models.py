@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from core.models import UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, Practica, Laboratorio
 
 class TipoInsumo(models.Model):
@@ -250,7 +250,7 @@ class Insumo(models.Model):
     
     # Auditoría
     usuario_creador = models.ForeignKey(
-        User, 
+        settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE,
         blank=True,
         null=True,
@@ -345,7 +345,7 @@ class MovimientoInsumo(models.Model):
     cantidad_nueva = models.FloatField()
     motivo = models.CharField(max_length=200)
     observaciones = models.TextField(blank=True)
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     fecha_movimiento = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -370,14 +370,14 @@ class SolicitudInsumo(models.Model):
     cantidad_solicitada = models.FloatField()
     fecha_solicitud = models.DateTimeField(auto_now_add=True)
     fecha_necesaria = models.DateField()
-    solicitante = models.ForeignKey(User, on_delete=models.CASCADE, related_name='solicitudes_insumos')
+    solicitante = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='solicitudes_insumos')
     estado = models.CharField(max_length=20, choices=ESTADOS_SOLICITUD, default='pendiente')
     justificacion = models.TextField()
     observaciones = models.TextField(blank=True)
     
     # Campos para aprobación/rechazo
     revisado_por = models.ForeignKey(
-        User, 
+        settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
@@ -388,7 +388,7 @@ class SolicitudInsumo(models.Model):
     
     # Campo para entrega
     entregado_por = models.ForeignKey(
-        User, 
+        settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
@@ -485,13 +485,13 @@ class TareaReordenamientoInsumo(models.Model):
     
     # Usuarios responsables
     usuario_creador = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='tareas_insumos_creadas',
         verbose_name="Usuario Creador"
     )
     usuario_asignado = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='tareas_insumos_asignadas',
         null=True,
@@ -646,7 +646,7 @@ class LogReordenamientoInsumo(models.Model):
         related_name='logs'
     )
     usuario = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         verbose_name="Usuario"
     )

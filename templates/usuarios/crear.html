@@ -1,0 +1,1896 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Crear Usuario - Sistema de Laboratorios{% endblock %}
+
+{% block content %}
+<style>
+/* Variables CSS para consistencia */
+:root {
+    --primary-color: #1e3a8a;
+    --primary-light: #3b82f6;
+    --success-color: #059669;
+    --success-light: #10b981;
+    --error-color: #dc2626;
+    --warning-color: #d97706;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Reset y estilos base */
+* {
+    box-sizing: border-box;
+}
+
+/* Contenedor principal */
+.usuarios-lista-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+/* Header del formulario */
+.crear-usuario-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-icon {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.header-text h1 {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.header-text p {
+    margin: 0;
+    font-size: 16px;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+.header-actions .btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 12px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.header-actions .btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Wrapper del formulario */
+.form-wrapper {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--gray-200);
+}
+
+/* Formulario principal */
+.user-form {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* Secciones del formulario */
+.form-section {
+    background: var(--gray-50);
+    border-radius: 16px;
+    border: 2px solid var(--gray-200);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.form-section:hover {
+    border-color: var(--primary-light);
+    box-shadow: var(--shadow-md);
+}
+
+.section-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.section-icon {
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.step-number {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.section-content {
+    padding: 30px;
+}
+
+/* Grid del formulario */
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.form-row:last-child {
+    margin-bottom: 0;
+}
+
+/* Grupos de formulario */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Labels */
+.form-label {
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: 15px;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.required {
+    color: var(--error-color);
+    font-weight: 700;
+}
+
+.optional {
+    color: var(--gray-500);
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.auto-generated {
+    color: var(--success-color);
+    font-weight: 500;
+    font-size: 13px;
+}
+
+/* Inputs */
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--gray-300);
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: white;
+    line-height: 1.4;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: #fafbff;
+}
+
+.form-input.error,
+.form-select.error,
+.form-textarea.error {
+    border-color: var(--error-color);
+    background: #fef2f2;
+}
+
+.form-input.readonly {
+    background-color: var(--gray-100);
+    color: var(--gray-600);
+    cursor: not-allowed;
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+/* Select múltiple */
+select[multiple] {
+    min-height: 120px;
+}
+
+/* Hints de campo */
+.field-hint {
+    font-size: 13px;
+    color: var(--gray-500);
+    line-height: 1.4;
+    margin-top: 4px;
+}
+
+.field-error {
+    font-size: 13px;
+    color: var(--error-color);
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+/* Selección de rol */
+.role-selection {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #0284c7;
+}
+
+.role-info-card {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 20px;
+    color: white;
+    box-shadow: var(--shadow-lg);
+    animation: slideInFromBottom 0.3s ease-out;
+}
+
+.role-info-content {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.role-icon {
+    font-size: 28px;
+    margin-top: 5px;
+    opacity: 0.9;
+}
+
+.role-details h4 {
+    margin: 0 0 12px 0;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.role-details p {
+    margin: 0 0 18px 0;
+    opacity: 0.9;
+    line-height: 1.5;
+    font-size: 15px;
+}
+
+.role-permissions strong {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.permissions-list {
+    margin: 12px 0 0 20px;
+    padding: 0;
+    list-style: none;
+}
+
+.permissions-list li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+    position: relative;
+    padding-left: 20px;
+}
+
+.permissions-list li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #10b981;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.2);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+
+/* Grids específicos */
+.admin-grid,
+.auxiliar-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 35px;
+    align-items: start;
+}
+
+.personal-data-admin,
+.personal-data-auxiliar {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* Sección de foto */
+.photo-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.photo-upload-area {
+    border: 3px dashed var(--gray-300);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.photo-upload-area:hover {
+    border-color: var(--primary-light);
+    background: #fafbff;
+}
+
+.photo-upload-area.required {
+    border-color: var(--warning-color);
+    background: #fffbeb;
+}
+
+.photo-preview-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.photo-preview {
+    max-width: 100%;
+    max-height: 180px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+}
+
+.photo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--gray-500);
+}
+
+.photo-placeholder i {
+    font-size: 32px;
+    color: var(--gray-400);
+}
+
+.photo-placeholder span {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+/* Checkboxes */
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 15px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    border: 2px solid var(--gray-200);
+    background: white;
+}
+
+.checkbox-label:hover {
+    background: #fafbff;
+    border-color: var(--primary-light);
+}
+
+.checkbox-custom {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--gray-400);
+    border-radius: 6px;
+    position: relative;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    border-color: var(--primary-color);
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.checkbox-text {
+    font-weight: 500;
+    color: var(--gray-700);
+    line-height: 1.4;
+}
+
+/* Formularios dinámicos */
+.role-form {
+    animation: slideInFromBottom 0.4s ease-out;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Botones de acción */
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px;
+    background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+    border-radius: 16px;
+    margin-top: 30px;
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--gray-200);
+}
+
+.btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    padding: 14px 24px;
+    border-radius: 10px;
+    border: 2px solid var(--gray-300);
+    font-weight: 600;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background: var(--gray-200);
+    border-color: var(--gray-400);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-light) 100%);
+    color: white;
+    padding: 14px 32px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #047857 0%, var(--success-color) 100%);
+    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+}
+
+/* Animaciones */
+@keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .usuarios-lista-container {
+        padding: 15px;
+    }
+
+    .crear-usuario-header {
+        padding: 20px;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+
+    .header-text h1 {
+        font-size: 24px;
+    }
+
+    .form-wrapper {
+        padding: 25px;
+    }
+
+    .section-header {
+        padding: 15px 20px;
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .section-content {
+        padding: 20px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .admin-grid,
+    .auxiliar-grid {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+
+    .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 15px;
+        padding: 20px;
+    }
+
+    .role-info-content {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .section-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .step-number {
+        font-size: 16px;
+    }
+
+    .section-title {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-wrapper {
+        padding: 20px;
+        border-radius: 15px;
+    }
+
+    .checkbox-label {
+        padding: 12px;
+    }
+
+    .permissions-list {
+        margin-left: 15px;
+    }
+
+    .photo-upload-area {
+        min-height: 150px;
+        padding: 15px;
+    }
+}
+
+/* Estados de carga */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--primary-light);
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Mejoras de accesibilidad */
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus,
+.btn:focus,
+.checkbox-label:focus-within {
+    outline: 2px solid var(--primary-light);
+    outline-offset: 2px;
+}
+
+/* Estilos para errores de validación */
+.field-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fef2f2;
+    color: var(--error-color);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #fecaca;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.field-error::before {
+    content: '⚠';
+    font-weight: bold;
+}
+
+/* Elementos de estado */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-required {
+    background: #fef2f2;
+    color: var(--error-color);
+}
+
+.status-optional {
+    background: #f3f4f6;
+    color: var(--gray-600);
+}
+
+.status-auto {
+    background: #ecfdf5;
+    color: var(--success-color);
+}
+</style>
+
+<div class="usuarios-lista-container">
+    <!-- Header -->
+    <div class="crear-usuario-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="header-text">
+                    <h1>Crear Nuevo Usuario</h1>
+                    <p>Configura los datos del nuevo usuario según su rol en el sistema</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'usuarios:lista' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver a la lista
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="form-wrapper">
+        <form method="POST" enctype="multipart/form-data" id="userForm" class="user-form">
+            {% csrf_token %}
+            
+            <!-- PASO 1: Selección de Rol -->
+            <div class="form-section role-selection">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <span class="step-number">1</span>
+                    </div>
+                    <h3 class="section-title">Seleccionar Tipo de Usuario</h3>
+                </div>
+                
+                <div class="section-content">
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <strong>Rol en el Sistema</strong> <span class="required">*</span>
+                            </label>
+                            <select name="rol" id="rolSelect" 
+                                    class="form-select {% if form.rol.errors %}error{% endif %}" 
+                                    required>
+                                <option value="">-- Selecciona el tipo de usuario --</option>
+                                {% for key, value in roles_disponibles %}
+                                    <option value="{{ key }}" {% if form.rol.value == key %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.rol.errors %}
+                                <div class="field-error">{{ form.rol.errors.0 }}</div>
+                            {% endif %}
+                            <div class="field-hint">Este campo determinará qué información se solicitará en el formulario</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información del rol seleccionado -->
+                    <div id="roleInfo" class="role-info-card hidden">
+                        <div class="role-info-content">
+                            <div class="role-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="role-details">
+                                <h4 class="role-title"></h4>
+                                <p class="role-description"></p>
+                                <div class="role-permissions">
+                                    <strong>Permisos y responsabilidades principales:</strong>
+                                    <ul class="permissions-list"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORMULARIOS DINÁMICOS SEGÚN EL ROL -->
+            
+            <!-- FORMULARIO PARA ADMINISTRADORES Y JEFES UYCIT -->
+            <div id="adminJefeForm" class="role-form hidden">
+                
+                <!-- Información Personal -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">2</span>
+                        </div>
+                        <h3 class="section-title">Información Personal</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="admin-grid">
+                            <!-- Foto de perfil (OPCIONAL para admins/jefes) -->
+                            <div class="photo-section">
+                                <label class="form-label">
+                                    Foto de Perfil <span class="optional">(Opcional)</span>
+                                </label>
+                                <div class="photo-upload-area" onclick="document.getElementById('photoInputAdmin').click();">
+                                    <div class="photo-preview-container">
+                                        <img id="photoPreviewAdmin" class="photo-preview hidden" alt="Vista previa">
+                                        <div class="photo-placeholder" id="photoPlaceholderAdmin">
+                                            <i class="fas fa-camera"></i>
+                                            <span>Seleccionar Foto</span>
+                                        </div>
+                                    </div>
+                                    <input type="file" name="admin_foto_perfil" id="photoInputAdmin" accept="image/*" style="display: none;">
+                                </div>
+                                <div class="field-hint">JPG, PNG. Máximo 2MB</div>
+                            </div>
+                            
+                            <!-- Datos personales -->
+                            <div class="personal-data-admin">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Nombres <span class="required">*</span>
+                                        </label>
+                                        <input type="text" name="admin_nombres" 
+                                               class="form-input" 
+                                               placeholder="Ingresa los nombres"
+                                               data-required="true">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Apellidos <span class="required">*</span>
+                                        </label>
+                                        <input type="text" name="admin_apellidos" 
+                                               class="form-input" 
+                                               placeholder="Ingresa los apellidos"
+                                               data-required="true">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Número de Carnet de Identidad <span class="required">*</span>
+                                        </label>
+                                        <input type="text" name="admin_numero_documento" 
+                                               class="form-input" 
+                                               placeholder="Ej: 1234567"
+                                               data-required="true">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Teléfono Personal <span class="optional">(Opcional)</span>
+                                        </label>
+                                        <input type="tel" name="admin_telefono_personal" 
+                                               class="form-input" 
+                                               placeholder="Ej: +591 70123456">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Profesional -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">3</span>
+                        </div>
+                        <h3 class="section-title">Información Profesional</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Especialidad/Área de Conocimiento <span class="required">*</span>
+                                </label>
+                                <input type="text" name="admin_especialidad_area" 
+                                       class="form-input" 
+                                       placeholder="Ej: Ingeniería de Sistemas, Administración, etc."
+                                       data-required="true">
+                                <div class="field-hint">Especifica la especialidad o área principal de conocimiento</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Institucional -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">4</span>
+                        </div>
+                        <h3 class="section-title">Información Institucional</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Sede de Asignación <span class="required">*</span>
+                                </label>
+                                <select name="admin_sede_asignacion" class="form-select" data-required="true">
+                                    <option value="">Seleccionar sede</option>
+                                    {% for key, value in sedes %}
+                                        <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Cargo/Posición Institucional <span class="required">*</span>
+                                </label>
+                                <input type="text" name="admin_cargo_posicion" 
+                                       class="form-input" 
+                                       placeholder="Ej: Director de UYCIT, Jefe de Laboratorio"
+                                       data-required="true">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Unidad <span class="required">*</span>
+                                </label>
+                                <input type="text" name="admin_unidad" 
+                                       class="form-input" 
+                                       placeholder="Ej: UYCIT, Unidad de Ingeniería"
+                                       data-required="true">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Correo Institucional <span class="required">*</span>
+                                </label>
+                                <input type="email" name="admin_correo_institucional" 
+                                       class="form-input" 
+                                       placeholder="ejemplo@est.emi.edu.bo"
+                                       data-required="true">
+                                <div class="field-hint">
+                                    <strong>Dominios permitidos:</strong> @est.emi.edu.bo, @doc.emi.edu.bo, @adm.emi.edu.bo
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Responsabilidades y Permisos -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">5</span>
+                        </div>
+                        <h3 class="section-title">Responsabilidades y Permisos</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Áreas de Responsabilidad <span class="optional">(Opcional)</span>
+                                </label>
+                                <div class="checkbox-grid">
+                                    {% for area, nombre in areas_responsabilidad %}
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="admin_areas_responsabilidad" value="{{ area }}">
+                                            <span class="checkbox-custom"></span>
+                                            <span class="checkbox-text">{{ nombre }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Laboratorios a Cargo <span class="optional">(Opcional)</span>
+                                </label>
+                                <select name="admin_laboratorios_asignados" id="laboratoriosSelect" class="form-select" multiple>
+                                    {% for laboratorio in laboratorios %}
+                                        <option value="{{ laboratorio.id }}">{{ laboratorio.nombre }} - {{ laboratorio.sede }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="field-hint">Mantén presionado Ctrl (Cmd en Mac) para seleccionar múltiples laboratorios</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Descripción de Responsabilidades <span class="optional">(Opcional)</span>
+                                </label>
+                                <textarea name="admin_descripcion_responsabilidades" 
+                                          class="form-textarea" 
+                                          rows="4"
+                                          placeholder="Describe las responsabilidades específicas del usuario..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Acceso -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">6</span>
+                        </div>
+                        <h3 class="section-title">Información de Acceso</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Usuario/Login <span class="auto-generated">(Se genera automáticamente)</span>
+                                </label>
+                                <input type="text" name="admin_username" 
+                                       class="form-input readonly" 
+                                       placeholder="Se generará automáticamente"
+                                       readonly>
+                                <div class="field-hint">Formato: nombre.apellido.sede</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Contraseña <span class="required">*</span>
+                                </label>
+                                <input type="password" name="admin_password" 
+                                       class="form-input" 
+                                       placeholder="Ingresa una contraseña segura"
+                                       data-required="true">
+                                <div class="field-hint">Mínimo 8 caracteres, incluye números y letras</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Adicional -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">7</span>
+                        </div>
+                        <h3 class="section-title">Información Adicional</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Estado del Usuario
+                                </label>
+                                <select name="admin_estado_usuario" class="form-select">
+                                    {% for key, value in estados %}
+                                        <option value="{{ key }}" {% if key == 'activo' %}selected{% endif %}>{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Observaciones <span class="optional">(Opcional)</span>
+                                </label>
+                                <textarea name="admin_observaciones" 
+                                          class="form-textarea" 
+                                          rows="3"
+                                          placeholder="Observaciones adicionales sobre el usuario..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FORMULARIO PARA AUXILIARES (ENCARGADOS DE LABORATORIO) -->
+            <div id="auxiliarForm" class="role-form hidden">
+                
+                <!-- Información Personal -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">2</span>
+                        </div>
+                        <h3 class="section-title">Información Personal</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="auxiliar-grid">
+                            <!-- Foto de perfil (OBLIGATORIA para auxiliares) -->
+                            <div class="photo-section">
+                                <label class="form-label">
+                                    Foto de Perfil <span class="required">*</span>
+                                </label>
+                                <div class="photo-upload-area required" onclick="document.getElementById('photoInputAuxiliar').click();">
+                                    <div class="photo-preview-container">
+                                        <img id="photoPreviewAuxiliar" class="photo-preview hidden" alt="Vista previa">
+                                        <div class="photo-placeholder" id="photoPlaceholderAuxiliar">
+                                            <i class="fas fa-camera"></i>
+                                            <span>Seleccionar Foto</span>
+                                        </div>
+                                    </div>
+                                    <input type="file" name="aux_foto_perfil" id="photoInputAuxiliar" accept="image/*" style="display: none;" data-required="true">
+                                </div>
+                                <div class="field-hint">JPG, PNG. Máximo 2MB. <strong>Obligatorio</strong></div>
+                            </div>
+                            
+                            <!-- Datos personales -->
+                            <div class="personal-data-auxiliar">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Nombres <span class="required">*</span>
+                                        </label>
+                                        <input type="text" name="aux_nombres" 
+                                               class="form-input" 
+                                               placeholder="Ingresa los nombres"
+                                               data-required="true">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Apellidos <span class="required">*</span>
+                                        </label>
+                                        <input type="text" name="aux_apellidos" 
+                                               class="form-input" 
+                                               placeholder="Ingresa los apellidos"
+                                               data-required="true">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Número de Carnet de Identidad <span class="required">*</span>
+                                        </label>
+                                        <input type="text" name="aux_numero_documento" 
+                                               class="form-input" 
+                                               placeholder="Ej: 1234567"
+                                               data-required="true">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Teléfono Personal <span class="required">*</span>
+                                        </label>
+                                        <input type="tel" name="aux_telefono_personal" 
+                                               class="form-input" 
+                                               placeholder="Ej: +591 70123456"
+                                               data-required="true">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Profesional (Simplificada) -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">3</span>
+                        </div>
+                        <h3 class="section-title">Información Profesional</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Nivel de Formación <span class="required">*</span>
+                                </label>
+                                <select name="aux_nivel_formacion" class="form-select" data-required="true">
+                                    <option value="">Seleccionar nivel</option>
+                                    {% for key, value in niveles_formacion %}
+                                        <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Área de Formación <span class="required">*</span>
+                                </label>
+                                <input type="text" name="aux_area_formacion" 
+                                       class="form-input" 
+                                       placeholder="Ej: Química, Física, Biología"
+                                       data-required="true">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Experiencia en Laboratorios <span class="optional">(Opcional)</span>
+                                </label>
+                                <input type="number" name="aux_experiencia_laboratorios" 
+                                       class="form-input" 
+                                       placeholder="Años de experiencia"
+                                       min="0"
+                                       max="50">
+                                <div class="field-hint">Años de experiencia trabajando en laboratorios</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Institucional -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">4</span>
+                        </div>
+                        <h3 class="section-title">Información Institucional</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Sede de Asignación <span class="required">*</span>
+                                </label>
+                                <select name="aux_sede_asignacion" id="sedeSelectAuxiliar" class="form-select" data-required="true">
+                                    <option value="">Seleccionar sede</option>
+                                    {% for key, value in sedes %}
+                                        <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Turno de Trabajo <span class="required">*</span>
+                                </label>
+                                <select name="aux_turno_trabajo" class="form-select" data-required="true">
+                                    <option value="">Seleccionar turno</option>
+                                    {% for key, value in turnos %}
+                                        <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Laboratorio(s) Asignado(s) <span class="required">*</span>
+                                </label>
+                                <select name="aux_laboratorios_asignados" id="laboratoriosSelectAuxiliar" class="form-select" multiple data-required="true">
+                                    <option value="">Primero selecciona una sede</option>
+                                </select>
+                                <div class="field-hint">Se cargarán los laboratorios de la sede seleccionada</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Correo Institucional <span class="required">*</span>
+                                </label>
+                                <input type="email" name="aux_correo_institucional" 
+                                       class="form-input" 
+                                       placeholder="ejemplo@est.emi.edu.bo"
+                                       data-required="true">
+                                <div class="field-hint">
+                                    <strong>Dominios permitidos:</strong> @est.emi.edu.bo, @doc.emi.edu.bo, @adm.emi.edu.bo
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Acceso (Simplificada) -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">5</span>
+                        </div>
+                        <h3 class="section-title">Información de Acceso</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Usuario/Login <span class="auto-generated">(Se genera automáticamente)</span>
+                                </label>
+                                <input type="text" name="aux_username" 
+                                       class="form-input readonly" 
+                                       placeholder="Se generará automáticamente"
+                                       readonly>
+                                <div class="field-hint">Formato: nombre.apellido.sede</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Contraseña <span class="required">*</span>
+                                </label>
+                                <input type="password" name="aux_password" 
+                                       class="form-input" 
+                                       placeholder="Ingresa una contraseña segura"
+                                       data-required="true">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Fecha de Inicio <span class="required">*</span>
+                                </label>
+                                <input type="date" name="aux_fecha_inicio" 
+                                       class="form-input" 
+                                       data-required="true">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Jefe Inmediato Superior <span class="required">*</span>
+                                </label>
+                                <select name="aux_jefe_inmediato" id="jefeInmediatoSelect" class="form-select" data-required="true">
+                                    <option value="">Primero selecciona una sede</option>
+                                </select>
+                                <div class="field-hint">Jefes UYCIT de la sede seleccionada</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Adicional -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <span class="step-number">6</span>
+                        </div>
+                        <h3 class="section-title">Información Adicional</h3>
+                    </div>
+                    
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Observaciones <span class="optional">(Opcional)</span>
+                                </label>
+                                <textarea name="aux_observaciones" 
+                                          class="form-textarea" 
+                                          rows="3"
+                                          placeholder="Observaciones adicionales sobre el auxiliar..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="form-actions" id="formActions" style="display: flex; justify-content: space-between; margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="history.back()">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="fas fa-save"></i>
+                    Crear Usuario
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Script iniciado - Versión corregida');
+    
+    const rolSelect = document.getElementById('rolSelect');
+    const roleInfo = document.getElementById('roleInfo');
+    const adminJefeForm = document.getElementById('adminJefeForm');
+    const auxiliarForm = document.getElementById('auxiliarForm');
+    const formActions = document.getElementById('formActions');
+
+    // Información de roles
+    const rolesInfo = {
+        'administrador': {
+            title: 'Administrador del Sistema',
+            description: 'Máximo nivel de acceso con control total sobre el sistema de laboratorios y gestión completa de usuarios.',
+            permissions: [
+                'Crear y gestionar todos los tipos de usuarios',
+                'Acceso completo a todas las funcionalidades',
+                'Gestión de configuraciones del sistema',
+                'Supervisión de todas las sedes y laboratorios',
+                'Dashboard de reordenamiento y reportes avanzados'
+            ]
+        },
+        'jefe_uycit': {
+            title: 'Jefe UYCIT',
+            description: 'Supervisión de auxiliares y gestión especializada de laboratorios en su sede asignada.',
+            permissions: [
+                'Crear y editar usuarios auxiliares en su sede',
+                'Supervisión de equipos e insumos',
+                'Gestión de guías de laboratorio',
+                'Acceso a reportes de su sede',
+                'Coordinación de actividades de laboratorio'
+            ]
+        },
+        'auxiliar': {
+            title: 'Auxiliar/Encargado de Laboratorio',
+            description: 'Operación directa en laboratorios específicos con responsabilidades operativas y de mantenimiento.',
+            permissions: [
+                'Gestión de inventarios de su laboratorio',
+                'Registro de actividades y uso de equipos',
+                'Mantenimiento básico de equipos',
+                'Consulta de información de su área',
+                'Reportes operativos básicos'
+            ]
+        }
+    };
+
+    // Función para remover atributo required de todos los campos
+    function removeAllRequired() {
+        console.log('🔄 Removiendo atributos required de todos los campos');
+        document.querySelectorAll('#adminJefeForm [required], #auxiliarForm [required]').forEach(input => {
+            input.removeAttribute('required');
+        });
+    }
+
+    // Función para agregar required a campos del formulario activo
+    function addRequiredToActiveForm(formElement) {
+        console.log('✅ Agregando required a campos del formulario activo');
+        formElement.querySelectorAll('[data-required="true"]').forEach(input => {
+            input.setAttribute('required', 'required');
+        });
+    }
+
+    // Manejar cambio de rol - CORREGIDO
+    rolSelect.addEventListener('change', function() {
+        const selectedRole = this.value;
+        console.log('🔄 Rol seleccionado:', selectedRole);
+        
+        // PASO 1: Remover required de todos los campos y ocultar formularios
+        removeAllRequired();
+        adminJefeForm.classList.add('hidden');
+        auxiliarForm.classList.add('hidden');
+        
+        if (selectedRole) {
+            console.log('✅ Mostrando información del rol:', selectedRole);
+            
+            // Mostrar información del rol
+            if (rolesInfo[selectedRole]) {
+                const info = rolesInfo[selectedRole];
+                roleInfo.querySelector('.role-title').textContent = info.title;
+                roleInfo.querySelector('.role-description').textContent = info.description;
+                
+                const permissionsList = roleInfo.querySelector('.permissions-list');
+                permissionsList.innerHTML = '';
+                info.permissions.forEach(permission => {
+                    const li = document.createElement('li');
+                    li.textContent = permission;
+                    permissionsList.appendChild(li);
+                });
+                
+                roleInfo.classList.remove('hidden');
+            }
+            
+            // PASO 2: Mostrar formulario correspondiente y agregar required
+            if (selectedRole === 'administrador' || selectedRole === 'jefe_uycit') {
+                console.log('📝 Mostrando formulario admin/jefe');
+                adminJefeForm.classList.remove('hidden');
+                addRequiredToActiveForm(adminJefeForm);
+            } else if (selectedRole === 'auxiliar') {
+                console.log('📝 Mostrando formulario auxiliar');
+                auxiliarForm.classList.remove('hidden');
+                addRequiredToActiveForm(auxiliarForm);
+            }
+        } else {
+            roleInfo.classList.add('hidden');
+        }
+    });
+
+    // Generar username automáticamente - CORREGIDO para campos únicos
+    function generateUsername() {
+        const selectedRole = rolSelect.value;
+        let nombres, apellidos, sede;
+        
+        if (selectedRole === 'administrador' || selectedRole === 'jefe_uycit') {
+            nombres = document.querySelector('input[name="admin_nombres"]')?.value;
+            apellidos = document.querySelector('input[name="admin_apellidos"]')?.value;
+            sede = document.querySelector('select[name="admin_sede_asignacion"]')?.value;
+            
+            if (nombres && apellidos && sede) {
+                const username = `${nombres.split(' ')[0]}.${apellidos.split(' ')[0]}.${sede}`.toLowerCase();
+                const usernameField = document.querySelector('input[name="admin_username"]');
+                if (usernameField) usernameField.value = username;
+            }
+        } else if (selectedRole === 'auxiliar') {
+            nombres = document.querySelector('input[name="aux_nombres"]')?.value;
+            apellidos = document.querySelector('input[name="aux_apellidos"]')?.value;
+            sede = document.querySelector('select[name="aux_sede_asignacion"]')?.value;
+            
+            if (nombres && apellidos && sede) {
+                const username = `${nombres.split(' ')[0]}.${apellidos.split(' ')[0]}.${sede}`.toLowerCase();
+                const usernameField = document.querySelector('input[name="aux_username"]');
+                if (usernameField) usernameField.value = username;
+            }
+        }
+    }
+
+    // Validar correo institucional - CORREGIDO
+    function validateInstitutionalEmail(input) {
+        const dominiosValidos = ['est.emi.edu.bo', 'doc.emi.edu.bo', 'adm.emi.edu.bo'];
+        const correo = input.value;
+        
+        if (correo) {
+            const dominio = correo.split('@')[1];
+            const esValido = dominiosValidos.includes(dominio);
+            
+            if (!esValido) {
+                input.classList.add('error');
+                showFieldError(input, 'El correo debe terminar en @est.emi.edu.bo, @doc.emi.edu.bo o @adm.emi.edu.bo');
+            } else {
+                input.classList.remove('error');
+                hideFieldError(input);
+            }
+        }
+    }
+
+    // Event listeners para generación automática y validación
+    document.addEventListener('input', function(e) {
+        // Generar username
+        if (e.target.name === 'admin_nombres' || e.target.name === 'admin_apellidos' || 
+            e.target.name === 'aux_nombres' || e.target.name === 'aux_apellidos') {
+            generateUsername();
+        }
+        
+        // Validar correo
+        if (e.target.name === 'admin_correo_institucional' || e.target.name === 'aux_correo_institucional') {
+            validateInstitutionalEmail(e.target);
+        }
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target.name === 'admin_sede_asignacion' || e.target.name === 'aux_sede_asignacion') {
+            generateUsername();
+        }
+    });
+
+    // Manejar subida de fotos
+    function handlePhotoPreview(inputId, previewId, placeholderId) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        const placeholder = document.getElementById(placeholderId);
+        
+        if (input && input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Event listeners para fotos
+    document.getElementById('photoInputAdmin')?.addEventListener('change', function() {
+        handlePhotoPreview('photoInputAdmin', 'photoPreviewAdmin', 'photoPlaceholderAdmin');
+    });
+    
+    document.getElementById('photoInputAuxiliar')?.addEventListener('change', function() {
+        handlePhotoPreview('photoInputAuxiliar', 'photoPreviewAuxiliar', 'photoPlaceholderAuxiliar');
+    });
+
+    // Funciones de utilidad para errores
+    function showFieldError(field, message) {
+        hideFieldError(field);
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'field-error';
+        errorDiv.textContent = message;
+        field.parentNode.appendChild(errorDiv);
+    }
+    
+    function hideFieldError(field) {
+        const existingError = field.parentNode.querySelector('.field-error');
+        if (existingError) {
+            existingError.remove();
+        }
+    }
+
+    // Función para procesar datos antes del envío
+    function prepareFormData() {
+        const selectedRole = rolSelect.value;
+        const formData = new FormData();
+        
+        // Agregar rol
+        formData.append('rol', selectedRole);
+        
+        if (selectedRole === 'administrador' || selectedRole === 'jefe_uycit') {
+            // Mapear campos de admin a campos estándar
+            const adminFields = {
+                'admin_nombres': 'nombres',
+                'admin_apellidos': 'apellidos', 
+                'admin_numero_documento': 'numero_documento',
+                'admin_telefono_personal': 'telefono_personal',
+                'admin_especialidad_area': 'especialidad_area',
+                'admin_sede_asignacion': 'sede_asignacion',
+                'admin_cargo_posicion': 'cargo_posicion',
+                'admin_unidad': 'unidad',
+                'admin_correo_institucional': 'correo_institucional',
+                'admin_username': 'username',
+                'admin_password': 'password',
+                'admin_estado_usuario': 'estado_usuario',
+                'admin_observaciones': 'observaciones'
+            };
+            
+            // Copiar datos de campos admin
+            Object.keys(adminFields).forEach(adminField => {
+                const element = document.querySelector(`[name="${adminField}"]`);
+                if (element && element.value) {
+                    formData.append(adminFields[adminField], element.value);
+                }
+            });
+            
+            // Foto de perfil
+            const fotoInput = document.getElementById('photoInputAdmin');
+            if (fotoInput && fotoInput.files[0]) {
+                formData.append('foto_perfil', fotoInput.files[0]);
+            }
+            
+            // Áreas de responsabilidad (checkboxes)
+            const areasChecked = document.querySelectorAll('input[name="admin_areas_responsabilidad"]:checked');
+            areasChecked.forEach(checkbox => {
+                formData.append('areas_responsabilidad', checkbox.value);
+            });
+            
+            // Laboratorios asignados
+            const labsSelect = document.getElementById('laboratoriosSelect');
+            if (labsSelect) {
+                Array.from(labsSelect.selectedOptions).forEach(option => {
+                    formData.append('laboratorios_asignados', option.value);
+                });
+            }
+            
+        } else if (selectedRole === 'auxiliar') {
+            // Mapear campos de auxiliar a campos estándar
+            const auxFields = {
+                'aux_nombres': 'nombres',
+                'aux_apellidos': 'apellidos',
+                'aux_numero_documento': 'numero_documento', 
+                'aux_telefono_personal': 'telefono_personal',
+                'aux_nivel_formacion': 'nivel_formacion',
+                'aux_area_formacion': 'area_formacion',
+                'aux_experiencia_laboratorios': 'experiencia_laboratorios',
+                'aux_sede_asignacion': 'sede_asignacion',
+                'aux_turno_trabajo': 'turno_trabajo',
+                'aux_correo_institucional': 'correo_institucional',
+                'aux_username': 'username',
+                'aux_password': 'password',
+                'aux_fecha_inicio': 'fecha_inicio',
+                'aux_jefe_inmediato': 'jefe_inmediato',
+                'aux_observaciones': 'observaciones'
+            };
+            
+            // Copiar datos de campos auxiliar
+            Object.keys(auxFields).forEach(auxField => {
+                const element = document.querySelector(`[name="${auxField}"]`);
+                if (element && element.value) {
+                    formData.append(auxFields[auxField], element.value);
+                }
+            });
+            
+            // Foto de perfil (obligatoria para auxiliares)
+            const fotoInput = document.getElementById('photoInputAuxiliar');
+            if (fotoInput && fotoInput.files[0]) {
+                formData.append('foto_perfil', fotoInput.files[0]);
+            }
+            
+            // Laboratorios asignados (auxiliar)
+            const labsSelect = document.getElementById('laboratoriosSelectAuxiliar');
+            if (labsSelect) {
+                Array.from(labsSelect.selectedOptions).forEach(option => {
+                    formData.append('laboratorios_asignados', option.value);
+                });
+            }
+        }
+        
+        return formData;
+    }
+
+    // Manejar envío del formulario - CORREGIDO
+    const userForm = document.getElementById('userForm');
+    if (userForm) {
+        console.log('📤 Event listener agregado al formulario');
+        
+        userForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevenir envío normal
+            
+            console.log('🚀 Formulario enviándose...');
+            
+            // Validar que se haya seleccionado un rol
+            const rolSelected = rolSelect.value;
+            console.log('👤 Rol seleccionado para envío:', rolSelected);
+            
+            if (!rolSelected) {
+                console.log('❌ No hay rol seleccionado');
+                alert('Por favor selecciona un rol antes de continuar');
+                return false;
+            }
+            
+            // Validar campos requeridos del formulario activo
+            const activeForm = rolSelected === 'auxiliar' ? auxiliarForm : adminJefeForm;
+            const requiredFields = activeForm.querySelectorAll('[required]');
+            let hasErrors = false;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('error');
+                    hasErrors = true;
+                } else {
+                    field.classList.remove('error');
+                }
+            });
+            
+            if (hasErrors) {
+                alert('Por favor completa todos los campos obligatorios');
+                return false;
+            }
+
+            // Mostrar mensaje de carga
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                console.log('🔄 Mostrando estado de carga');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando usuario...';
+                submitBtn.disabled = true;
+            }
+            
+            // Preparar y enviar datos
+            try {
+                const formData = prepareFormData();
+                
+                // Agregar CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                formData.append('csrfmiddlewaretoken', csrfToken);
+                
+                console.log('✅ Enviando datos procesados...');
+                
+                // Enviar con fetch
+                fetch(userForm.action || window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('✅ Usuario creado exitosamente');
+                        // Redirigir o mostrar mensaje de éxito
+                        window.location.href = response.url || '{% url "usuarios:lista" %}';
+                    } else {
+                        throw new Error('Error en el servidor');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error al crear usuario:', error);
+                    alert('Error al crear el usuario. Por favor intenta nuevamente.');
+                    
+                    // Restaurar botón
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<i class="fas fa-save"></i> Crear Usuario';
+                        submitBtn.disabled = false;
+                    }
+                });
+                
+            } catch (error) {
+                console.error('❌ Error al procesar datos:', error);
+                alert('Error al procesar los datos. Por favor revisa el formulario.');
+                
+                // Restaurar botón
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="fas fa-save"></i> Crear Usuario';
+                    submitBtn.disabled = false;
+                }
+            }
+            
+            return false;
+        });
+    } else {
+        console.log('❌ No se encontró el formulario userForm');
+    }
+
+    // Función de debugging
+    window.debugForm = function() {
+        console.log('🐛 DEBUG - Estado del formulario:');
+        console.log('- Rol seleccionado:', rolSelect.value);
+        console.log('- Admin form visible:', !adminJefeForm.classList.contains('hidden'));
+        console.log('- Auxiliar form visible:', !auxiliarForm.classList.contains('hidden'));
+        
+        const formData = prepareFormData();
+        console.log('- Datos procesados:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value}`);
+        }
+    };
+
+    console.log('✅ Script de formulario inicializado correctamente');
+});
+</script>
+
+{% endblock %}
