@@ -195,10 +195,23 @@ def detalle_equipo_view(request, pk):
     # Obtener mantenimientos
     mantenimientos = MantenimientoEquipo.objects.filter(equipo=equipo).order_by('-fecha_inicio')[:10]
     
+    # Calcular valores totales
+    numero_unidades = equipo.numero_unidades or 1
+    valor_total_dolares = None
+    valor_total_bolivianos = None
+    
+    if hasattr(equipo, 'costo_dolares') and equipo.costo_dolares:
+        valor_total_dolares = equipo.costo_dolares * numero_unidades
+        
+    if hasattr(equipo, 'costo_bolivianos') and equipo.costo_bolivianos:
+        valor_total_bolivianos = equipo.costo_bolivianos * numero_unidades
+    
     context = {
         'equipo': equipo,
         'historial': historial,
         'mantenimientos': mantenimientos,
+        'valor_total_dolares': valor_total_dolares,
+        'valor_total_bolivianos': valor_total_bolivianos,
     }
     
     return render(request, 'equipos/detalle.html', context)

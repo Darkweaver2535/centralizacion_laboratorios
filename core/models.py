@@ -8,7 +8,7 @@ class UnidadAcademica(models.Model):
         ('UACB', 'UACB - Cochabamba'),
         ('UASC', 'UASC - Santa Cruz'),
         ('UATP', 'UATP - Trópico'),
-        ('UCRB', 'UCRB - Riberalta'),
+        ('UARB', 'UARB - Riberalta'),
     ]
     
     nombre = models.CharField(max_length=20, choices=UNIDADES, unique=True)

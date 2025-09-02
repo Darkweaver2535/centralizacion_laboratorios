@@ -177,12 +177,12 @@
                         </div>
                         
                         <div class="info-item full-width">
-                            <label>Valor Total ({{ equipo.numero_unidades }} unidades)</label>
+                            <label>Valor Total ({{ equipo.numero_unidades|default:1 }} unidades)</label>
                             <span class="currency highlight">
-                                {% if equipo.costo_dolares %}
-                                    ${{ equipo.costo_dolares|mul:equipo.numero_unidades|floatformat:2 }} USD
-                                {% elif equipo.costo_bolivianos %}
-                                    Bs. {{ equipo.costo_bolivianos|mul:equipo.numero_unidades|floatformat:2 }}
+                                {% if valor_total_dolares %}
+                                    ${{ valor_total_dolares|floatformat:2 }} USD
+                                {% elif valor_total_bolivianos %}
+                                    Bs. {{ valor_total_bolivianos|floatformat:2 }}
                                 {% else %}
                                     No calculable
                                 {% endif %}
