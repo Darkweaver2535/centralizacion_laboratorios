@@ -148,8 +148,8 @@ def importar_malla_curricular():
                 
                 # Crear o reutilizar asignatura
                 if asignatura_key not in asignatura_cache:
-                    # Elegir nombre de asignatura del modelo
-                    nombre_asignatura = asignaturas_disponibles[len(asignatura_cache) % len(asignaturas_disponibles)]
+                    # Usar el nombre REAL del Excel, no uno hardcodeado
+                    nombre_asignatura = asignatura_excel.lower().replace(' ', '_').replace('í', 'i').replace('ó', 'o')
                     
                     asignatura_obj, created = Asignatura.objects.get_or_create(
                         nombre=nombre_asignatura,
@@ -157,7 +157,9 @@ def importar_malla_curricular():
                         semestre=semestre,
                         defaults={
                             'carga_horaria_semanal': carga_semanal,
-                            'carga_horaria_semestral': carga_semestral
+                            'carga_horaria_semestral': carga_semestral,
+                            'codigo_competencia': str(row['CODIGO DE COMPETENCIA']) if pd.notna(row['CODIGO DE COMPETENCIA']) else '',
+                            'sigla_curricular': str(row['SIGLA CURRICULAR']) if pd.notna(row['SIGLA CURRICULAR']) else ''
                         }
                     )
                     
