@@ -106,83 +106,28 @@ def equipos_view(request):
 
 @login_required
 def nuevo_equipo_view(request):
-    """Vista para crear un nuevo equipo"""
+    """Vista para crear un nuevo equipo con todas las 24 columnas"""
     
     if request.method == 'POST':
-        try:
-            print("=== DEBUG: Datos del formulario ===")
-            for key, value in request.POST.items():
-                print(f"{key}: {value}")
-            print("=== FIN DEBUG ===")
-            
-            with transaction.atomic():
-                # Validar campos requeridos
-                campos_requeridos = [
-                    'unidad_academica', 'carrera', 'semestre', 'asignatura',
-                    'carga_horaria_semanal', 'carga_horaria_semestral',
-                    'guia_laboratorio', 'practica',
-                    'equipo_existente', 'laboratorio'
-                ]
-                
-                for campo in campos_requeridos:
-                    if not request.POST.get(campo):
-                        raise ValueError(f"El campo {campo} es requerido")
-                
-                # Crear el equipo con todos los datos del formulario
-                equipo = Equipo.objects.create(
-                    unidad_academica_id=int(request.POST.get('unidad_academica')),
-                    carrera_id=int(request.POST.get('carrera')),
-                    semestre=int(request.POST.get('semestre')),
-                    asignatura_id=int(request.POST.get('asignatura')),
-                    carga_horaria_semanal=int(request.POST.get('carga_horaria_semanal', 4)),
-                    carga_horaria_semestral=int(request.POST.get('carga_horaria_semestral', 64)),
-                    guia_laboratorio_id=int(request.POST.get('guia_laboratorio')),
-                    practica_id=int(request.POST.get('practica')),
-                    equipo_existente=request.POST.get('equipo_existente'),
-                    marca=request.POST.get('marca', ''),
-                    modelo=request.POST.get('modelo', ''),
-                    estado=request.POST.get('estado', 'bueno'),
-                    numero_unidades=int(request.POST.get('numero_unidades', 1)),
-                    es_activo_fijo=request.POST.get('es_activo_fijo') == 'on',
-                    laboratorio_id=int(request.POST.get('laboratorio')),
-                    seccion_area=request.POST.get('seccion_area', ''),
-                    identificador_aula=request.POST.get('identificador_aula', ''),
-                    equipo_requerido=request.POST.get('equipo_requerido', ''),
-                    numero_equipos_requeridos=int(request.POST.get('numero_equipos_requeridos', 0)),
-                    usuario_creador=request.user,
-                    observaciones=request.POST.get('observaciones', ''),
-                )
-                
-                # Manejar archivos de imagen
-                if 'fotografia_frontal' in request.FILES:
-                    equipo.fotografia_frontal = request.FILES['fotografia_frontal']
-                
-                if 'fotografia_placa' in request.FILES:
-                    equipo.fotografia_placa = request.FILES['fotografia_placa']
-                
-                equipo.save()
-                
-                print(f"=== EQUIPO CREADO: {equipo.pk} - {equipo.equipo_existente} ===")
-                
-                messages.success(request, 'Equipo agregado correctamente.')
-                return redirect('visualizacion:analisis')  # Redirigir a la vista de visualización con 20 columnas
-                
-        except ValueError as e:
-            print(f"=== ERROR VALOR: {str(e)} ===")
-            messages.error(request, f'Error de validación: {str(e)}')
-        except Exception as e:
-            print(f"=== ERROR GENERAL: {str(e)} ===")
-            messages.error(request, f'Error al crear el equipo: {str(e)}')
+        form = EquipoForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    equipo = form.save()
+                    messages.success(request, f'Equipo "{equipo.equipo_existente}" creado exitosamente.')
+                    return redirect('equipos:detalle', pk=equipo.pk)
+            except Exception as e:
+                messages.error(request, f'Error al crear el equipo: {str(e)}')
+        else:
+            messages.error(request, 'Por favor corrija los errores en el formulario.')
+    else:
+        form = EquipoForm()
     
-    # Datos para los formularios
-    unidades = UnidadAcademica.objects.all()
-    carreras = Carrera.objects.all()
-    laboratorios = Laboratorio.objects.all()
-    
+    # Datos para los selectores dinámicos
     context = {
-        'unidades': unidades,
-        'carreras': carreras,
-        'laboratorios': laboratorios,
+        'form': form,
+        'unidades_academicas': UnidadAcademica.objects.all(),
+        'laboratorios': Laboratorio.objects.all(),
         'estados_choices': Equipo.ESTADOS,
         'semestres_choices': [(i, f"{i}° Semestre") for i in range(1, 11)],
     }

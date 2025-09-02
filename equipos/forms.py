@@ -159,7 +159,7 @@ class EquipoForm(forms.ModelForm):
             else:
                 self.fields['practica'].queryset = Practica.objects.none()
         else:
-            # Para nuevo equipo, inicializar con querysets vacíos
+            # Para nuevo equipo, inicializar con querysets vacíos que se llenarán por AJAX
             self.fields['asignatura'].queryset = Asignatura.objects.none()
             self.fields['criterio_desempeno'].queryset = CriterioDesempeno.objects.none()
             self.fields['unidad_didactica'].queryset = UnidadDidactica.objects.none()
