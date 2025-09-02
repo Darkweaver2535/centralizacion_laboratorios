@@ -211,8 +211,8 @@
                                     <td>{{ equipo.asignatura.get_nombre_display }}</td>
                                     <td>{{ equipo.carga_horaria_semestral|default:"-" }}</td>
                                     <td>{{ equipo.carga_horaria_semanal|default:"-" }}</td>
-                                    <td>{{ equipo.criterio_desempeno.nombre|default:"-" }}</td>
-                                    <td>{{ equipo.unidad_didactica.nombre|default:"-" }}</td>
+                                    <td>{{ equipo.criterio_desempeno.descripcion|default:"-" }}</td>
+                                    <td>{{ equipo.unidad_didactica.descripcion|default:"-" }}</td>
                                     <td>{{ equipo.contenido_analitico.descripcion|default:"-" }}</td>
                                     <td>{{ equipo.guia_laboratorio.get_nombre_display|default:"-" }}</td>
                                     <td>{{ equipo.practica.get_nombre_display|default:"-" }}</td>

@@ -18,6 +18,15 @@ urlpatterns = [
     path('ajax/practicas/', views.get_practicas_ajax, name='practicas_ajax'),
     path('ajax/laboratorios/', views.get_laboratorios_ajax, name='laboratorios_ajax'),
     
+    # URLs para cargar datos de malla curricular dinámicamente
+    path('ajax/cargar-carreras/', views.cargar_carreras_ajax, name='cargar_carreras_ajax'),
+    path('ajax/cargar-asignaturas/', views.cargar_asignaturas_ajax, name='cargar_asignaturas_ajax'),
+    path('ajax/cargar-criterios-desempeno/', views.cargar_criterios_desempeno_ajax, name='cargar_criterios_ajax'),
+    path('ajax/cargar-unidades-didacticas/', views.cargar_unidades_didacticas_ajax, name='cargar_unidades_didacticas_ajax'),
+    path('ajax/cargar-contenidos-analiticos/', views.cargar_contenidos_analiticos_ajax, name='cargar_contenidos_ajax'),
+    path('ajax/cargar-guias-laboratorio/', views.cargar_guias_laboratorio_ajax, name='cargar_guias_ajax'),
+    path('ajax/cargar-practicas/', views.cargar_practicas_ajax, name='cargar_practicas_ajax'),
+    
     # URLs para el sistema de reordenamiento
     path('reordenamiento/', views.lista_tareas_reordenamiento, name='reordenamiento'),
     path('reordenamiento/nueva-tarea/', views.nueva_tarea_reordenamiento, name='nueva_tarea'),

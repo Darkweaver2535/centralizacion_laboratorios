@@ -293,7 +293,7 @@ class CriterioDesempeno(models.Model):
         ordering = ['nombre']
     
     def __str__(self):
-        return self.nombre
+        return self.descripcion[:100] + "..." if len(self.descripcion) > 100 else self.descripcion
 
 
 class UnidadDidactica(models.Model):
@@ -310,7 +310,7 @@ class UnidadDidactica(models.Model):
         ordering = ['nombre']
     
     def __str__(self):
-        return self.nombre
+        return self.descripcion[:100] + "..." if len(self.descripcion) > 100 else self.descripcion
 
 
 class ContenidoAnalitico(models.Model):
@@ -327,4 +327,4 @@ class ContenidoAnalitico(models.Model):
         ordering = ['nombre']
     
     def __str__(self):
-        return self.nombre
+        return self.descripcion[:100] + "..." if self.descripcion and len(self.descripcion) > 100 else (self.descripcion or self.nombre)

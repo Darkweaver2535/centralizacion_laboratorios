@@ -1,0 +1,1238 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Equipo - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Editar Equipo{% endblock %}
+
+{% block page_description %}Modificar información del equipo: {{ equipo.equipo_existente }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Variables CSS para consistencia con el sistema */
+    :root {
+        --primary-color: #3b82f6;
+        --primary-hover: #2563eb;
+        --secondary-color: #6b7280;
+        --success-color: #059669;
+        --warning-color: #d97706;
+        --danger-color: #dc2626;
+        --info-color: #0284c7;
+        --white: #ffffff;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --radius-xl: 1rem;
+        --radius-2xl: 1.5rem;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Container principal */
+    .editar-equipo-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        background: var(--gray-50);
+        min-height: calc(100vh - 100px);
+    }
+
+    /* Header elegante */
+    .form-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--info-color) 100%);
+        color: var(--white);
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-xl);
+        border-radius: var(--radius-lg);
+    }
+
+    .form-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(180deg); }
+    }
+
+    .form-header-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .header-info h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-info h2 i {
+        font-size: 2rem;
+        opacity: 0.9;
+    }
+
+    .header-info p {
+        font-size: 1.1rem;
+        margin: 0;
+        opacity: 0.9;
+        max-width: 600px;
+        line-height: 1.5;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    /* Formulario principal */
+    .equipo-form {
+        display: grid;
+        gap: 2.5rem;
+        padding-bottom: 2rem;
+    }
+
+    /* Secciones del formulario */
+    .form-section {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 2px solid var(--gray-200);
+        overflow: hidden;
+        transition: var(--transition);
+        position: relative;
+    }
+
+    .form-section:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+        border-color: var(--primary-color);
+    }
+
+    .form-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+    }
+
+    /* Header de sección */
+    .section-header {
+        background: linear-gradient(135deg, var(--gray-50) 0%, var(--white) 100%);
+        padding: 2rem 2.5rem;
+        border-bottom: 2px solid var(--gray-200);
+        position: relative;
+    }
+
+    .section-header h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .section-header h3 i {
+        font-size: 1.125rem;
+        color: var(--primary-color);
+        width: 20px;
+        text-align: center;
+    }
+
+    .section-header p {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Grid responsive */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2rem;
+        padding: 2.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    /* Labels mejorados */
+    .form-group label {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--gray-800);
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-group label.required::after {
+        content: "*";
+        color: var(--danger-color);
+        font-weight: 900;
+        font-size: 1.1rem;
+        margin-left: 0.25rem;
+    }
+
+    /* Inputs estilizados */
+    .form-control {
+        padding: 1rem 1.25rem;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        font-size: 1rem;
+        color: var(--gray-900);
+        background: var(--white);
+        transition: var(--transition);
+        font-family: inherit;
+        width: 100%;
+        position: relative;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
+        background: var(--white);
+    }
+
+    .form-control:hover:not(:focus) {
+        border-color: var(--gray-300);
+    }
+
+    /* Estados de validación */
+    .form-control.is-valid {
+        border-color: var(--success-color);
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    }
+
+    .form-control.is-invalid {
+        border-color: var(--danger-color);
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+
+    /* Selects personalizados */
+    select.form-control {
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1rem;
+        padding-right: 3rem;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    /* Textareas */
+    textarea.form-control {
+        resize: vertical;
+        min-height: 120px;
+        line-height: 1.6;
+        font-family: inherit;
+    }
+
+    /* Help text */
+    .form-help {
+        margin-top: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        line-height: 1.4;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .form-help::before {
+        content: "\f05a";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 0.75rem;
+        color: var(--info-color);
+    }
+
+    /* Checkbox personalizado */
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--gray-50);
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        margin-top: 0.75rem;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+
+    .checkbox-wrapper:hover {
+        background: var(--gray-100);
+        border-color: var(--primary-color);
+    }
+
+    .checkbox-wrapper input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--primary-color);
+        cursor: pointer;
+    }
+
+    .checkbox-label {
+        margin: 0 !important;
+        font-weight: 600 !important;
+        color: var(--gray-700);
+        cursor: pointer;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+    }
+
+    /* File inputs */
+    .form-control-file {
+        padding: 1rem;
+        border: 2px dashed var(--gray-300);
+        border-radius: var(--radius-lg);
+        background: var(--gray-50);
+        transition: var(--transition);
+        cursor: pointer;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .form-control-file:hover {
+        border-color: var(--primary-color);
+        background: rgba(30, 58, 138, 0.05);
+    }
+
+    .form-control-file::before {
+        content: "\f07c";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        margin-right: 0.5rem;
+        color: var(--primary-color);
+    }
+
+    .form-control-file::after {
+        content: "Seleccionar archivo o arrastrar aquí";
+        display: block;
+        color: var(--gray-600);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Current image display */
+    .current-image {
+        margin-bottom: 1.5rem;
+        text-align: center;
+        padding: 1.5rem;
+        background: var(--gray-50);
+        border-radius: var(--radius-lg);
+        border: 2px solid var(--gray-200);
+    }
+
+    .current-image img {
+        max-width: 250px;
+        max-height: 200px;
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-md);
+        transition: var(--transition);
+    }
+
+    .current-image img:hover {
+        transform: scale(1.05);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .current-image p {
+        margin: 1rem 0 0 0;
+        color: var(--gray-600);
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    /* Botones estilizados */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 2rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-decoration: none;
+        border: none;
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        transition: var(--transition);
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        box-shadow: var(--shadow-md);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.6s;
+    }
+
+    .btn:hover::before {
+        left: 100%;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-xl);
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color), #2563eb);
+        color: var(--white);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #2563eb, var(--primary-color));
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, var(--gray-600), var(--gray-700));
+        color: var(--white);
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, var(--gray-700), var(--gray-800));
+        color: var(--white);
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, var(--info-color), #0369a1);
+        color: var(--white);
+    }
+
+    .btn-info:hover {
+        background: linear-gradient(135deg, #0369a1, #075985);
+        color: var(--white);
+    }
+
+    /* Actions container */
+    .form-actions {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: flex-start;
+        padding: 2.5rem;
+        background: linear-gradient(135deg, var(--gray-50) 0%, var(--white) 100%);
+        border-top: 1px solid var(--gray-200);
+        flex-wrap: wrap;
+        border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
+    }
+
+    /* Loading state */
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+        filter: blur(1px);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    /* Notification styles */
+    .notification {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: var(--radius-lg);
+        color: var(--white);
+        font-weight: 600;
+        z-index: 9999;
+        box-shadow: var(--shadow-xl);
+        animation: slideInRight 0.3s ease-out;
+        max-width: 400px;
+    }
+
+    .notification-success { background: var(--success-color); }
+    .notification-error { background: var(--danger-color); }
+    .notification-warning { background: var(--warning-color); }
+    .notification-info { background: var(--info-color); }
+
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+
+    /* Responsive design */
+    @media (max-width: 1024px) {
+        .form-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+        
+        .form-header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: center;
+            gap: 1.5rem;
+        }
+        
+        .header-actions {
+            align-self: stretch;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .editar-equipo-container {
+            padding: 15px;
+        }
+        
+        .form-header {
+            padding: 2rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .header-info h2 {
+            font-size: 2rem;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+        
+        .section-header {
+            padding: 1.5rem;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            padding: 2rem 1.5rem;
+        }
+        
+        .btn {
+            justify-content: center;
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .header-info h2 {
+            font-size: 1.75rem;
+        }
+        
+        .form-grid {
+            padding: 1rem;
+        }
+        
+        .section-header {
+            padding: 1rem;
+        }
+        
+        .section-header h3 {
+            font-size: 1.25rem;
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+        }
+    }
+</style>
+
+<div class="editar-equipo-container">
+    <!-- Header principal -->
+    <div class="form-header fade-in-up">
+        <div class="form-header-content">
+            <div class="header-info">
+                <h2>
+                    <i class="fas fa-edit"></i>
+                    Editar Equipo
+                </h2>
+                <p>Modifique los campos necesarios para actualizar la información del equipo: <strong>{{ equipo.equipo_existente }}</strong></p>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'equipos:detalle' equipo.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver al Detalle
+                </a>
+                <a href="{% url 'visualizacion:analisis' %}" class="btn btn-info">
+                    <i class="fas fa-table"></i>
+                    Ver Tabla General
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario principal -->
+    <form method="post" enctype="multipart/form-data" id="equipoForm" class="equipo-form">
+        {% csrf_token %}
+        
+        <!-- Sección 1: Información Básica -->
+        <div class="form-section fade-in-up" style="animation-delay: 0.1s;">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-info-circle"></i>
+                    Información Básica
+                </h3>
+                <p>Datos fundamentales del equipo y características principales</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="equipo_existente" class="required">Nombre del Equipo</label>
+                    <input type="text" 
+                           id="equipo_existente" 
+                           name="equipo_existente" 
+                           class="form-control"
+                           value="{{ equipo.equipo_existente }}"
+                           placeholder="Ej: Microscopio Óptico Binocular"
+                           required>
+                    <small class="form-help">Nombre descriptivo completo del equipo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="marca">Marca</label>
+                    <input type="text" 
+                           id="marca" 
+                           name="marca" 
+                           class="form-control"
+                           value="{{ equipo.marca|default:'' }}"
+                           placeholder="Ej: Olympus, Zeiss, etc.">
+                    <small class="form-help">Fabricante del equipo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="modelo">Modelo</label>
+                    <input type="text" 
+                           id="modelo" 
+                           name="modelo" 
+                           class="form-control"
+                           value="{{ equipo.modelo|default:'' }}"
+                           placeholder="Ej: CX23, BX53, etc.">
+                    <small class="form-help">Modelo específico del equipo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_unidades" class="required">Número de Unidades</label>
+                    <input type="number" 
+                           id="numero_unidades" 
+                           name="numero_unidades" 
+                           class="form-control"
+                           min="1" 
+                           value="{{ equipo.numero_unidades|default:1 }}"
+                           required>
+                    <small class="form-help">Cantidad de equipos disponibles</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="estado" class="required">Estado del Equipo</label>
+                    <select id="estado" name="estado" class="form-control" required>
+                        {% for value, display in estados_choices %}
+                            <option value="{{ value }}" {% if equipo.estado == value %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">Condición actual del equipo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="es_activo_fijo">Clasificación de Activo</label>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" 
+                               id="es_activo_fijo" 
+                               name="es_activo_fijo"
+                               {% if equipo.es_activo_fijo %}checked{% endif %}>
+                        <label for="es_activo_fijo" class="checkbox-label">
+                            <i class="fas fa-check" style="color: var(--success-color);"></i> Es un activo fijo según acta de entrega
+                        </label>
+                    </div>
+                    <small class="form-help">Marque si el equipo está registrado como activo fijo institucional</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 2: Ubicación Académica -->
+        <div class="form-section fade-in-up" style="animation-delay: 0.2s;">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-university"></i>
+                    Ubicación Académica
+                </h3>
+                <p>Asignación a unidad académica y estructura curricular</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="unidad_academica" class="required">Unidad Académica</label>
+                    <select id="unidad_academica" name="unidad_academica" class="form-control" required>
+                        <option value="">Seleccione una unidad académica</option>
+                        {% for unidad in unidades %}
+                            <option value="{{ unidad.id }}" {% if equipo.unidad_academica.id == unidad.id %}selected{% endif %}>
+                                {{ unidad.get_nombre_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">Departamento o facultad responsable</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="carrera" class="required">Carrera</label>
+                    <select id="carrera" name="carrera" class="form-control" required>
+                        <option value="">Seleccione una carrera</option>
+                        {% for carrera in carreras %}
+                            <option value="{{ carrera.id }}" {% if equipo.carrera.id == carrera.id %}selected{% endif %}>
+                                {{ carrera.get_nombre_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">Programa académico que utiliza el equipo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="semestre" class="required">Semestre</label>
+                    <select id="semestre" name="semestre" class="form-control" required>
+                        <option value="">Seleccione un semestre</option>
+                        {% for value, display in semestres_choices %}
+                            <option value="{{ value }}" {% if equipo.semestre == value %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">Semestre académico de uso</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="asignatura" class="required">Asignatura</label>
+                    <select id="asignatura" name="asignatura" class="form-control" required>
+                        <option value="">Seleccione una asignatura</option>
+                        {% for asignatura in asignaturas %}
+                            <option value="{{ asignatura.id }}" {% if equipo.asignatura.id == asignatura.id %}selected{% endif %}>
+                                {{ asignatura.get_nombre_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">Materia específica que utiliza el equipo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="carga_horaria_semanal" class="required">Carga Horaria Semanal</label>
+                    <input type="number" 
+                           id="carga_horaria_semanal" 
+                           name="carga_horaria_semanal" 
+                           class="form-control"
+                           min="1" 
+                           max="20"
+                           value="{{ equipo.carga_horaria_semanal|default:4 }}"
+                           required>
+                    <small class="form-help">Horas semanales de la asignatura</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="carga_horaria_semestral" class="required">Carga Horaria Semestral</label>
+                    <input type="number" 
+                           id="carga_horaria_semestral" 
+                           name="carga_horaria_semestral" 
+                           class="form-control"
+                           min="16" 
+                           max="160"
+                           value="{{ equipo.carga_horaria_semestral|default:64 }}"
+                           required>
+                    <small class="form-help">Total de horas académicas en el semestre</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 3: Contexto Curricular -->
+        <div class="form-section fade-in-up" style="animation-delay: 0.3s;">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-book"></i>
+                    Contexto Curricular
+                </h3>
+                <p>Relación con la malla curricular y contenidos académicos</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="criterio_desempeno">Criterio de Desempeño</label>
+                    <input type="text" 
+                           id="criterio_desempeno" 
+                           name="criterio_desempeno" 
+                           class="form-control"
+                           value="{{ equipo.criterio_desempeno.nombre|default:'' }}"
+                           placeholder="Criterio de desempeño relacionado"
+                           readonly>
+                    <small class="form-help">Se asigna automáticamente según la asignatura</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="unidad_didactica">Unidad Didáctica</label>
+                    <input type="text" 
+                           id="unidad_didactica" 
+                           name="unidad_didactica" 
+                           class="form-control"
+                           value="{{ equipo.unidad_didactica.nombre|default:'' }}"
+                           placeholder="Unidad didáctica correspondiente"
+                           readonly>
+                    <small class="form-help">Se asigna automáticamente según la asignatura</small>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="contenido_analitico">Contenido Analítico</label>
+                    <textarea id="contenido_analitico" 
+                              name="contenido_analitico" 
+                              class="form-control"
+                              rows="3"
+                              placeholder="Contenido analítico relacionado"
+                              readonly>{{ equipo.contenido_analitico.descripcion|default:'' }}</textarea>
+                    <small class="form-help">Se asigna automáticamente según la asignatura</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="guia_laboratorio" class="required">Guía de Laboratorio</label>
+                    <select id="guia_laboratorio" name="guia_laboratorio" class="form-control" required>
+                        <option value="">Seleccione una guía</option>
+                        {% for guia in guias_laboratorio %}
+                            <option value="{{ guia.id }}" {% if equipo.guia_laboratorio.id == guia.id %}selected{% endif %}>
+                                {{ guia.get_nombre_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">Manual o guía de prácticas de laboratorio</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="practica" class="required">Práctica</label>
+                    <select id="practica" name="practica" class="form-control" required>
+                        <option value="">Seleccione una práctica</option>
+                        {% for practica in practicas %}
+                            <option value="{{ practica.id }}" {% if equipo.practica.id == practica.id %}selected{% endif %}>
+                                {{ practica.get_nombre_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">Práctica específica donde se utiliza el equipo</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 4: Ubicación Física -->
+        <div class="form-section fade-in-up" style="animation-delay: 0.4s;">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-map-marker-alt"></i>
+                    Ubicación Física
+                </h3>
+                <p>Localización actual del equipo en las instalaciones</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="laboratorio" class="required">Laboratorio</label>
+                    <select id="laboratorio" name="laboratorio" class="form-control" required>
+                        <option value="">Seleccione un laboratorio</option>
+                        {% for lab in laboratorios %}
+                            <option value="{{ lab.id }}" {% if equipo.laboratorio.id == lab.id %}selected{% endif %}>
+                                {{ lab.get_nombre_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">Laboratorio donde se encuentra el equipo</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="seccion_area">Sección/Área</label>
+                    <input type="text" 
+                           id="seccion_area" 
+                           name="seccion_area" 
+                           class="form-control"
+                           value="{{ equipo.laboratorio.seccion_area|default:'' }}"
+                           placeholder="Ej: Área A, Sección 1, etc.">
+                    <small class="form-help">Área específica dentro del laboratorio</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="identificador_aula">Identificador/Nº de Aula</label>
+                    <input type="text" 
+                           id="identificador_aula" 
+                           name="identificador_aula" 
+                           class="form-control"
+                           value="{{ equipo.laboratorio.identificador_aula|default:'' }}"
+                           placeholder="Ej: LAB-001, Aula 205, etc.">
+                    <small class="form-help">Número o código de identificación del espacio</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 5: Equipos Requeridos -->
+        <div class="form-section fade-in-up" style="animation-delay: 0.5s;">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-clipboard-list"></i>
+                    Equipos Requeridos
+                </h3>
+                <p>Necesidades adicionales de equipamiento complementario</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="equipo_requerido">Equipo Requerido</label>
+                    <input type="text" 
+                           id="equipo_requerido" 
+                           name="equipo_requerido" 
+                           class="form-control"
+                           value="{{ equipo.equipo_requerido|default:'' }}"
+                           placeholder="Descripción del equipo que se necesita">
+                    <small class="form-help">Equipos adicionales necesarios para el funcionamiento</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_equipos_requeridos">Número de Equipos Requeridos</label>
+                    <input type="number" 
+                           id="numero_equipos_requeridos" 
+                           name="numero_equipos_requeridos" 
+                           class="form-control"
+                           min="0"
+                           value="{{ equipo.numero_equipos_requeridos|default:0 }}"
+                           placeholder="0">
+                    <small class="form-help">Cantidad de equipos adicionales necesarios</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 6: Fotografías -->
+        <div class="form-section fade-in-up" style="animation-delay: 0.6s;">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-camera"></i>
+                    Fotografías del Equipo
+                </h3>
+                <p>Documentación visual del equipo y sus características</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fotografia_frontal">Fotografía Frontal</label>
+                    {% if equipo.fotografia_frontal %}
+                        <div class="current-image">
+                            <img src="{{ equipo.fotografia_frontal.url }}" alt="Fotografía frontal actual">
+                            <p><strong><i class="fas fa-image"></i> Imagen actual</strong> - Seleccione un archivo para reemplazar</p>
+                        </div>
+                    {% endif %}
+                    <input type="file" 
+                           id="fotografia_frontal" 
+                           name="fotografia_frontal" 
+                           class="form-control-file"
+                           accept="image/*">
+                    <small class="form-help">JPG, PNG o GIF - Máximo 5MB</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fotografia_placa">Fotografía de la Placa</label>
+                    {% if equipo.fotografia_placa %}
+                        <div class="current-image">
+                            <img src="{{ equipo.fotografia_placa.url }}" alt="Fotografía de placa actual">
+                            <p><strong><i class="fas fa-clipboard"></i> Imagen actual</strong> - Seleccione un archivo para reemplazar</p>
+                        </div>
+                    {% endif %}
+                    <input type="file" 
+                           id="fotografia_placa" 
+                           name="fotografia_placa" 
+                           class="form-control-file"
+                           accept="image/*">
+                    <small class="form-help">Foto de la placa de características técnicas</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 7: Observaciones -->
+        <div class="form-section fade-in-up" style="animation-delay: 0.7s;">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-sticky-note"></i>
+                    Observaciones
+                </h3>
+                <p>Información adicional y notas relevantes sobre el equipo</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="observaciones">Observaciones</label>
+                    <textarea id="observaciones" 
+                              name="observaciones" 
+                              class="form-control"
+                              rows="5"
+                              placeholder="Información adicional, notas importantes, comentarios sobre el estado, mantenimiento, etc...">{{ equipo.observaciones|default:'' }}</textarea>
+                    <small class="form-help">Incluya cualquier información relevante sobre el equipo</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="form-actions fade-in-up" style="animation-delay: 0.8s;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                Guardar Cambios
+            </button>
+            <a href="{% url 'equipos:detalle' equipo.pk %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                Cancelar
+            </a>
+            <a href="{% url 'visualizacion:analisis' %}" class="btn btn-info">
+                <i class="fas fa-table"></i>
+                Ver Tabla General
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Sistema de edición cargado con diseño profesional');
+    
+    // Elementos del formulario
+    const form = document.getElementById('equipoForm');
+    const requiredFields = document.querySelectorAll('[required]');
+    const cargaSemanalInput = document.getElementById('carga_horaria_semanal');
+    const cargaSemestralInput = document.getElementById('carga_horaria_semestral');
+    
+    // Validación en tiempo real
+    requiredFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            validateField(this);
+        });
+        
+        field.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid')) {
+                validateField(this);
+            }
+        });
+    });
+    
+    // Función de validación individual
+    function validateField(field) {
+        if (field.value.trim() === '') {
+            field.classList.add('is-invalid');
+            field.classList.remove('is-valid');
+            return false;
+        } else {
+            field.classList.add('is-valid');
+            field.classList.remove('is-invalid');
+            return true;
+        }
+    }
+    
+    // Cálculo automático de carga horaria semestral
+    if (cargaSemanalInput && cargaSemestralInput) {
+        cargaSemanalInput.addEventListener('input', function() {
+            const semanal = parseInt(this.value) || 0;
+            const semestral = semanal * 16; // 16 semanas promedio
+            cargaSemestralInput.value = semestral;
+            
+            // Validar el campo actualizado
+            if (cargaSemestralInput.hasAttribute('required')) {
+                validateField(cargaSemestralInput);
+            }
+        });
+    }
+    
+    // Validación del formulario al enviar
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        const submitButton = form.querySelector('button[type="submit"]');
+        
+        // Añadir estado de loading
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        form.classList.add('loading');
+        
+        // Validar todos los campos requeridos
+        requiredFields.forEach(field => {
+            if (!validateField(field)) {
+                isValid = false;
+            }
+        });
+        
+        // Validaciones específicas
+        const numeroUnidades = document.getElementById('numero_unidades');
+        if (numeroUnidades && parseInt(numeroUnidades.value) < 1) {
+            numeroUnidades.classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            
+            // Restaurar el botón
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+            form.classList.remove('loading');
+            
+            // Mostrar mensaje de error
+            showNotification('Por favor, complete todos los campos requeridos correctamente.', 'error');
+            
+            // Scroll al primer campo inválido
+            const firstInvalid = form.querySelector('.is-invalid');
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInvalid.focus();
+            }
+        } else {
+            // Mostrar mensaje de éxito
+            showNotification('Guardando cambios...', 'success');
+        }
+    });
+    
+    // Función para mostrar notificaciones
+    function showNotification(message, type = 'info') {
+        // Remover notificación existente
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        // Crear nueva notificación
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Auto-remover después de 5 segundos
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
+    }
+    
+    // Preview de imágenes antes de subir
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Crear preview
+                    let preview = input.parentElement.querySelector('.file-preview');
+                    if (!preview) {
+                        preview = document.createElement('div');
+                        preview.className = 'current-image';
+                        preview.style.marginTop = '1rem';
+                        input.parentElement.appendChild(preview);
+                    }
+                    
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 0.5rem; box-shadow: var(--shadow-md);">
+                        <p style="margin: 10px 0 0 0; color: var(--gray-600); font-size: 0.875rem; font-weight: 600;">
+                            <i class="fas fa-file-alt"></i> Nueva imagen seleccionada
+                        </p>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+    
+    // Efectos de hover mejorados
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            if (!this.disabled) {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = 'var(--shadow-xl)';
+            }
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            if (!this.disabled) {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = 'var(--shadow-md)';
+            }
+        });
+    });
+    
+    // Animaciones de entrada escalonadas
+    const sections = document.querySelectorAll('.form-section');
+    sections.forEach((section, index) => {
+        section.style.animationDelay = `${index * 0.1}s`;
+    });
+    
+    console.log('Sistema: Todas las funcionalidades del formulario han sido inicializadas');
+});
+</script>
+{% endblock %}

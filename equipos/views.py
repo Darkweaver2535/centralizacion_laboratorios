@@ -13,7 +13,12 @@ from django.utils import timezone
 import json
 
 from .models import Equipo, HistorialEquipo, MantenimientoEquipo, TareaReordenamiento, EquipoTarea, LogReordenamiento
-from core.models import UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, Practica, Laboratorio
+from .forms import EquipoForm
+from core.models import (
+    UnidadAcademica, Carrera, Asignatura, UnidadTematica, 
+    GuiaLaboratorio, Practica, Laboratorio, CriterioDesempeno,
+    UnidadDidactica, ContenidoAnalitico
+)
 
 @login_required
 def equipos_view(request):
@@ -218,82 +223,54 @@ def detalle_equipo_view(request, pk):
 
 @login_required
 def editar_equipo_view(request, pk):
-    """Vista para editar un equipo existente"""
+    """Vista para editar un equipo existente con datos del Excel de malla curricular"""
     equipo = get_object_or_404(Equipo, pk=pk)
     
     if request.method == 'POST':
-        try:
-            with transaction.atomic():
-                # Registrar cambio de estado si aplica
-                estado_anterior = equipo.estado
-                estado_nuevo = request.POST.get('estado', equipo.estado)
-                
-                if estado_anterior != estado_nuevo:
-                    HistorialEquipo.objects.create(
-                        equipo=equipo,
-                        estado_anterior=estado_anterior,
-                        estado_nuevo=estado_nuevo,
-                        usuario=request.user,
-                        observaciones=f"Cambio de estado: {estado_anterior} → {estado_nuevo}"
-                    )
-                
-                # Actualizar todos los campos
-                equipo.unidad_academica_id = request.POST.get('unidad_academica')
-                equipo.carrera_id = request.POST.get('carrera')
-                equipo.semestre = int(request.POST.get('semestre'))
-                equipo.asignatura_id = request.POST.get('asignatura')
-                equipo.carga_horaria_semanal = int(request.POST.get('carga_horaria_semanal'))
-                equipo.carga_horaria_semestral = int(request.POST.get('carga_horaria_semestral'))
-                equipo.guia_laboratorio_id = request.POST.get('guia_laboratorio')
-                equipo.practica_id = request.POST.get('practica')
-                equipo.equipo_existente = request.POST.get('equipo_existente')
-                equipo.marca = request.POST.get('marca', '')
-                equipo.modelo = request.POST.get('modelo', '')
-                equipo.estado = estado_nuevo
-                equipo.numero_unidades = int(request.POST.get('numero_unidades', 1))
-                equipo.es_activo_fijo = request.POST.get('es_activo_fijo') == 'on'
-                equipo.laboratorio_id = request.POST.get('laboratorio')
-                equipo.seccion_area = request.POST.get('seccion_area', '')
-                equipo.identificador_aula = request.POST.get('identificador_aula', '')
-                equipo.equipo_requerido = request.POST.get('equipo_requerido', '')
-                equipo.numero_equipos_requeridos = int(request.POST.get('numero_equipos_requeridos', 0))
-                equipo.observaciones = request.POST.get('observaciones', '')
-                
-                # Manejar archivos de imagen
-                if 'fotografia_frontal' in request.FILES:
-                    equipo.fotografia_frontal = request.FILES['fotografia_frontal']
-                
-                if 'fotografia_placa' in request.FILES:
-                    equipo.fotografia_placa = request.FILES['fotografia_placa']
-                
-                equipo.save()
-                
-                messages.success(request, 'Equipo actualizado correctamente.')
-                return redirect('equipos:detalle', pk=equipo.pk)
-                
-        except Exception as e:
-            messages.error(request, f'Error al actualizar el equipo: {str(e)}')
-    
-    # Datos para los formularios
-    unidades = UnidadAcademica.objects.all()
-    carreras = Carrera.objects.all()
-    laboratorios = Laboratorio.objects.all()
-    
-    # Datos relacionados del equipo actual
-    asignaturas = Asignatura.objects.filter(carrera=equipo.carrera, semestre=equipo.semestre) if equipo.carrera else []
-    guias_laboratorio = GuiaLaboratorio.objects.filter(unidad_tematica__asignatura=equipo.asignatura) if equipo.asignatura else []
-    practicas = Practica.objects.filter(guia_laboratorio=equipo.guia_laboratorio) if equipo.guia_laboratorio else []
+        form = EquipoForm(request.POST, request.FILES, instance=equipo)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Registrar cambio de estado si aplica
+                    estado_anterior = equipo.estado
+                    estado_nuevo = form.cleaned_data['estado']
+                    
+                    if estado_anterior != estado_nuevo:
+                        HistorialEquipo.objects.create(
+                            equipo=equipo,
+                            estado_anterior=estado_anterior,
+                            estado_nuevo=estado_nuevo,
+                            usuario=request.user,
+                            observaciones=f"Cambio de estado: {estado_anterior} → {estado_nuevo}"
+                        )
+                    
+                    # Guardar el equipo con los nuevos datos
+                    form.save()
+                    
+                    messages.success(request, 'Equipo actualizado correctamente.')
+                    return redirect('equipos:detalle', pk=equipo.pk)
+                    
+            except Exception as e:
+                messages.error(request, f'Error al actualizar el equipo: {str(e)}')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+    else:
+        form = EquipoForm(instance=equipo)
     
     context = {
+        'form': form,
         'equipo': equipo,
-        'unidades': unidades,
-        'carreras': carreras,
-        'laboratorios': laboratorios,
-        'asignaturas': asignaturas,
-        'guias_laboratorio': guias_laboratorio,
-        'practicas': practicas,
-        'estados_choices': Equipo.ESTADOS,
-        'semestres_choices': [(i, f"{i}° Semestre") for i in range(1, 11)],
+        'title': f'Editar Equipo: {equipo.equipo_existente}',
+        # Datos para AJAX
+        'criterios_data': list(CriterioDesempeno.objects.filter(
+            asignatura=equipo.asignatura
+        ).values('id', 'nombre', 'descripcion')) if equipo.asignatura else [],
+        'unidades_didacticas_data': list(UnidadDidactica.objects.filter(
+            asignatura=equipo.asignatura
+        ).values('id', 'nombre', 'descripcion')) if equipo.asignatura else [],
+        'contenidos_data': list(ContenidoAnalitico.objects.filter(
+            unidad_didactica=equipo.unidad_didactica
+        ).values('id', 'nombre', 'descripcion')) if equipo.unidad_didactica else [],
     }
     
     return render(request, 'equipos/editar.html', context)
@@ -1246,3 +1223,157 @@ def get_laboratorios_unidad_ajax(request):
             })
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+# Vistas AJAX para cargar datos dinámicamente en formularios de equipos
+
+@login_required
+def cargar_carreras_ajax(request):
+    """Cargar carreras basadas en la unidad académica seleccionada"""
+    unidad_academica_id = request.GET.get('unidad_academica_id')
+    
+    if unidad_academica_id:
+        carreras = Carrera.objects.filter(unidad_academica_id=unidad_academica_id).values('id', 'nombre')
+        carreras_data = [
+            {'id': carrera['id'], 'text': dict(Carrera.CARRERAS)[carrera['nombre']]}
+            for carrera in carreras
+        ]
+    else:
+        carreras_data = []
+    
+    return JsonResponse({'carreras': carreras_data})
+
+@login_required
+def cargar_asignaturas_ajax(request):
+    """Cargar asignaturas basadas en la carrera seleccionada"""
+    carrera_id = request.GET.get('carrera_id')
+    
+    if carrera_id:
+        asignaturas = Asignatura.objects.filter(carrera_id=carrera_id).values(
+            'id', 'nombre', 'semestre', 'codigo_competencia', 'sigla_curricular',
+            'carga_horaria_semanal', 'carga_horaria_semestral'
+        )
+        asignaturas_data = [
+            {
+                'id': asignatura['id'], 
+                'text': f"{dict(Asignatura.ASIGNATURAS_CHOICES)[asignatura['nombre']]} (Semestre {asignatura['semestre']})",
+                'semestre': asignatura['semestre'],
+                'codigo_competencia': asignatura['codigo_competencia'] or '',
+                'sigla_curricular': asignatura['sigla_curricular'] or '',
+                'carga_horaria_semanal': asignatura['carga_horaria_semanal'] or '',
+                'carga_horaria_semestral': asignatura['carga_horaria_semestral'] or ''
+            }
+            for asignatura in asignaturas
+        ]
+    else:
+        asignaturas_data = []
+    
+    return JsonResponse({'asignaturas': asignaturas_data})
+
+@login_required 
+def cargar_criterios_desempeno_ajax(request):
+    """Cargar criterios de desempeño basados en la asignatura seleccionada"""
+    asignatura_id = request.GET.get('asignatura_id')
+    
+    if asignatura_id:
+        criterios = CriterioDesempeno.objects.filter(asignatura_id=asignatura_id).values(
+            'id', 'nombre', 'descripcion'
+        )
+        criterios_data = [
+            {
+                'id': criterio['id'],
+                'text': criterio['descripcion'],  # Mostrar la descripción completa del Excel
+                'descripcion': criterio['descripcion']
+            }
+            for criterio in criterios
+        ]
+    else:
+        criterios_data = []
+    
+    return JsonResponse({'criterios': criterios_data})
+
+@login_required
+def cargar_unidades_didacticas_ajax(request):
+    """Cargar unidades didácticas basadas en la asignatura seleccionada"""
+    asignatura_id = request.GET.get('asignatura_id')
+    
+    if asignatura_id:
+        unidades = UnidadDidactica.objects.filter(asignatura_id=asignatura_id).values(
+            'id', 'nombre', 'descripcion'
+        )
+        unidades_data = [
+            {
+                'id': unidad['id'],
+                'text': unidad['descripcion'],  # Mostrar la descripción del Excel
+                'descripcion': unidad['descripcion']
+            }
+            for unidad in unidades
+        ]
+    else:
+        unidades_data = []
+    
+    return JsonResponse({'unidades_didacticas': unidades_data})
+
+@login_required
+def cargar_contenidos_analiticos_ajax(request):
+    """Cargar contenidos analíticos basados en la unidad didáctica seleccionada"""
+    unidad_didactica_id = request.GET.get('unidad_didactica_id')
+    
+    if unidad_didactica_id:
+        contenidos = ContenidoAnalitico.objects.filter(unidad_didactica_id=unidad_didactica_id).values(
+            'id', 'nombre', 'descripcion'
+        )
+        contenidos_data = [
+            {
+                'id': contenido['id'],
+                'text': contenido['descripcion'],  # Mostrar la descripción del Excel
+                'descripcion': contenido['descripcion']
+            }
+            for contenido in contenidos
+        ]
+    else:
+        contenidos_data = []
+    
+    return JsonResponse({'contenidos_analiticos': contenidos_data})
+
+@login_required
+def cargar_guias_laboratorio_ajax(request):
+    """Cargar guías de laboratorio basadas en la asignatura seleccionada"""
+    asignatura_id = request.GET.get('asignatura_id')
+    
+    if asignatura_id:
+        guias = GuiaLaboratorio.objects.filter(
+            unidad_tematica__asignatura_id=asignatura_id
+        ).values('id', 'nombre', 'numero')
+        guias_data = [
+            {
+                'id': guia['id'],
+                'text': f"Guía {guia['numero']}: {guia['nombre']}"
+            }
+            for guia in guias
+        ]
+    else:
+        guias_data = []
+    
+    return JsonResponse({'guias_laboratorio': guias_data})
+
+@login_required
+def cargar_practicas_ajax(request):
+    """Cargar prácticas basadas en la guía de laboratorio seleccionada"""
+    guia_laboratorio_id = request.GET.get('guia_laboratorio_id')
+    
+    if guia_laboratorio_id:
+        practicas = Practica.objects.filter(guia_laboratorio_id=guia_laboratorio_id).values(
+            'id', 'nombre', 'numero'
+        )
+        practicas_data = [
+            {
+                'id': practica['id'],
+                'text': f"Práctica {practica['numero']}: {practica['nombre']}"
+            }
+            for practica in practicas
+        ]
+    else:
+        practicas_data = []
+    
+    return JsonResponse({'practicas': practicas_data})

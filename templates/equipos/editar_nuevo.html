@@ -7,428 +7,136 @@
 
 {% block page_description %}Modificar información del equipo: {{ equipo.equipo_existente }}{% endblock %}
 
-{% block content %}
+{% block extra_css %}
 <style>
-    /* Variables CSS del sistema */
-    :root {
-        --primary-color: #1e3a8a;
-        --primary-dark: #1e2b4f;
-        --secondary-color: #3730a3;
-        --success-color: #10b981;
-        --warning-color: #f59e0b;
-        --danger-color: #ef4444;
-        --info-color: #0891b2;
-        --dark-color: #1f2937;
-        --light-color: #f8fafc;
-        --white: #ffffff;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-300: #d1d5db;
-        --gray-400: #9ca3af;
-        --gray-500: #6b7280;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-        --gray-900: #111827;
-        
-        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        
-        --radius-sm: 0.375rem;
-        --radius-md: 0.5rem;
-        --radius-lg: 0.75rem;
-        --radius-xl: 1rem;
-        --radius-2xl: 1.5rem;
-        
-        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Container principal */
-    .container-fluid {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    /* Header */
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-        padding: 25px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--gray-200);
-    }
-
-    .page-header h1 {
-        color: var(--primary-color);
-        font-size: 2rem;
-        font-weight: 700;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .page-header p {
-        color: var(--gray-600);
-        margin: 5px 0 0 0;
-        font-size: 1rem;
-    }
-
-    /* Secciones del formulario */
     .form-section {
         background: white;
         border-radius: 12px;
-        padding: 30px;
-        margin-bottom: 25px;
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--gray-200);
-        transition: var(--transition);
-    }
-    
-    .form-section:hover {
-        box-shadow: var(--shadow-lg);
-        transform: translateY(-2px);
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
     }
     
     .form-section h3 {
-        color: var(--primary-color);
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 0 0 25px 0;
-        border-bottom: 3px solid var(--primary-color);
-        padding-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    
-    .form-section h3 i {
+        color: #1f2937;
         font-size: 1.25rem;
-        color: var(--info-color);
+        font-weight: 600;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #3b82f6;
+        padding-bottom: 10px;
     }
     
-    /* Grid de formulario */
     .form-row {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 25px;
-        margin-bottom: 25px;
+        gap: 20px;
+        margin-bottom: 20px;
     }
     
     .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+        margin-bottom: 20px;
     }
     
     .form-group label {
-        font-weight: 600;
-        color: var(--gray-700);
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #374151;
         font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        gap: 6px;
     }
     
-    .form-group label::before {
-        content: "";
-        width: 4px;
-        height: 16px;
-        background: var(--info-color);
-        border-radius: 2px;
-    }
-    
-    /* Controles de formulario */
     .form-control {
         width: 100%;
-        padding: 14px 16px;
-        border: 2px solid var(--gray-300);
-        border-radius: 10px;
+        padding: 10px 12px;
+        border: 2px solid #d1d5db;
+        border-radius: 8px;
         font-size: 0.95rem;
-        transition: var(--transition);
+        transition: all 0.3s ease;
         background: white;
-        box-shadow: var(--shadow-sm);
     }
     
     .form-control:focus {
         outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
-        transform: translateY(-1px);
-    }
-
-    .form-control:hover {
-        border-color: var(--gray-400);
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
     
-    /* Campos dinámicos */
+    .form-check-input {
+        margin-right: 8px;
+        transform: scale(1.2);
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+    
+    .btn-primary {
+        background: #3b82f6;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #4b5563;
+    }
+    
+    .description-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 5px;
+        font-style: italic;
+    }
+    
     .dynamic-field {
         position: relative;
     }
     
     .loading-indicator {
         position: absolute;
-        right: 12px;
+        right: 10px;
         top: 50%;
         transform: translateY(-50%);
         display: none;
-        color: var(--primary-color);
-        font-size: 0.875rem;
     }
     
-    .loading-indicator.show {
-        display: block;
-    }
-
-    /* Información del Excel */
     .data-info {
-        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        border: 2px solid #bfdbfe;
-        border-radius: 10px;
-        padding: 15px;
-        margin-top: 10px;
-        font-size: 0.875rem;
-        color: var(--primary-color);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .data-info i {
-        color: var(--info-color);
-        font-size: 1rem;
-    }
-
-    /* Campos de información del Excel */
-    #info-excel-asignatura {
-        background: var(--gray-50);
-        border: 2px dashed var(--gray-300);
-        border-radius: 12px;
-        padding: 20px;
-        margin: 20px 0;
-    }
-
-    #info-excel-asignatura .form-control {
-        background: var(--gray-100);
-        border-color: var(--gray-300);
-        color: var(--gray-700);
-        font-weight: 600;
-    }
-
-    /* Checkbox personalizado */
-    .form-check {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 15px 0;
-    }
-    
-    .form-check-input {
-        width: 20px;
-        height: 20px;
-        border: 2px solid var(--gray-300);
-        border-radius: 4px;
-        cursor: pointer;
-        transition: var(--transition);
-    }
-    
-    .form-check-input:checked {
-        background: var(--primary-color);
-        border-color: var(--primary-color);
-    }
-
-    .form-check label {
-        cursor: pointer;
-        color: var(--gray-700);
-        font-weight: 500;
-        margin: 0;
-    }
-    
-    /* Botones */
-    .btn {
-        padding: 14px 28px;
-        border-radius: 10px;
-        font-weight: 600;
-        text-decoration: none;
-        border: none;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        transition: var(--transition);
-        font-size: 0.95rem;
-        box-shadow: var(--shadow-sm);
-    }
-    
-    .btn-primary {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white;
-    }
-    
-    .btn-primary:hover {
-        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
-        color: white;
-        text-decoration: none;
-    }
-    
-    .btn-secondary {
-        background: var(--gray-600);
-        color: white;
-    }
-    
-    .btn-secondary:hover {
-        background: var(--gray-700);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
-        color: white;
-        text-decoration: none;
-    }
-    
-    /* Texto descriptivo */
-    .description-text {
-        font-size: 0.875rem;
-        color: var(--gray-500);
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        padding: 12px;
         margin-top: 8px;
-        font-style: italic;
-        line-height: 1.4;
-        padding: 8px 12px;
-        background: var(--gray-50);
-        border-radius: 6px;
-        border-left: 3px solid var(--info-color);
-    }
-    
-    /* Mensajes de error */
-    .text-danger {
-        color: var(--danger-color) !important;
         font-size: 0.875rem;
-        font-weight: 500;
-        margin-top: 5px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        color: #1e40af;
     }
-
-    .text-danger::before {
-        content: "⚠";
-        font-size: 1rem;
-    }
-    
-    /* Información de archivos actuales */
-    .current-file-info {
-        margin-top: 10px;
-        padding: 10px;
-        background: var(--success-color);
-        color: white;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .current-file-info i {
-        color: white;
-    }
-    
-    /* Responsive */
-    @media (max-width: 1024px) {
-        .form-row {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .page-header {
-            flex-direction: column;
-            gap: 15px;
-            align-items: stretch;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .container-fluid {
-            padding: 15px;
-        }
-        
-        .form-section {
-            padding: 20px;
-        }
-        
-        .form-row {
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-        
-        .page-header {
-            padding: 20px;
-        }
-        
-        .form-section h3 {
-            font-size: 1.25rem;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .btn {
-            width: 100%;
-            justify-content: center;
-        }
-        
-        .page-header .d-flex {
-            flex-direction: column;
-            gap: 15px;
-        }
-    }
-
-    /* Animaciones */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .form-section {
-        animation: fadeInUp 0.6s ease-out;
-    }
-
-    .form-section:nth-child(2) { animation-delay: 0.1s; }
-    .form-section:nth-child(3) { animation-delay: 0.2s; }
-    .form-section:nth-child(4) { animation-delay: 0.3s; }
-    .form-section:nth-child(5) { animation-delay: 0.4s; }
-    .form-section:nth-child(6) { animation-delay: 0.5s; }
-
-    /* Utility classes */
-    .d-flex { display: flex; }
-    .justify-content-between { justify-content: space-between; }
-    .align-items-center { align-items: center; }
-    .mb-4 { margin-bottom: 1.5rem; }
-    .mb-3 { margin-bottom: 1rem; }
-    .mt-2 { margin-top: 0.5rem; }
-    .mt-3 { margin-top: 1rem; }
-    .text-muted { color: var(--gray-500) !important; }
 </style>
+{% endblock %}
 
+{% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <!-- Header -->
-            <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1><i class="fas fa-edit"></i> Editar Equipo</h1>
-                    <p>Complete los campos con los datos del equipo: <strong>{{ equipo.equipo_existente }}</strong></p>
+                    <h1 class="h3 mb-0">{{ title }}</h1>
+                    <p class="text-muted mb-0">Complete los campos con los datos del equipo</p>
                 </div>
                 <a href="{% url 'equipos:detalle' equipo.pk %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver al Detalle
@@ -446,17 +154,17 @@
                             {{ form.unidad_academica.label_tag }}
                             {{ form.unidad_academica }}
                             {% if form.unidad_academica.errors %}
-                                <div class="text-danger">{{ form.unidad_academica.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.unidad_academica.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="form-group dynamic-field">
                             {{ form.carrera.label_tag }}
                             {{ form.carrera }}
                             <div class="loading-indicator">
-                                <i class="fas fa-spinner fa-spin"></i> Cargando carreras...
+                                <i class="fas fa-spinner fa-spin"></i>
                             </div>
                             {% if form.carrera.errors %}
-                                <div class="text-danger">{{ form.carrera.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.carrera.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -465,56 +173,33 @@
                             {{ form.semestre.label_tag }}
                             {{ form.semestre }}
                             {% if form.semestre.errors %}
-                                <div class="text-danger">{{ form.semestre.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.semestre.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="form-group dynamic-field">
                             {{ form.asignatura.label_tag }}
                             {{ form.asignatura }}
                             <div class="loading-indicator">
-                                <i class="fas fa-spinner fa-spin"></i> Cargando asignaturas...
+                                <i class="fas fa-spinner fa-spin"></i>
                             </div>
                             {% if form.asignatura.errors %}
-                                <div class="text-danger">{{ form.asignatura.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.asignatura.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
-                    
-                    <!-- Información adicional del Excel -->
-                    <div id="info-excel-asignatura" style="display: none;">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label"><i class="fas fa-code"></i> Código de Competencia</label>
-                                <input type="text" id="codigo-competencia-info" class="form-control" readonly>
-                                <div class="data-info">
-                                    <i class="fas fa-file-excel"></i>
-                                    Código de competencia según Excel de malla curricular
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label"><i class="fas fa-tag"></i> Sigla Curricular</label>
-                                <input type="text" id="sigla-curricular-info" class="form-control" readonly>
-                                <div class="data-info">
-                                    <i class="fas fa-file-excel"></i>
-                                    Sigla curricular según Excel de malla curricular
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <div class="form-row">
                         <div class="form-group">
                             {{ form.carga_horaria_semanal.label_tag }}
                             {{ form.carga_horaria_semanal }}
                             {% if form.carga_horaria_semanal.errors %}
-                                <div class="text-danger">{{ form.carga_horaria_semanal.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.carga_horaria_semanal.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="form-group">
                             {{ form.carga_horaria_semestral.label_tag }}
                             {{ form.carga_horaria_semestral }}
                             {% if form.carga_horaria_semestral.errors %}
-                                <div class="text-danger">{{ form.carga_horaria_semestral.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.carga_horaria_semestral.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -523,15 +208,19 @@
                 <!-- Datos Curriculares del Excel -->
                 <div class="form-section">
                     <h3><i class="fas fa-book-open"></i> Datos Curriculares (Excel Malla Curricular)</h3>
-                    <div class="form-row">
+                    <div class="data-info">
+                        <i class="fas fa-info-circle"></i> 
+                        Estos datos provienen del Excel "DATOS DE MALLA CURRICULAR.xlsx" y se cargan dinámicamente según la asignatura seleccionada.
+                    </div>
+                    <div class="form-row mt-3">
                         <div class="form-group dynamic-field">
                             {{ form.criterio_desempeno.label_tag }}
                             {{ form.criterio_desempeno }}
                             <div class="loading-indicator">
-                                <i class="fas fa-spinner fa-spin"></i> Cargando criterios...
+                                <i class="fas fa-spinner fa-spin"></i>
                             </div>
                             {% if form.criterio_desempeno.errors %}
-                                <div class="text-danger">{{ form.criterio_desempeno.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.criterio_desempeno.errors.0 }}</div>
                             {% endif %}
                             <div class="description-text" id="criterio-descripcion"></div>
                         </div>
@@ -539,10 +228,10 @@
                             {{ form.unidad_didactica.label_tag }}
                             {{ form.unidad_didactica }}
                             <div class="loading-indicator">
-                                <i class="fas fa-spinner fa-spin"></i> Cargando unidades...
+                                <i class="fas fa-spinner fa-spin"></i>
                             </div>
                             {% if form.unidad_didactica.errors %}
-                                <div class="text-danger">{{ form.unidad_didactica.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.unidad_didactica.errors.0 }}</div>
                             {% endif %}
                             <div class="description-text" id="unidad-descripcion"></div>
                         </div>
@@ -552,10 +241,10 @@
                             {{ form.contenido_analitico.label_tag }}
                             {{ form.contenido_analitico }}
                             <div class="loading-indicator">
-                                <i class="fas fa-spinner fa-spin"></i> Cargando contenidos...
+                                <i class="fas fa-spinner fa-spin"></i>
                             </div>
                             {% if form.contenido_analitico.errors %}
-                                <div class="text-danger">{{ form.contenido_analitico.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.contenido_analitico.errors.0 }}</div>
                             {% endif %}
                             <div class="description-text" id="contenido-descripcion"></div>
                         </div>
@@ -570,14 +259,14 @@
                             {{ form.equipo_existente.label_tag }}
                             {{ form.equipo_existente }}
                             {% if form.equipo_existente.errors %}
-                                <div class="text-danger">{{ form.equipo_existente.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.equipo_existente.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="form-group">
                             {{ form.marca.label_tag }}
                             {{ form.marca }}
                             {% if form.marca.errors %}
-                                <div class="text-danger">{{ form.marca.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.marca.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -586,14 +275,14 @@
                             {{ form.modelo.label_tag }}
                             {{ form.modelo }}
                             {% if form.modelo.errors %}
-                                <div class="text-danger">{{ form.modelo.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.modelo.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="form-group">
                             {{ form.estado.label_tag }}
                             {{ form.estado }}
                             {% if form.estado.errors %}
-                                <div class="text-danger">{{ form.estado.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.estado.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -602,16 +291,17 @@
                             {{ form.numero_unidades.label_tag }}
                             {{ form.numero_unidades }}
                             {% if form.numero_unidades.errors %}
-                                <div class="text-danger">{{ form.numero_unidades.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.numero_unidades.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="form-group">
-                            <div class="form-check">
+                            <label></label>
+                            <div class="form-check mt-3">
                                 {{ form.es_activo_fijo }}
                                 {{ form.es_activo_fijo.label_tag }}
                             </div>
                             {% if form.es_activo_fijo.errors %}
-                                <div class="text-danger">{{ form.es_activo_fijo.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.es_activo_fijo.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -625,14 +315,14 @@
                             {{ form.laboratorio.label_tag }}
                             {{ form.laboratorio }}
                             {% if form.laboratorio.errors %}
-                                <div class="text-danger">{{ form.laboratorio.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.laboratorio.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="form-group">
                             {{ form.seccion_area.label_tag }}
                             {{ form.seccion_area }}
                             {% if form.seccion_area.errors %}
-                                <div class="text-danger">{{ form.seccion_area.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.seccion_area.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -641,14 +331,14 @@
                             {{ form.identificador_aula.label_tag }}
                             {{ form.identificador_aula }}
                             {% if form.identificador_aula.errors %}
-                                <div class="text-danger">{{ form.identificador_aula.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.identificador_aula.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="form-group">
                             {{ form.responsable_excel.label_tag }}
                             {{ form.responsable_excel }}
                             {% if form.responsable_excel.errors %}
-                                <div class="text-danger">{{ form.responsable_excel.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.responsable_excel.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -662,20 +352,20 @@
                             {{ form.guia_laboratorio.label_tag }}
                             {{ form.guia_laboratorio }}
                             <div class="loading-indicator">
-                                <i class="fas fa-spinner fa-spin"></i> Cargando guías...
+                                <i class="fas fa-spinner fa-spin"></i>
                             </div>
                             {% if form.guia_laboratorio.errors %}
-                                <div class="text-danger">{{ form.guia_laboratorio.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.guia_laboratorio.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="form-group dynamic-field">
                             {{ form.practica.label_tag }}
                             {{ form.practica }}
                             <div class="loading-indicator">
-                                <i class="fas fa-spinner fa-spin"></i> Cargando prácticas...
+                                <i class="fas fa-spinner fa-spin"></i>
                             </div>
                             {% if form.practica.errors %}
-                                <div class="text-danger">{{ form.practica.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.practica.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -689,14 +379,14 @@
                             {{ form.equipo_requerido.label_tag }}
                             {{ form.equipo_requerido }}
                             {% if form.equipo_requerido.errors %}
-                                <div class="text-danger">{{ form.equipo_requerido.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.equipo_requerido.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="form-group">
                             {{ form.numero_equipos_requeridos.label_tag }}
                             {{ form.numero_equipos_requeridos }}
                             {% if form.numero_equipos_requeridos.errors %}
-                                <div class="text-danger">{{ form.numero_equipos_requeridos.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.numero_equipos_requeridos.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -710,12 +400,11 @@
                             {{ form.fotografia_frontal.label_tag }}
                             {{ form.fotografia_frontal }}
                             {% if form.fotografia_frontal.errors %}
-                                <div class="text-danger">{{ form.fotografia_frontal.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.fotografia_frontal.errors.0 }}</div>
                             {% endif %}
                             {% if equipo.fotografia_frontal %}
-                                <div class="current-file-info">
-                                    <i class="fas fa-image"></i>
-                                    Imagen actual: {{ equipo.fotografia_frontal.name }}
+                                <div class="mt-2">
+                                    <small class="text-muted">Imagen actual: {{ equipo.fotografia_frontal.name }}</small>
                                 </div>
                             {% endif %}
                         </div>
@@ -723,12 +412,11 @@
                             {{ form.fotografia_placa.label_tag }}
                             {{ form.fotografia_placa }}
                             {% if form.fotografia_placa.errors %}
-                                <div class="text-danger">{{ form.fotografia_placa.errors.0 }}</div>
+                                <div class="text-danger mt-1">{{ form.fotografia_placa.errors.0 }}</div>
                             {% endif %}
                             {% if equipo.fotografia_placa %}
-                                <div class="current-file-info">
-                                    <i class="fas fa-image"></i>
-                                    Imagen actual: {{ equipo.fotografia_placa.name }}
+                                <div class="mt-2">
+                                    <small class="text-muted">Imagen actual: {{ equipo.fotografia_placa.name }}</small>
                                 </div>
                             {% endif %}
                         </div>
@@ -742,7 +430,7 @@
                         {{ form.observaciones.label_tag }}
                         {{ form.observaciones }}
                         {% if form.observaciones.errors %}
-                            <div class="text-danger">{{ form.observaciones.errors.0 }}</div>
+                            <div class="text-danger mt-1">{{ form.observaciones.errors.0 }}</div>
                         {% endif %}
                     </div>
                 </div>
@@ -762,19 +450,19 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 $(document).ready(function() {
-    console.log('🎯 Formulario de edición inicializado correctamente');
-    
     // Función para mostrar/ocultar indicador de carga
     function toggleLoading(fieldId, show) {
         const field = $(fieldId);
         const indicator = field.closest('.dynamic-field').find('.loading-indicator');
         if (show) {
-            indicator.addClass('show');
+            indicator.show();
         } else {
-            indicator.removeClass('show');
+            indicator.hide();
         }
     }
 
@@ -827,14 +515,9 @@ $(document).ready(function() {
                 asignaturaSelect.empty().append('<option value="">---------</option>');
                 
                 $.each(data.asignaturas, function(index, asignatura) {
-                    const option = $('<option></option>')
-                        .attr('value', asignatura.id)
-                        .text(asignatura.text)
-                        .data('codigo_competencia', asignatura.codigo_competencia)
-                        .data('sigla_curricular', asignatura.sigla_curricular)
-                        .data('carga_horaria_semanal', asignatura.carga_horaria_semanal)
-                        .data('carga_horaria_semestral', asignatura.carga_horaria_semestral);
-                    asignaturaSelect.append(option);
+                    asignaturaSelect.append(
+                        $('<option></option>').attr('value', asignatura.id).text(asignatura.text)
+                    );
                 });
                 
                 // Limpiar datos curriculares
@@ -854,38 +537,12 @@ $(document).ready(function() {
     // Cargar datos curriculares cuando cambia la asignatura
     $('#id_asignatura').change(function() {
         const asignaturaId = $(this).val();
-        const selectedOption = $(this).find('option:selected');
         
         if (asignaturaId) {
-            // Mostrar información del Excel
-            const codigoCompetencia = selectedOption.data('codigo_competencia');
-            const siglaCurricular = selectedOption.data('sigla_curricular');
-            const cargaSemanal = selectedOption.data('carga_horaria_semanal');
-            const cargaSemestral = selectedOption.data('carga_horaria_semestral');
-            
-            $('#codigo-competencia-info').val(codigoCompetencia || 'No disponible');
-            $('#sigla-curricular-info').val(siglaCurricular || 'No disponible');
-            
-            // Actualizar campos de carga horaria si están disponibles
-            if (cargaSemanal) {
-                $('#id_carga_horaria_semanal').val(cargaSemanal);
-            }
-            if (cargaSemestral) {
-                $('#id_carga_horaria_semestral').val(cargaSemestral);
-            }
-            
-            // Mostrar la sección de información del Excel con animación
-            $('#info-excel-asignatura').fadeIn(400);
-            
             cargarCriteriosDesempeno(asignaturaId);
             cargarUnidadesDidacticas(asignaturaId);
             cargarGuiasLaboratorio(asignaturaId);
         } else {
-            // Ocultar información del Excel
-            $('#info-excel-asignatura').fadeOut(300);
-            $('#codigo-competencia-info').val('');
-            $('#sigla-curricular-info').val('');
-            
             limpiarDatosCurriculares();
         }
     });
@@ -1043,11 +700,6 @@ $(document).ready(function() {
         $('#criterio-descripcion').text('');
         $('#unidad-descripcion').text('');
         $('#contenido-descripcion').text('');
-        
-        // Limpiar información del Excel
-        $('#info-excel-asignatura').hide();
-        $('#codigo-competencia-info').val('');
-        $('#sigla-curricular-info').val('');
     }
 
     // Mostrar descripciones cuando se seleccionen opciones
@@ -1065,24 +717,6 @@ $(document).ready(function() {
         const descripcion = $(this).find('option:selected').data('descripcion');
         $('#contenido-descripcion').text(descripcion || '');
     });
-
-    // Animación de envío del formulario
-    $('#equipoForm').on('submit', function() {
-        const submitBtn = $(this).find('button[type="submit"]');
-        submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
-        submitBtn.prop('disabled', true);
-    });
-
-    console.log('✅ Todas las funcionalidades del formulario inicializadas');
 });
 </script>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-    /* Backup styles if extra_css works */
-    .backup-styles {
-        display: none;
-    }
-</style>
 {% endblock %}
