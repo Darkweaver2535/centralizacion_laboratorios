@@ -4,7 +4,7 @@
 
 {% block page_title %}Gestión de Equipos{% endblock %}
 
-{% block page_description %}Control y administración de equipos de laboratorio con las 22 columnas requeridas{% endblock %}
+{% block page_description %}Control y administración de equipos de laboratorio con las 24 columnas oficiales{% endblock %}
 
 {% block content %}
 <div class="equipos-container">
@@ -26,28 +26,28 @@
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 id="equipos-operativos">{{ stats.operativos }}</h3>
-                    <p>Operativos</p>
+                    <h3 id="equipos-bueno">{{ stats.bueno }}</h3>
+                    <p>Bueno</p>
                 </div>
             </div>
             
             <div class="stat-card">
                 <div class="stat-icon" style="background: linear-gradient(135deg, #ffd166 0%, #f77f00 100%);">
-                    <i class="fas fa-wrench"></i>
+                    <i class="fas fa-exclamation-triangle"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 id="equipos-mantenimiento">{{ stats.mantenimiento }}</h3>
-                    <p>En Mantenimiento</p>
+                    <h3 id="equipos-regular">{{ stats.regular }}</h3>
+                    <p>Regular</p>
                 </div>
             </div>
             
             <div class="stat-card">
                 <div class="stat-icon" style="background: linear-gradient(135deg, #ef476f 0%, #ffd166 100%);">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i class="fas fa-times-circle"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 id="equipos-reparacion">{{ stats.reparacion }}</h3>
-                    <p>En Reparación</p>
+                    <h3 id="equipos-malo">{{ stats.malo }}</h3>
+                    <p>Malo</p>
                 </div>
             </div>
         </div>
@@ -152,48 +152,78 @@
             <table class="equipos-table">
                 <thead>
                     <tr>
-                        <th>Código</th>
-                        <th>Equipo</th>
-                        <th>Marca/Modelo</th>
-                        <th>Estado</th>
-                        <th>Unidad Académica</th>
-                        <th>Carrera</th>
-                        <th>Semestre</th>
-                        <th>Laboratorio</th>
-                        <th>Unidades</th>
-                        <th>Acciones</th>
+                        <th>UNIDAD ACADÉMICA</th>
+                        <th>CARRERA</th>
+                        <th>SEMESTRE</th>
+                        <th>ASIGNATURA</th>
+                        <th>CARGA HORARIA SEMESTRAL</th>
+                        <th>CARGA HORARIA SEMANAL</th>
+                        <th>CRITERIO DE DESEMPEÑO</th>
+                        <th>UNIDAD DIDACTICA</th>
+                        <th>CONTENIDO ANALITICO</th>
+                        <th>GUÍA DE LABORATORIO</th>
+                        <th>PRÁCTICA</th>
+                        <th>NOMBRE DE EQUIPO EXISTENTE</th>
+                        <th>MARCA</th>
+                        <th>MODELO</th>
+                        <th>ESTADO</th>
+                        <th>NÚMERO DE UNIDADES DEL EQUIPO</th>
+                        <th>ES UN ACTIVO FIJO DE ACUERDO A SU ACTA DE ENTREGA?</th>
+                        <th>FOTOGRAFÍA FRONTAL DEL EQUIPO</th>
+                        <th>FOTOGRAFÍA DE LA PLACA DE CARACTERÍSTICAS</th>
+                        <th>UBICACIÓN DEL EQUIPO (LABORATORIO)</th>
+                        <th>SECCIÓN/ÁREA</th>
+                        <th>IDENTIFICADOR/Nº DE AULA</th>
+                        <th>EQUIPO REQUERIDO</th>
+                        <th>NÚMERO DE EQUIPOS REQUERIDOS</th>
+                        <th>ACCIONES</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for equipo in page_obj %}
                     <tr>
+                        <td>{{ equipo.unidad_academica.get_nombre_display }}</td>
+                        <td>{{ equipo.carrera.get_nombre_display }}</td>
+                        <td>{{ equipo.semestre }}°</td>
+                        <td>{{ equipo.asignatura.get_nombre_display }}</td>
+                        <td>{{ equipo.carga_horaria_semestral|default:"-" }}</td>
+                        <td>{{ equipo.carga_horaria_semanal|default:"-" }}</td>
+                        <td>{{ equipo.criterio_desempeno.nombre|default:"-" }}</td>
+                        <td>{{ equipo.unidad_didactica.nombre|default:"-" }}</td>
+                        <td>{{ equipo.contenido_analitico.descripcion|default:"-" }}</td>
+                        <td>{{ equipo.guia_laboratorio.get_nombre_display|default:"-" }}</td>
+                        <td>{{ equipo.practica.get_nombre_display|default:"-" }}</td>
                         <td>
-                            <strong>{{ equipo.codigo_inventario }}</strong>
+                            <strong>{{ equipo.equipo_existente }}</strong>
                         </td>
-                        <td>
-                            <div class="equipo-info">
-                                <strong>{{ equipo.equipo_existente }}</strong>
-                                {% if equipo.fotografia_frontal %}
-                                    <span class="badge-photo"><i class="fas fa-camera"></i></span>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            {% if equipo.marca %}{{ equipo.marca }}{% endif %}
-                            {% if equipo.modelo %}<br><small>{{ equipo.modelo }}</small>{% endif %}
-                        </td>
+                        <td>{{ equipo.marca|default:"-" }}</td>
+                        <td>{{ equipo.modelo|default:"-" }}</td>
                         <td>
                             <span class="badge badge-{{ equipo.estado }}">
                                 {{ equipo.get_estado_display }}
                             </span>
                         </td>
-                        <td>{{ equipo.unidad_academica.get_nombre_display }}</td>
-                        <td>{{ equipo.carrera.get_nombre_display }}</td>
-                        <td>{{ equipo.semestre }}°</td>
-                        <td>{{ equipo.laboratorio.get_nombre_display }}</td>
+                        <td class="text-center">{{ equipo.numero_unidades }}</td>
+                        <td>{{ equipo.get_es_activo_fijo_display|default:"-" }}</td>
                         <td class="text-center">
-                            <span class="badge badge-info">{{ equipo.numero_unidades }}</span>
+                            {% if equipo.fotografia_frontal %}
+                                <span class="badge-photo"><i class="fas fa-camera text-success"></i></span>
+                            {% else %}
+                                <i class="fas fa-camera text-muted"></i>
+                            {% endif %}
                         </td>
+                        <td class="text-center">
+                            {% if equipo.fotografia_placa %}
+                                <span class="badge-photo"><i class="fas fa-camera text-success"></i></span>
+                            {% else %}
+                                <i class="fas fa-camera text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{ equipo.laboratorio.get_nombre_display }}</td>
+                        <td>{{ equipo.laboratorio.seccion_area|default:"-" }}</td>
+                        <td>{{ equipo.laboratorio.identificador_aula|default:"-" }}</td>
+                        <td>{{ equipo.equipo_requerido|default:"-" }}</td>
+                        <td class="text-center">{{ equipo.numero_equipos_requeridos|default:"-" }}</td>
                         <td>
                             <div class="action-buttons">
                                 <a href="{% url 'equipos:detalle' equipo.pk %}" class="btn-action btn-info" title="Ver Detalle">
@@ -210,7 +240,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="10" class="text-center empty-state">
+                        <td colspan="25" class="text-center empty-state">
                             <i class="fas fa-search"></i>
                             <p>No se encontraron equipos con los filtros aplicados</p>
                             <a href="{% url 'equipos:nuevo' %}" class="btn btn-primary">
@@ -601,6 +631,103 @@
         .stats-grid {
             grid-template-columns: 1fr;
         }
+    }
+    
+    /* Estilos específicos para tabla de 24 columnas */
+    .table-container {
+        max-width: 100vw;
+        overflow-x: auto;
+        overflow-y: visible;
+        margin: 0 -20px;
+        padding: 0 20px;
+    }
+    
+    .equipos-table {
+        min-width: 2400px; /* Ancho mínimo para 24 columnas */
+        font-size: 12px;
+    }
+    
+    .equipos-table th {
+        min-width: 80px;
+        white-space: nowrap;
+        font-size: 11px;
+        padding: 8px 6px;
+        text-align: center;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .equipos-table td {
+        min-width: 80px;
+        padding: 6px 4px;
+        font-size: 11px;
+        border: 1px solid #dee2e6;
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    /* Columnas importantes más anchas */
+    .equipos-table th:nth-child(4), /* ASIGNATURA */
+    .equipos-table th:nth-child(12), /* NOMBRE EQUIPO */
+    .equipos-table th:nth-child(20), /* LABORATORIO */
+    .equipos-table td:nth-child(4),
+    .equipos-table td:nth-child(12),
+    .equipos-table td:nth-child(20) {
+        min-width: 150px;
+    }
+    
+    /* Columnas de texto más anchas */
+    .equipos-table th:nth-child(7), /* CRITERIO DESEMPEÑO */
+    .equipos-table th:nth-child(8), /* UNIDAD DIDACTICA */
+    .equipos-table th:nth-child(9), /* CONTENIDO ANALITICO */
+    .equipos-table td:nth-child(7),
+    .equipos-table td:nth-child(8),
+    .equipos-table td:nth-child(9) {
+        min-width: 120px;
+    }
+    
+    /* Columnas numéricas más estrechas */
+    .equipos-table th:nth-child(3), /* SEMESTRE */
+    .equipos-table th:nth-child(5), /* CARGA SEMESTRAL */
+    .equipos-table th:nth-child(6), /* CARGA SEMANAL */
+    .equipos-table th:nth-child(16), /* NÚMERO UNIDADES */
+    .equipos-table th:nth-child(24), /* EQUIPOS REQUERIDOS */
+    .equipos-table td:nth-child(3),
+    .equipos-table td:nth-child(5),
+    .equipos-table td:nth-child(6),
+    .equipos-table td:nth-child(16),
+    .equipos-table td:nth-child(24) {
+        min-width: 60px;
+    }
+    
+    /* Columnas de foto más estrechas */
+    .equipos-table th:nth-child(18), /* FOTO FRONTAL */
+    .equipos-table th:nth-child(19), /* FOTO PLACA */
+    .equipos-table td:nth-child(18),
+    .equipos-table td:nth-child(19) {
+        min-width: 50px;
+    }
+    
+    /* Scroll horizontal visible */
+    .table-container::-webkit-scrollbar {
+        height: 12px;
+    }
+    
+    .table-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 6px;
+    }
+    
+    .table-container::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 6px;
+    }
+    
+    .table-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
     }
 </style>
 

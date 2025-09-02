@@ -26,7 +26,7 @@ class EquipoAdmin(admin.ModelAdmin):
         }),
         ('Estructura Curricular', {
             'fields': (
-                'unidad_tematica', 'guia_laboratorio', 'practica'
+                'guia_laboratorio', 'practica'
             )
         }),
         ('Información del Equipo', {

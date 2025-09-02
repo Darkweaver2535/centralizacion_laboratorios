@@ -1,32 +1,37 @@
 from django.db import models
 from django.conf import settings
-from core.models import UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, Practica, Laboratorio
+from core.models import (
+    UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, 
+    Practica, Laboratorio, CriterioDesempeno, UnidadDidactica, ContenidoAnalitico
+)
 
 class Equipo(models.Model):
     """
-    Modelo principal para equipos con las 22 columnas especificadas:
+    Modelo principal para equipos con las 24 columnas oficiales:
     1. UNIDAD ACADÉMICA
     2. CARRERA
     3. SEMESTRE
     4. ASIGNATURA
     5. CARGA HORARIA SEMANAL
     6. CARGA HORARIA SEMESTRAL
-    7. UNIDAD TEMÁTICA
-    8. GUÍA DE LABORATORIO
-    9. PRÁCTICA
-    10. EQUIPO EXISTENTE
-    11. MARCA
-    12. MODELO
-    13. ESTADO
-    14. NÚMERO DE UNIDADES DEL EQUIPO
-    15. ES UN ACTIVO FIJO DE ACUERDO A SU ACTA DE ENTREGA?
-    16. FOTOGRAFÍA FRONTAL DEL EQUIPO
-    17. FOTOGRAFÍA DE LA PLACA DE CARACTERÍSTICAS
-    18. UBICACIÓN DEL EQUIPO (LABORATORIO)
-    19. SECCIÓN/ÁREA
-    20. IDENTIFICADOR/Nº DE AULA
-    21. EQUIPO REQUERIDO
-    22. NÚMERO DE EQUIPOS REQUERIDOS
+    7. CRITERIO DE DESEMPEÑO
+    8. UNIDAD DIDACTICA
+    9. CONTENIDO ANALITICO
+    10. GUÍA DE LABORATORIO
+    11. PRÁCTICA
+    12. NOMBRE DE EQUIPO EXISTENTE
+    13. MARCA
+    14. MODELO
+    15. ESTADO
+    16. NÚMERO DE UNIDADES DEL EQUIPO
+    17. ES UN ACTIVO FIJO DE ACUERDO A SU ACTA DE ENTREGA?
+    18. FOTOGRAFÍA FRONTAL DEL EQUIPO
+    19. FOTOGRAFÍA DE LA PLACA DE CARACTERÍSTICAS
+    20. UBICACIÓN DEL EQUIPO (LABORATORIO)
+    21. SECCIÓN/ÁREA
+    22. IDENTIFICADOR/Nº DE AULA
+    23. EQUIPO REQUERIDO
+    24. NÚMERO DE EQUIPOS REQUERIDOS
     """
     
     ESTADOS = [
@@ -74,49 +79,69 @@ class Equipo(models.Model):
         help_text="Total de horas en el semestre"
     )
     
-    # 7. UNIDAD TEMÁTICA
-    unidad_tematica = models.ForeignKey(
-        UnidadTematica, 
+    # 7. CRITERIO DE DESEMPEÑO
+    criterio_desempeno = models.ForeignKey(
+        CriterioDesempeno, 
         on_delete=models.CASCADE,
-        verbose_name="Unidad Temática"
+        verbose_name="Criterio de Desempeño",
+        null=True,
+        blank=True
     )
     
-    # 8. GUÍA DE LABORATORIO
+    # 8. UNIDAD DIDACTICA
+    unidad_didactica = models.ForeignKey(
+        UnidadDidactica, 
+        on_delete=models.CASCADE,
+        verbose_name="Unidad Didáctica",
+        null=True,
+        blank=True
+    )
+    
+    # 9. CONTENIDO ANALITICO
+    contenido_analitico = models.ForeignKey(
+        ContenidoAnalitico, 
+        on_delete=models.CASCADE,
+        verbose_name="Contenido Analítico",
+        null=True,
+        blank=True
+    )
+    
+    # 10. GUÍA DE LABORATORIO
     guia_laboratorio = models.ForeignKey(
         GuiaLaboratorio, 
         on_delete=models.CASCADE,
         verbose_name="Guía de Laboratorio"
     )
     
-    # 9. PRÁCTICA
+    # 11. PRÁCTICA
     practica = models.ForeignKey(
         Practica, 
         on_delete=models.CASCADE,
         verbose_name="Práctica"
     )
     
-    # 10. EQUIPO EXISTENTE
+    # 12. NOMBRE DE EQUIPO EXISTENTE
     equipo_existente = models.CharField(
         max_length=200,
-        verbose_name="Equipo Existente",
+        verbose_name="Nombre de Equipo Existente",
         help_text="Nombre del equipo existente"
     )
     
-    # 11. MARCA
+    # 13. MARCA
     marca = models.CharField(
         max_length=100,
         blank=True,
         verbose_name="Marca"
     )
     
-    # 12. MODELO
+    # 14. MODELO
     modelo = models.CharField(
         max_length=100,
         blank=True,
         verbose_name="Modelo"
     )
     
-    # 13. ESTADO
+    # 15. ESTADO
     estado = models.CharField(
         max_length=20,
         choices=ESTADOS,
@@ -124,19 +149,19 @@ class Equipo(models.Model):
         verbose_name="Estado"
     )
     
-    # 14. NÚMERO DE UNIDADES DEL EQUIPO
+    # 16. NÚMERO DE UNIDADES DEL EQUIPO
     numero_unidades = models.IntegerField(
         default=1,
         verbose_name="Número de Unidades del Equipo"
     )
     
-    # 15. ES UN ACTIVO FIJO DE ACUERDO A SU ACTA DE ENTREGA?
+    # 17. ES UN ACTIVO FIJO DE ACUERDO A SU ACTA DE ENTREGA?
     es_activo_fijo = models.BooleanField(
         default=False,
         verbose_name="Es un Activo Fijo de acuerdo a su Acta de Entrega?"
     )
     
-    # 16. FOTOGRAFÍA FRONTAL DEL EQUIPO
+    # 18. FOTOGRAFÍA FRONTAL DEL EQUIPO
     fotografia_frontal = models.ImageField(
         upload_to='equipos/fotos_frontales/',
         blank=True,
@@ -144,7 +169,7 @@ class Equipo(models.Model):
         verbose_name="Fotografía Frontal del Equipo"
     )
     
-    # 17. FOTOGRAFÍA DE LA PLACA DE CARACTERÍSTICAS
+    # 19. FOTOGRAFÍA DE LA PLACA DE CARACTERÍSTICAS
     fotografia_placa = models.ImageField(
         upload_to='equipos/fotos_placas/',
         blank=True,
@@ -152,28 +177,28 @@ class Equipo(models.Model):
         verbose_name="Fotografía de la Placa de Características"
     )
     
-    # 18. UBICACIÓN DEL EQUIPO (LABORATORIO)
+    # 20. UBICACIÓN DEL EQUIPO (LABORATORIO)
     laboratorio = models.ForeignKey(
         Laboratorio, 
         on_delete=models.CASCADE,
         verbose_name="Ubicación del Equipo (Laboratorio)"
     )
     
-    # 19. SECCIÓN/ÁREA
+    # 21. SECCIÓN/ÁREA
     seccion_area = models.CharField(
         max_length=100,
         blank=True,
         verbose_name="Sección/Área"
     )
     
-    # 20. IDENTIFICADOR/Nº DE AULA
+    # 22. IDENTIFICADOR/Nº DE AULA
     identificador_aula = models.CharField(
         max_length=50,
         blank=True,
         verbose_name="Identificador/Nº de Aula"
     )
     
-    # 21. EQUIPO REQUERIDO
+    # 23. EQUIPO REQUERIDO
     equipo_requerido = models.CharField(
         max_length=200,
         blank=True,
@@ -181,7 +206,7 @@ class Equipo(models.Model):
         help_text="Equipo que se requiere para completar el laboratorio"
     )
     
-    # 22. NÚMERO DE EQUIPOS REQUERIDOS
+    # 24. NÚMERO DE EQUIPOS REQUERIDOS
     numero_equipos_requeridos = models.IntegerField(
         default=0,
         verbose_name="Número de Equipos Requeridos"

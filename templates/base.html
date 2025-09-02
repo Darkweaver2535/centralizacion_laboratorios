@@ -627,6 +627,14 @@
                     </a>
                 </li>
 
+                <!-- Malla Curricular -->
+                <li>
+                    <a href="{% url 'core:malla_curricular' %}" class="menu-item {% if request.resolver_match.namespace == 'core' and 'malla' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="fas fa-graduation-cap"></i>
+                        Malla Curricular
+                    </a>
+                </li>
+
                 
             </ul>
         </aside>
@@ -655,7 +663,7 @@
                 </div>
 
                 <div style="margin-top: 25px; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #1e3a8a;">
-                    <h4 style="color: #1e3a8a; margin-bottom: 10px;">🚀 Nuevas Funcionalidades</h4>
+                    <h4 style="color: #1e3a8a; margin-bottom: 10px;"><i class="fas fa-rocket"></i> Nuevas Funcionalidades</h4>
                     <ul style="color: #374151; font-size: 14px;">
                         <li><strong>Equipos:</strong> Sistema completo de gestión con información detallada</li>
                         <li><strong>Insumos:</strong> Gestión separada de materiales, herramientas y reactivos</li>

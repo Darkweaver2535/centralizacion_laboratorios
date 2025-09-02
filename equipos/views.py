@@ -31,7 +31,11 @@ def equipos_view(request):
     }
     
     # Construir queryset con filtros
-    equipos = Equipo.objects.all()
+    equipos = Equipo.objects.select_related(
+        'unidad_academica', 'carrera', 'asignatura', 'laboratorio',
+        'criterio_desempeno', 'unidad_didactica', 'contenido_analitico',
+        'guia_laboratorio', 'practica'
+    ).all()
     
     if filtros['unidad_academica']:
         equipos = equipos.filter(unidad_academica_id=filtros['unidad_academica'])
@@ -111,7 +115,7 @@ def nuevo_equipo_view(request):
                 campos_requeridos = [
                     'unidad_academica', 'carrera', 'semestre', 'asignatura',
                     'carga_horaria_semanal', 'carga_horaria_semestral',
-                    'unidad_tematica', 'guia_laboratorio', 'practica',
+                    'guia_laboratorio', 'practica',
                     'equipo_existente', 'laboratorio'
                 ]
                 
@@ -127,7 +131,6 @@ def nuevo_equipo_view(request):
                     asignatura_id=int(request.POST.get('asignatura')),
                     carga_horaria_semanal=int(request.POST.get('carga_horaria_semanal', 4)),
                     carga_horaria_semestral=int(request.POST.get('carga_horaria_semestral', 64)),
-                    unidad_tematica_id=int(request.POST.get('unidad_tematica')),
                     guia_laboratorio_id=int(request.POST.get('guia_laboratorio')),
                     practica_id=int(request.POST.get('practica')),
                     equipo_existente=request.POST.get('equipo_existente'),
@@ -228,7 +231,6 @@ def editar_equipo_view(request, pk):
                 equipo.asignatura_id = request.POST.get('asignatura')
                 equipo.carga_horaria_semanal = int(request.POST.get('carga_horaria_semanal'))
                 equipo.carga_horaria_semestral = int(request.POST.get('carga_horaria_semestral'))
-                equipo.unidad_tematica_id = request.POST.get('unidad_tematica')
                 equipo.guia_laboratorio_id = request.POST.get('guia_laboratorio')
                 equipo.practica_id = request.POST.get('practica')
                 equipo.equipo_existente = request.POST.get('equipo_existente')
@@ -266,8 +268,7 @@ def editar_equipo_view(request, pk):
     
     # Datos relacionados del equipo actual
     asignaturas = Asignatura.objects.filter(carrera=equipo.carrera, semestre=equipo.semestre) if equipo.carrera else []
-    unidades_tematicas = UnidadTematica.objects.filter(asignatura=equipo.asignatura) if equipo.asignatura else []
-    guias_laboratorio = GuiaLaboratorio.objects.filter(unidad_tematica=equipo.unidad_tematica) if equipo.unidad_tematica else []
+    guias_laboratorio = GuiaLaboratorio.objects.filter(unidad_tematica__asignatura=equipo.asignatura) if equipo.asignatura else []
     practicas = Practica.objects.filter(guia_laboratorio=equipo.guia_laboratorio) if equipo.guia_laboratorio else []
     
     context = {
@@ -276,7 +277,6 @@ def editar_equipo_view(request, pk):
         'carreras': carreras,
         'laboratorios': laboratorios,
         'asignaturas': asignaturas,
-        'unidades_tematicas': unidades_tematicas,
         'guias_laboratorio': guias_laboratorio,
         'practicas': practicas,
         'estados_choices': Equipo.ESTADOS,
@@ -367,11 +367,11 @@ def get_unidades_tematicas_ajax(request):
 
 @login_required
 def get_guias_laboratorio_ajax(request):
-    """Obtener guías de laboratorio por unidad temática"""
-    unidad_tematica_id = request.GET.get('unidad_tematica_id')
+    """Obtener guías de laboratorio por asignatura"""
+    asignatura_id = request.GET.get('asignatura_id')
     
-    if unidad_tematica_id:
-        guias = GuiaLaboratorio.objects.filter(unidad_tematica_id=unidad_tematica_id)
+    if asignatura_id:
+        guias = GuiaLaboratorio.objects.filter(unidad_tematica__asignatura_id=asignatura_id)
     else:
         guias = GuiaLaboratorio.objects.none()
     
@@ -438,7 +438,11 @@ def filtrar_equipos_ajax(request):
     }
     
     # Construir queryset
-    equipos = Equipo.objects.all()
+    equipos = Equipo.objects.select_related(
+        'unidad_academica', 'carrera', 'asignatura', 'laboratorio',
+        'criterio_desempeno', 'unidad_didactica', 'contenido_analitico',
+        'guia_laboratorio', 'practica'
+    ).all()
     
     if filtros['unidad_academica']:
         equipos = equipos.filter(unidad_academica_id=filtros['unidad_academica'])
@@ -488,10 +492,9 @@ def filtrar_equipos_ajax(request):
     # Estadísticas
     stats = {
         'total': equipos.count(),
-        'operativos': equipos.filter(estado='operativo').count(),
-        'mantenimiento': equipos.filter(estado='mantenimiento').count(),
-        'reparacion': equipos.filter(estado='reparacion').count(),
-        'inoperativos': equipos.filter(estado='inoperativo').count(),
+        'bueno': equipos.filter(estado='bueno').count(),
+        'regular': equipos.filter(estado='regular').count(),
+        'malo': equipos.filter(estado='malo').count(),
     }
     
     return JsonResponse({
@@ -502,7 +505,7 @@ def filtrar_equipos_ajax(request):
 
 @login_required
 def exportar_equipos_excel(request):
-    """Exportar equipos a Excel con todas las 22 columnas"""
+    """Exportar equipos a Excel con todas las 24 columnas"""
     
     # Obtener filtros si existen
     filtros = {
@@ -514,7 +517,7 @@ def exportar_equipos_excel(request):
     
     # Construir queryset
     equipos = Equipo.objects.select_related(
-        'unidad_academica', 'carrera', 'asignatura', 'unidad_tematica',
+        'unidad_academica', 'carrera', 'asignatura',
         'guia_laboratorio', 'practica', 'laboratorio', 'usuario_creador'
     ).all()
     
@@ -590,7 +593,7 @@ def exportar_equipos_excel(request):
             equipo.asignatura.get_nombre_display(),
             equipo.carga_horaria_semanal,
             equipo.carga_horaria_semestral,
-            f"Unidad {equipo.unidad_tematica.numero}: {equipo.unidad_tematica.nombre}",
+            f"Criterio: {equipo.criterio_desempeno.nombre if equipo.criterio_desempeno else 'N/A'}",
             f"Guía {equipo.guia_laboratorio.numero}: {equipo.guia_laboratorio.nombre}",
             f"Práctica {equipo.practica.numero}: {equipo.practica.nombre}",
             equipo.equipo_existente,

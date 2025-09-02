@@ -179,25 +179,26 @@
                                     <th>CARRERA</th>
                                     <th>SEMESTRE</th>
                                     <th>ASIGNATURA</th>
-                                    <th>CARGA HORARIA SEMANAL</th>
                                     <th>CARGA HORARIA SEMESTRAL</th>
-                                    <th>UNIDAD TEMÁTICA</th>
+                                    <th>CARGA HORARIA SEMANAL</th>
+                                    <th>CRITERIO DE DESEMPEÑO</th>
+                                    <th>UNIDAD DIDACTICA</th>
+                                    <th>CONTENIDO ANALITICO</th>
                                     <th>GUÍA DE LABORATORIO</th>
                                     <th>PRÁCTICA</th>
-                                    <th>EQUIPO EXISTENTE</th>
+                                    <th>NOMBRE DE EQUIPO EXISTENTE</th>
                                     <th>MARCA</th>
                                     <th>MODELO</th>
                                     <th>ESTADO</th>
-                                    <th>NÚMERO DE UNIDADES</th>
-                                    <th>ES ACTIVO FIJO</th>
-                                    <th>FOTOGRAFÍA FRONTAL</th>
-                                    <th>FOTOGRAFÍA PLACA</th>
-                                    <th>UBICACIÓN (LABORATORIO)</th>
+                                    <th>NÚMERO DE UNIDADES DEL EQUIPO</th>
+                                    <th>ES UN ACTIVO FIJO DE ACUERDO A SU ACTA DE ENTREGA?</th>
+                                    <th>FOTOGRAFÍA FRONTAL DEL EQUIPO</th>
+                                    <th>FOTOGRAFÍA DE LA PLACA DE CARACTERÍSTICAS</th>
+                                    <th>UBICACIÓN DEL EQUIPO (LABORATORIO)</th>
                                     <th>SECCIÓN/ÁREA</th>
-                                    <th>IDENTIFICADOR/Nº AULA</th>
-                                    <th>RESPONSABLE</th>
+                                    <th>IDENTIFICADOR/Nº DE AULA</th>
                                     <th>EQUIPO REQUERIDO</th>
-                                    <th>NÚMERO EQUIPOS REQUERIDOS</th>
+                                    <th>NÚMERO DE EQUIPOS REQUERIDOS</th>
                                     <th class="actions-column">ACCIONES</th>
                                 </tr>
                             </thead>
@@ -208,34 +209,30 @@
                                     <td>{{ equipo.carrera.get_nombre_display }}</td>
                                     <td>{{ equipo.semestre }}°</td>
                                     <td>{{ equipo.asignatura.get_nombre_display }}</td>
-                                    <td>{{ equipo.carga_horaria_semanal }} hrs</td>
-                                    <td>{{ equipo.carga_horaria_semestral }} hrs</td>
-                                    <td>{{ equipo.unidad_tematica.nombre }}</td>
-                                    <td>{{ equipo.guia_laboratorio.nombre }}</td>
-                                    <td>{{ equipo.practica.nombre }}</td>
+                                    <td>{{ equipo.carga_horaria_semestral|default:"-" }}</td>
+                                    <td>{{ equipo.carga_horaria_semanal|default:"-" }}</td>
+                                    <td>{{ equipo.criterio_desempeno.nombre|default:"-" }}</td>
+                                    <td>{{ equipo.unidad_didactica.nombre|default:"-" }}</td>
+                                    <td>{{ equipo.contenido_analitico.descripcion|default:"-" }}</td>
+                                    <td>{{ equipo.guia_laboratorio.get_nombre_display|default:"-" }}</td>
+                                    <td>{{ equipo.practica.get_nombre_display|default:"-" }}</td>
                                     <td class="equipo-nombre">{{ equipo.equipo_existente }}</td>
-                                    <td>{{ equipo.marca|default:"N/A" }}</td>
-                                    <td>{{ equipo.modelo|default:"N/A" }}</td>
+                                    <td>{{ equipo.marca|default:"-" }}</td>
+                                    <td>{{ equipo.modelo|default:"-" }}</td>
                                     <td>
                                         <span class="badge badge-{{ equipo.estado }}">
                                             {{ equipo.get_estado_display }}
                                         </span>
                                     </td>
                                     <td class="text-center">{{ equipo.numero_unidades }}</td>
-                                    <td class="text-center">
-                                        {% if equipo.es_activo_fijo %}
-                                            <span class="badge badge-success">SÍ</span>
-                                        {% else %}
-                                            <span class="badge badge-secondary">NO</span>
-                                        {% endif %}
-                                    </td>
+                                    <td class="text-center">{{ equipo.get_es_activo_fijo_display|default:"-" }}</td>
                                     <td class="text-center">
                                         {% if equipo.fotografia_frontal %}
                                             <a href="{{ equipo.fotografia_frontal.url }}" target="_blank" class="btn btn-sm btn-info">
                                                 <i class="fas fa-image"></i>
                                             </a>
                                         {% else %}
-                                            <span class="text-muted">Sin foto</span>
+                                            <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
@@ -244,15 +241,14 @@
                                                 <i class="fas fa-image"></i>
                                             </a>
                                         {% else %}
-                                            <span class="text-muted">Sin foto</span>
+                                            <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ equipo.laboratorio.get_nombre_display }}</td>
-                                    <td>{{ equipo.seccion_area|default:"N/A" }}</td>
-                                    <td>{{ equipo.identificador_aula|default:"N/A" }}</td>
-                                    <td class="responsable-column">{{ equipo.responsable_excel|default:"Sin asignar" }}</td>
-                                    <td>{{ equipo.equipo_requerido|default:"N/A" }}</td>
-                                    <td class="text-center">{{ equipo.numero_equipos_requeridos }}</td>
+                                    <td>{{ equipo.laboratorio.seccion_area|default:"-" }}</td>
+                                    <td>{{ equipo.laboratorio.identificador_aula|default:"-" }}</td>
+                                    <td>{{ equipo.equipo_requerido|default:"-" }}</td>
+                                    <td class="text-center">{{ equipo.numero_equipos_requeridos|default:"-" }}</td>
                                     <td class="actions-column">
                                         <div class="btn-group-vertical btn-group-sm">
                                             <a href="{% url 'equipos:detalle' equipo.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
@@ -484,24 +480,29 @@
 }
 
 .equipos-table {
-    min-width: 2000px; /* Asegurar que la tabla sea muy ancha */
+    min-width: 2400px; /* Asegurar ancho para 24 columnas */
     margin: 0;
     border-collapse: collapse;
+    font-size: 11px;
 }
 
 .equipos-table th {
     background: #f8fafc;
     color: #374151;
     font-weight: 600;
-    padding: 12px 8px;
+    padding: 8px 6px;
     border: 1px solid #e5e7eb;
     white-space: nowrap;
-    font-size: 12px;
+    font-size: 10px;
     text-align: center;
+    min-width: 80px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .equipos-table td {
-    padding: 10px 8px;
+    padding: 6px 4px;
     border: 1px solid #e5e7eb;
     vertical-align: middle;
     font-size: 12px;
@@ -525,6 +526,76 @@
     border-radius: 4px;
     font-size: 11px;
     font-weight: 500;
+}
+
+/* Optimización específica para tabla de 24 columnas */
+.table-responsive {
+    max-width: 100vw;
+    overflow-x: auto;
+    overflow-y: visible;
+    margin: 0 -15px;
+    padding: 0 15px;
+}
+
+/* Columnas importantes más anchas */
+.equipos-table th:nth-child(4), /* ASIGNATURA */
+.equipos-table th:nth-child(12), /* NOMBRE EQUIPO */
+.equipos-table th:nth-child(20), /* LABORATORIO */
+.equipos-table td:nth-child(4),
+.equipos-table td:nth-child(12),
+.equipos-table td:nth-child(20) {
+    min-width: 150px;
+}
+
+/* Columnas de texto más anchas */
+.equipos-table th:nth-child(7), /* CRITERIO DESEMPEÑO */
+.equipos-table th:nth-child(8), /* UNIDAD DIDACTICA */
+.equipos-table th:nth-child(9), /* CONTENIDO ANALITICO */
+.equipos-table td:nth-child(7),
+.equipos-table td:nth-child(8),
+.equipos-table td:nth-child(9) {
+    min-width: 120px;
+}
+
+/* Columnas numéricas más estrechas */
+.equipos-table th:nth-child(3), /* SEMESTRE */
+.equipos-table th:nth-child(5), /* CARGA SEMESTRAL */
+.equipos-table th:nth-child(6), /* CARGA SEMANAL */
+.equipos-table th:nth-child(16), /* NÚMERO UNIDADES */
+.equipos-table th:nth-child(24), /* EQUIPOS REQUERIDOS */
+.equipos-table td:nth-child(3),
+.equipos-table td:nth-child(5),
+.equipos-table td:nth-child(6),
+.equipos-table td:nth-child(16),
+.equipos-table td:nth-child(24) {
+    min-width: 60px;
+}
+
+/* Columnas de foto más estrechas */
+.equipos-table th:nth-child(18), /* FOTO FRONTAL */
+.equipos-table th:nth-child(19), /* FOTO PLACA */
+.equipos-table td:nth-child(18),
+.equipos-table td:nth-child(19) {
+    min-width: 50px;
+}
+
+/* Scroll horizontal visible */
+.table-responsive::-webkit-scrollbar {
+    height: 12px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 .badge-operativo { background: #059669; color: white; }

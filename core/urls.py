@@ -11,4 +11,11 @@ urlpatterns = [
     path('ajax/guias-laboratorio/', views.get_guias_laboratorio_ajax, name='guias_laboratorio'),
     path('ajax/practicas/', views.get_practicas_ajax, name='practicas'),
     path('ajax/laboratorios/', views.get_laboratorios_ajax, name='laboratorios'),
+    
+    # Malla Curricular
+    path('malla-curricular/', views.malla_curricular_view, name='malla_curricular'),
+    path('malla-curricular/asignatura/<int:asignatura_id>/', views.detalle_asignatura_view, name='detalle_asignatura'),
+    path('ajax/criterios-desempeno/', views.get_criterios_desempeno_ajax, name='criterios_desempeno'),
+    path('ajax/unidades-didacticas/', views.get_unidades_didacticas_ajax, name='unidades_didacticas'),
+    path('ajax/contenidos-analiticos/', views.get_contenidos_analiticos_ajax, name='contenidos_analiticos'),
 ]

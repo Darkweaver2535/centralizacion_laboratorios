@@ -28,7 +28,8 @@ def visualizacion_view(request):
     
     # Obtener todos los equipos
     equipos = Equipo.objects.select_related(
-        'unidad_academica', 'carrera', 'asignatura', 'unidad_tematica', 
+        'unidad_academica', 'carrera', 'asignatura',
+        'criterio_desempeno', 'unidad_didactica', 'contenido_analitico',
         'guia_laboratorio', 'practica', 'laboratorio'
     ).all()
     

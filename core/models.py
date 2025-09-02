@@ -76,6 +76,7 @@ class Asignatura(models.Model):
         ('fisica_ii', 'Física II'),
         ('fisica_iii', 'Física III'),
         ('quimica_general', 'Química General'),
+        ('fisicoquimica', 'Fisicoquímica'),
         ('quimica_organica', 'Química Orgánica'),
         ('estadistica_probabilidades', 'Estadística y Probabilidades'),
         ('ecuaciones_diferenciales', 'Ecuaciones Diferenciales'),
@@ -149,6 +150,23 @@ class Asignatura(models.Model):
     semestre = models.IntegerField(choices=[(i, f"{i}° Semestre") for i in range(1, 11)])
     carga_horaria_semanal = models.IntegerField(default=4, help_text="Horas por semana")
     carga_horaria_semestral = models.IntegerField(default=80, help_text="Total de horas en el semestre")
+    
+    # Nuevos campos de malla curricular
+    codigo_competencia = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True,
+        verbose_name='Código de Competencia',
+        help_text='Código de competencia de la materia'
+    )
+    sigla_curricular = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True,
+        verbose_name='Sigla Curricular',
+        help_text='Sigla curricular de la asignatura'
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -259,3 +277,54 @@ class Laboratorio(models.Model):
     
     def __str__(self):
         return self.get_nombre_display()
+
+
+class CriterioDesempeno(models.Model):
+    """Modelo para criterios de desempeño"""
+    nombre = models.CharField(max_length=200, unique=True, verbose_name="Criterio de Desempeño")
+    descripcion = models.TextField(blank=True, verbose_name="Descripción")
+    asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE, related_name='criterios_desempeno')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Criterio de Desempeño"
+        verbose_name_plural = "Criterios de Desempeño"
+        ordering = ['nombre']
+    
+    def __str__(self):
+        return self.nombre
+
+
+class UnidadDidactica(models.Model):
+    """Modelo para unidades didácticas"""
+    nombre = models.CharField(max_length=200, unique=True, verbose_name="Unidad Didáctica")
+    descripcion = models.TextField(blank=True, verbose_name="Descripción")
+    asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE, related_name='unidades_didacticas')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Unidad Didáctica"
+        verbose_name_plural = "Unidades Didácticas"
+        ordering = ['nombre']
+    
+    def __str__(self):
+        return self.nombre
+
+
+class ContenidoAnalitico(models.Model):
+    """Modelo para contenidos analíticos"""
+    nombre = models.CharField(max_length=300, unique=True, verbose_name="Contenido Analítico")
+    descripcion = models.TextField(blank=True, verbose_name="Descripción detallada")
+    unidad_didactica = models.ForeignKey(UnidadDidactica, on_delete=models.CASCADE, related_name='contenidos_analiticos')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Contenido Analítico"
+        verbose_name_plural = "Contenidos Analíticos"
+        ordering = ['nombre']
+    
+    def __str__(self):
+        return self.nombre

@@ -1,8 +1,11 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Count
-from .models import UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, Practica, Laboratorio
+from .models import (
+    UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, 
+    Practica, Laboratorio, CriterioDesempeno, UnidadDidactica, ContenidoAnalitico
+)
 
 @login_required
 def dashboard_view(request):
@@ -207,3 +210,159 @@ def get_laboratorios_ajax(request):
     ]
     
     return JsonResponse({'laboratorios': laboratorios_data})
+
+
+# =====================================
+# VISTAS PARA MALLA CURRICULAR
+# =====================================
+
+@login_required
+def malla_curricular_view(request):
+    """Vista principal de malla curricular"""
+    
+    # Estadísticas generales
+    stats = {
+        'total_asignaturas': Asignatura.objects.count(),
+        'total_criterios': CriterioDesempeno.objects.count(),
+        'total_unidades_didacticas': UnidadDidactica.objects.count(),
+        'total_contenidos': ContenidoAnalitico.objects.count(),
+    }
+    
+    # Asignaturas por carrera con datos de malla curricular
+    carreras_con_malla = []
+    for carrera in Carrera.objects.all():
+        asignaturas = Asignatura.objects.filter(carrera=carrera).order_by('semestre', 'nombre')
+        if asignaturas.exists():
+            carreras_con_malla.append({
+                'carrera': carrera,
+                'asignaturas': asignaturas,
+                'total_asignaturas': asignaturas.count(),
+                'con_codigo_competencia': asignaturas.exclude(codigo_competencia__in=['', None]).count(),
+                'con_sigla_curricular': asignaturas.exclude(sigla_curricular__in=['', None]).count(),
+            })
+    
+    # Datos para filtros
+    unidades_academicas = UnidadAcademica.objects.all()
+    carreras = Carrera.objects.all()
+    
+    context = {
+        'stats': stats,
+        'carreras_con_malla': carreras_con_malla,
+        'unidades_academicas': unidades_academicas,
+        'carreras': carreras,
+    }
+    
+    return render(request, 'core/malla_curricular.html', context)
+
+
+@login_required
+def detalle_asignatura_view(request, asignatura_id):
+    """Vista detallada de una asignatura con toda su malla curricular"""
+    
+    asignatura = get_object_or_404(Asignatura, id=asignatura_id)
+    
+    # Criterios de desempeño
+    criterios = CriterioDesempeno.objects.filter(asignatura=asignatura)
+    
+    # Unidades didácticas
+    unidades_didacticas = UnidadDidactica.objects.filter(asignatura=asignatura)
+    
+    # Contenidos analíticos por unidad didáctica
+    contenidos_por_unidad = {}
+    for unidad in unidades_didacticas:
+        contenidos_por_unidad[unidad.id] = ContenidoAnalitico.objects.filter(unidad_didactica=unidad)
+    
+    # Unidades temáticas tradicionales (si existen)
+    unidades_tematicas = UnidadTematica.objects.filter(asignatura=asignatura)
+    
+    # Estadísticas de la asignatura
+    asignatura_stats = {
+        'criterios_count': criterios.count(),
+        'unidades_didacticas_count': unidades_didacticas.count(),
+        'contenidos_count': sum(contenidos.count() for contenidos in contenidos_por_unidad.values()),
+        'unidades_tematicas_count': unidades_tematicas.count(),
+    }
+    
+    context = {
+        'asignatura': asignatura,
+        'criterios': criterios,
+        'unidades_didacticas': unidades_didacticas,
+        'contenidos_por_unidad': contenidos_por_unidad,
+        'unidades_tematicas': unidades_tematicas,
+        'asignatura_stats': asignatura_stats,
+    }
+    
+    return render(request, 'core/detalle_asignatura.html', context)
+
+
+@login_required
+def get_criterios_desempeno_ajax(request):
+    """Obtener criterios de desempeño por asignatura"""
+    asignatura_id = request.GET.get('asignatura_id')
+    
+    if asignatura_id:
+        criterios = CriterioDesempeno.objects.filter(asignatura_id=asignatura_id)
+    else:
+        criterios = CriterioDesempeno.objects.all()
+    
+    criterios_data = [
+        {
+            'id': criterio.id,
+            'nombre': criterio.nombre,
+            'descripcion': criterio.descripcion,
+            'asignatura': criterio.asignatura.get_nombre_display()
+        }
+        for criterio in criterios
+    ]
+    
+    return JsonResponse({'criterios': criterios_data})
+
+
+@login_required
+def get_unidades_didacticas_ajax(request):
+    """Obtener unidades didácticas por asignatura"""
+    asignatura_id = request.GET.get('asignatura_id')
+    
+    if asignatura_id:
+        unidades = UnidadDidactica.objects.filter(asignatura_id=asignatura_id)
+    else:
+        unidades = UnidadDidactica.objects.all()
+    
+    unidades_data = [
+        {
+            'id': unidad.id,
+            'nombre': unidad.nombre,
+            'descripcion': unidad.descripcion,
+            'asignatura': unidad.asignatura.get_nombre_display()
+        }
+        for unidad in unidades
+    ]
+    
+    return JsonResponse({'unidades_didacticas': unidades_data})
+
+
+@login_required
+def get_contenidos_analiticos_ajax(request):
+    """Obtener contenidos analíticos por unidad didáctica"""
+    unidad_didactica_id = request.GET.get('unidad_didactica_id')
+    asignatura_id = request.GET.get('asignatura_id')
+    
+    if unidad_didactica_id:
+        contenidos = ContenidoAnalitico.objects.filter(unidad_didactica_id=unidad_didactica_id)
+    elif asignatura_id:
+        contenidos = ContenidoAnalitico.objects.filter(unidad_didactica__asignatura_id=asignatura_id)
+    else:
+        contenidos = ContenidoAnalitico.objects.all()
+    
+    contenidos_data = [
+        {
+            'id': contenido.id,
+            'nombre': contenido.nombre,
+            'descripcion': contenido.descripcion,
+            'unidad_didactica': contenido.unidad_didactica.nombre,
+            'asignatura': contenido.unidad_didactica.asignatura.get_nombre_display()
+        }
+        for contenido in contenidos
+    ]
+    
+    return JsonResponse({'contenidos_analiticos': contenidos_data})
