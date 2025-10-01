@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Sistema de Filtros Mejorado - Laboratorios{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="hero-section text-center bg-gradient-primary text-white py-5 mb-4" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 10px;">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-filter me-3"></i>
+                    Sistema de Filtros Avanzado
+                </h1>
+                <p class="lead mb-4">Explora equipos, insumos y guías de laboratorio con filtros inteligentes</p>
+                
+                <!-- Estadísticas -->
+                <div class="row justify-content-center">
+                    <div class="col-md-2 col-sm-4 mb-3">
+                        <div class="stat-card bg-white bg-opacity-20 rounded p-3">
+                            <h3 class="fw-bold mb-1">{{ equipos_count }}</h3>
+                            <small>Equipos</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 mb-3">
+                        <div class="stat-card bg-white bg-opacity-20 rounded p-3">
+                            <h3 class="fw-bold mb-1">{{ insumos_count }}</h3>
+                            <small>Insumos</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 mb-3">
+                        <div class="stat-card bg-white bg-opacity-20 rounded p-3">
+                            <h3 class="fw-bold mb-1">{{ guias_count }}</h3>
+                            <small>Guías</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjetas de categorías -->
+    <div class="row">
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card category-card h-100 shadow-sm border-0">
+                <div class="card-body text-center p-4">
+                    <div class="category-icon mb-3">
+                        <i class="fas fa-microscope fa-3x text-primary"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Equipos de Laboratorio</h5>
+                    <p class="card-text text-muted mb-4">
+                        Explora y filtra equipos por unidad académica, carrera, semestre y estado.
+                    </p>
+                    <span class="badge bg-primary fs-6 mb-3">{{ equipos_count }} equipos disponibles</span>
+                    <div class="d-grid">
+                        <a href="{% url 'visualizacion:equipos_filter' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search me-2"></i>
+                            Explorar Equipos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card category-card h-100 shadow-sm border-0">
+                <div class="card-body text-center p-4">
+                    <div class="category-icon mb-3">
+                        <i class="fas fa-flask fa-3x text-success"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Insumos y Materiales</h5>
+                    <p class="card-text text-muted mb-4">
+                        Encuentra reactivos, materiales y herramientas para tus prácticas.
+                    </p>
+                    <span class="badge bg-success fs-6 mb-3">{{ insumos_count }} insumos disponibles</span>
+                    <div class="d-grid">
+                        <a href="{% url 'visualizacion:insumos_filter' %}" class="btn btn-success btn-lg">
+                            <i class="fas fa-search me-2"></i>
+                            Explorar Insumos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card category-card h-100 shadow-sm border-0">
+                <div class="card-body text-center p-4">
+                    <div class="category-icon mb-3">
+                        <i class="fas fa-book fa-3x text-info"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Guías de Prácticas</h5>
+                    <p class="card-text text-muted mb-4">
+                        Accede a guías de laboratorio organizadas por asignatura y tipo.
+                    </p>
+                    <span class="badge bg-info fs-6 mb-3">{{ guias_count }} guías disponibles</span>
+                    <div class="d-grid">
+                        <a href="{% url 'visualizacion:guias_filter' %}" class="btn btn-info btn-lg">
+                            <i class="fas fa-search me-2"></i>
+                            Explorar Guías
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 bg-light">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-3">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                        Cómo usar el sistema de filtros
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <h6 class="fw-bold text-primary">
+                                <i class="fas fa-step-forward me-2"></i>
+                                1. Selecciona una categoría
+                            </h6>
+                            <p class="small text-muted mb-0">
+                                Elige entre equipos, insumos o guías según lo que necesites encontrar.
+                            </p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="fw-bold text-success">
+                                <i class="fas fa-filter me-2"></i>
+                                2. Aplica filtros
+                            </h6>
+                            <p class="small text-muted mb-0">
+                                Usa los filtros disponibles para refinar tu búsqueda por criterios específicos.
+                            </p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="fw-bold text-info">
+                                <i class="fas fa-list me-2"></i>
+                                3. Explora resultados
+                            </h6>
+                            <p class="small text-muted mb-0">
+                                Navega por los resultados paginados y encuentra exactamente lo que buscas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.category-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.stat-card {
+    backdrop-filter: blur(10px);
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+}
+</style>
+{% endblock %}

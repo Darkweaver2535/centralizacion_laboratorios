@@ -7,6 +7,7 @@ app_name = 'insumos'
 urlpatterns = [
     path('', views.lista_insumos, name='lista'),
     path('nuevo/', views.nuevo_insumo, name='nuevo'),
+    path('importar/', views.importar_insumos_view, name='importar'),
     path('<int:insumo_id>/', views.detalle_insumo, name='detalle'),
     path('<int:insumo_id>/editar/', views.editar_insumo, name='editar'),
     path('eliminar/<int:insumo_id>/', views.eliminar_insumo, name='eliminar'),

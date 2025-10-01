@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}Filtrar Equipos - Laboratorios{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold mb-1">
+                        <i class="fas fa-microscope text-primary me-2"></i>
+                        Equipos de Laboratorio
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Mostrando {{ filtered_count }} de {{ total_count }} equipos
+                    </p>
+                </div>
+                <a href="{% url 'visualizacion:filter_index' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver al inicio
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Panel de filtros -->
+        <div class="col-lg-3 col-md-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter me-2"></i>
+                        Filtros de Búsqueda
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="filter-form">
+                        {% for field in filter.form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                    {{ field.label }}
+                                </label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>
+                                Aplicar Filtros
+                            </button>
+                            <a href="{% url 'visualizacion:equipos_filter' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>
+                                Limpiar Filtros
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="col-lg-9 col-md-8">
+            {% if object_list %}
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Equipo</th>
+                                        <th>Descripción</th>
+                                        <th>Unidad Académica</th>
+                                        <th>Carrera</th>
+                                        <th>Semestre</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for equipo in object_list %}
+                                        <tr>
+                                            <td class="fw-bold">{{ equipo.equipo_existente|default:"Sin nombre" }}</td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {{ equipo.marca }} {{ equipo.modelo }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info bg-opacity-10 text-info">
+                                                    {{ equipo.unidad_academica.nombre|default:"N/A" }}
+                                                </span>
+                                            </td>
+                                            <td>{{ equipo.carrera.nombre|default:"N/A" }}</td>
+                                            <td>
+                                                {% if equipo.semestre %}
+                                                    {{ equipo.semestre }}° Semestre
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if equipo.estado == 'excelente' %}
+                                                    <span class="badge bg-success">Excelente</span>
+                                                {% elif equipo.estado == 'bueno' %}
+                                                    <span class="badge bg-primary">Bueno</span>
+                                                {% elif equipo.estado == 'regular' %}
+                                                    <span class="badge bg-warning">Regular</span>
+                                                {% elif equipo.estado == 'malo' %}
+                                                    <span class="badge bg-danger">Malo</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ equipo.estado|default:"Sin estado" }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paginación -->
+                {% if is_paginated %}
+                    <div class="d-flex justify-content-center mt-4">
+                        <nav aria-label="Paginación">
+                            <ul class="pagination">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No se encontraron equipos</h4>
+                    <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
+                    <a href="{% url 'visualizacion:equipos_filter' %}" class="btn btn-primary">
+                        <i class="fas fa-refresh me-2"></i>
+                        Limpiar Filtros
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

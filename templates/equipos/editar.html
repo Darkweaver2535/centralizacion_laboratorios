@@ -252,6 +252,33 @@
         margin: 0;
     }
     
+    /* Estilos para el campo de equipos UALP */
+    #id_equipo_requerido {
+        position: relative;
+    }
+    
+    #id_equipo_requerido option {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--gray-200);
+    }
+    
+    #id_equipo_requerido option:hover {
+        background: var(--gray-50);
+    }
+    
+    #loading-equipos {
+        position: absolute;
+        right: 45px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        border: 1px solid var(--gray-300);
+        font-size: 0.85rem;
+        color: var(--primary-color);
+    }
+    
     /* Botones */
     .btn {
         padding: 14px 28px;
@@ -687,7 +714,16 @@
                     <div class="form-row">
                         <div class="form-group">
                             {{ form.equipo_requerido.label_tag }}
-                            {{ form.equipo_requerido }}
+                            <div class="dynamic-field">
+                                {{ form.equipo_requerido }}
+                                <datalist id="equipos-ualp-list">
+                                    <!-- Se llenará dinámicamente con JavaScript -->
+                                </datalist>
+                                <div class="loading-indicator" id="loading-equipos">
+                                    <i class="fas fa-spinner fa-spin"></i> Cargando equipos UALP...
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Escriba para buscar y seleccionar un equipo disponible en la UALP</small>
                             {% if form.equipo_requerido.errors %}
                                 <div class="text-danger">{{ form.equipo_requerido.errors.0 }}</div>
                             {% endif %}
@@ -1064,6 +1100,92 @@ $(document).ready(function() {
     $('#id_contenido_analitico').change(function() {
         const descripcion = $(this).find('option:selected').data('descripcion');
         $('#contenido-descripcion').text(descripcion || '');
+    });
+
+    // Cargar equipos de la UALP para equipos requeridos
+    function cargarEquiposUALP(query = '') {
+        console.log('🔍 Iniciando carga de equipos UALP, query:', query);
+        
+        const equipoInput = $('#id_equipo_requerido');
+        const datalist = $('#equipos-ualp-list');
+        const loadingIndicator = $('#loading-equipos');
+        
+        console.log('📋 Elementos encontrados:', {
+            equipoInput: equipoInput.length,
+            datalist: datalist.length,
+            loadingIndicator: loadingIndicator.length
+        });
+        
+        if (equipoInput.length === 0) {
+            console.error('❌ Campo equipo_requerido no encontrado');
+            return;
+        }
+        
+        if (datalist.length === 0) {
+            console.error('❌ Datalist equipos-ualp-list no encontrado');
+            return;
+        }
+        
+        loadingIndicator.show();
+        
+        console.log('🌐 Realizando petición AJAX a:', '{% url "equipos:cargar_equipos_ualp_ajax" %}');
+        
+        $.get('{% url "equipos:cargar_equipos_ualp_ajax" %}', {
+            'query': query
+        }).done(function(data) {
+            console.log('✅ Respuesta AJAX recibida:', data);
+            
+            datalist.empty();
+            
+            $.each(data.equipos, function(index, equipo) {
+                const option = $('<option></option>')
+                    .attr('value', equipo.text)
+                    .data('equipo-id', equipo.id)
+                    .data('estado', equipo.estado);
+                datalist.append(option);
+            });
+            
+            console.log(`✅ Cargados ${data.equipos.length} equipos de la UALP en datalist`);
+            
+        }).fail(function(xhr, status, error) {
+            console.error('❌ Error al cargar equipos de la UALP:', {
+                status: status,
+                error: error,
+                response: xhr.responseText
+            });
+            alert('Error al cargar la lista de equipos de la UALP');
+        }).always(function() {
+            loadingIndicator.hide();
+        });
+    }
+    
+    // Inicializar carga de equipos al cargar la página
+    console.log('🚀 Inicializando carga de equipos UALP...');
+    cargarEquiposUALP();
+    
+    // Implementar búsqueda en tiempo real
+    let equipoSearchTimeout;
+    $('#id_equipo_requerido').on('input', function() {
+        const query = $(this).val();
+        
+        // Cancelar búsqueda anterior
+        clearTimeout(equipoSearchTimeout);
+        
+        // Nueva búsqueda después de 300ms
+        equipoSearchTimeout = setTimeout(function() {
+            if (query.length >= 2) {
+                cargarEquiposUALP(query);
+            } else if (query.length === 0) {
+                cargarEquiposUALP(); // Cargar todos si está vacío
+            }
+        }, 300);
+    });
+    
+    // Al hacer foco, cargar todos los equipos
+    $('#id_equipo_requerido').on('focus', function() {
+        if ($('#equipos-ualp-list option').length === 0) {
+            cargarEquiposUALP();
+        }
     });
 
     // Animación de envío del formulario

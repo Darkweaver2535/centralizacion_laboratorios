@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .import_views import seleccionar_metodo_carga, importar_excel_view, descargar_plantilla_excel
 
 app_name = 'core'
 
@@ -18,4 +19,9 @@ urlpatterns = [
     path('ajax/criterios-desempeno/', views.get_criterios_desempeno_ajax, name='criterios_desempeno'),
     path('ajax/unidades-didacticas/', views.get_unidades_didacticas_ajax, name='unidades_didacticas'),
     path('ajax/contenidos-analiticos/', views.get_contenidos_analiticos_ajax, name='contenidos_analiticos'),
+    
+    # Sistema de importación R1
+    path('seleccionar-metodo/<str:tipo>/', seleccionar_metodo_carga, name='seleccionar_metodo'),
+    path('importar-excel/<str:tipo>/', importar_excel_view, name='importar_excel'),
+    path('plantilla-excel/<str:tipo>/', descargar_plantilla_excel, name='plantilla_excel'),
 ]

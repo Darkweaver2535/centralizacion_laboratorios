@@ -6,6 +6,7 @@ app_name = 'equipos'
 urlpatterns = [
     path('', views.equipos_view, name='lista'),
     path('nuevo/', views.nuevo_equipo_view, name='nuevo'),
+    path('importar/', views.importar_equipos_view, name='importar'),
     path('<int:pk>/', views.detalle_equipo_view, name='detalle'),
     path('<int:pk>/editar/', views.editar_equipo_view, name='editar'),
     path('<int:pk>/eliminar/', views.eliminar_equipo_view, name='eliminar'),
@@ -26,6 +27,7 @@ urlpatterns = [
     path('ajax/cargar-contenidos-analiticos/', views.cargar_contenidos_analiticos_ajax, name='cargar_contenidos_ajax'),
     path('ajax/cargar-guias-laboratorio/', views.cargar_guias_laboratorio_ajax, name='cargar_guias_ajax'),
     path('ajax/cargar-practicas/', views.cargar_practicas_ajax, name='cargar_practicas_ajax'),
+    path('ajax/cargar-equipos-ualp/', views.cargar_equipos_ualp_ajax, name='cargar_equipos_ualp_ajax'),
     
     # URLs para el sistema de reordenamiento
     path('reordenamiento/', views.lista_tareas_reordenamiento, name='reordenamiento'),

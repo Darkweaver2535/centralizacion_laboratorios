@@ -65,7 +65,13 @@ class EquipoForm(forms.ModelForm):
             'laboratorio': forms.Select(attrs={'class': 'form-control'}),
             'seccion_area': forms.TextInput(attrs={'class': 'form-control'}),
             'identificador_aula': forms.TextInput(attrs={'class': 'form-control'}),
-            'equipo_requerido': forms.TextInput(attrs={'class': 'form-control'}),
+            'equipo_requerido': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'id': 'id_equipo_requerido',
+                'list': 'equipos-ualp-list',
+                'placeholder': 'Buscar y seleccionar equipo de la UALP...',
+                'autocomplete': 'off'
+            }),
             'numero_equipos_requeridos': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
             'responsable_excel': forms.TextInput(attrs={'class': 'form-control'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3})

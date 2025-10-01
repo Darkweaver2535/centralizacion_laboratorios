@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
@@ -87,6 +88,13 @@ def lista_insumos(request):
     
     return render(request, 'insumos/lista.html', context)
 
+
+@login_required
+def importar_insumos_view(request):
+    """Vista para importar insumos desde Excel/CSV"""
+    return render(request, 'insumos/importar.html', {
+        'tipo': 'insumos'
+    })
 
 def nuevo_insumo(request):
     """Vista para crear un nuevo insumo"""

@@ -388,6 +388,131 @@
             font-style: italic;
         }
 
+        /* Bubble Menu Styles */
+        .bubble-menu {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .bubble-menu.expanded {
+            background: linear-gradient(135deg, #f8faff 0%, #e0f2fe 100%);
+            border-radius: 12px;
+            margin: 4px 8px;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.1);
+        }
+
+        .bubble-toggle {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bubble-toggle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .bubble-menu.expanded .bubble-toggle::before {
+            left: 100%;
+        }
+
+        .bubble-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bubble-expanded {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 0 0 8px 8px;
+            border-top: 1px solid rgba(30, 58, 138, 0.1);
+        }
+
+        .bubble-section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px 8px 40px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6366f1;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            border-bottom: 1px solid #e0e7ff;
+            margin-bottom: 4px;
+        }
+
+        .bubble-section-label i {
+            color: #6366f1;
+            -webkit-text-fill-color: #6366f1;
+            font-size: 10px;
+        }
+
+        .bubble-menu .submenu-item {
+            margin: 2px 8px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .bubble-menu .submenu-item:hover {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%);
+            color: #1e40af;
+            transform: translateX(8px);
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.15);
+        }
+
+        .bubble-menu .submenu-item.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .bubble-menu .submenu-item.active:hover {
+            transform: translateX(4px);
+        }
+
+        .bubble-menu .submenu-item.active::before {
+            display: none;
+        }
+
+        /* Animation for bubble expansion */
+        @keyframes bubbleExpand {
+            from {
+                max-height: 0;
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                max-height: 400px;
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bubble-expanded.open {
+            animation: bubbleExpand 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        /* Enhanced dropdown arrow for bubble menus */
+        .bubble-toggle .dropdown-arrow {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #6b7280;
+        }
+
+        .bubble-menu.expanded .dropdown-arrow {
+            color: #3b82f6;
+            transform: rotate(90deg);
+        }
+
         /* Main Content */
         .main-content {
             flex: 1;
@@ -491,15 +616,15 @@
             <div class="user-menu">
                 <button class="user-menu-btn" onclick="toggleUserMenu()">
                     <div class="user-avatar">
-                        {{ user.get_full_name|default:user.username|first|upper }}
+                        {% if user.is_authenticated %}{{ user.get_full_name|default:user.username|first|upper }}{% else %}A{% endif %}
                     </div>
-                    <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="user-name">{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% else %}Anónimo{% endif %}</div>
                     <i class="fas fa-chevron-down" style="font-size: 12px;"></i>
                 </button>
                 <div class="user-dropdown" id="userDropdown">
                     <div class="dropdown-header">
-                        <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-                        <div class="user-email">{{ user.correo_institucional|default:user.email }}</div>
+                        <div class="user-name">{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% else %}Anónimo{% endif %}</div>
+                        <div class="user-email">{% if user.is_authenticated %}{{ user.correo_institucional|default:user.email }}{% else %}Usuario anónimo{% endif %}</div>
                     </div>
                     <a href="{% url 'usuarios:perfil' %}" class="dropdown-item">
                         <i class="fas fa-user"></i>
@@ -526,7 +651,7 @@
                 <h3>Menú Principal</h3>
             </div>
             <ul class="sidebar-menu">
-                <!-- Dashboard -->
+                <!-- 1. Dashboard -->
                 <li>
                     <a href="{% url 'dashboard' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                         <i class="fas fa-tachometer-alt"></i>
@@ -534,107 +659,58 @@
                     </a>
                 </li>
                 
-                <!-- Equipos -->
-                <li class="dropdown-menu" data-dropdown="dropdown-0">
-                    <button class="dropdown-toggle" onclick="toggleDropdown(this)">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <i class="fas fa-flask dropdown-icon"></i>
-                            <span>Equipos</span>
+                <!-- 2. Gestión de la Información (Registro R1) -->
+                <li class="dropdown-menu bubble-menu" data-dropdown="gestion-informacion">
+                    <button class="dropdown-toggle bubble-toggle" onclick="toggleBubble(this)">
+                        <div class="bubble-content">
+                            <i class="fas fa-database dropdown-icon"></i>
+                            <span>Gestión de la Información</span>
                         </div>
                         <i class="fas fa-chevron-right dropdown-arrow"></i>
                     </button>
-                    <div class="dropdown-content">
-                        <a href="{% url 'equipos:nuevo' %}" class="submenu-item {% if request.resolver_match.namespace == 'equipos' and request.resolver_match.url_name == 'nuevo' %}active{% endif %}">
-                            <i class="fas fa-plus-circle"></i>
-                            Ingreso de Equipos
+                    <div class="dropdown-content bubble-expanded">
+                        <div class="bubble-section-label">
+                            <i class="fas fa-edit"></i>
+                            <span>Registro de Datos (R1)</span>
+                        </div>
+                        <a href="{% url 'core:malla_curricular' %}" class="submenu-item {% if request.resolver_match.namespace == 'core' and 'malla' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-graduation-cap"></i>
+                            Malla Curricular
                         </a>
-                        <a href="{% url 'visualizacion:analisis' %}" class="submenu-item {% if request.resolver_match.namespace == 'visualizacion' %}active{% endif %}">
-                            <i class="fas fa-chart-bar"></i>
-                            Visualización / Análisis
+                        <a href="{% url 'core:seleccionar_metodo' 'equipos' %}" class="submenu-item {% if request.resolver_match.namespace == 'equipos' %}active{% endif %}">
+                            <i class="fas fa-flask"></i>
+                            Equipos
                         </a>
-                        <!-- Nueva opción: Reordenamiento Equipos -->
-                        <a href="{% url 'equipos:reordenamiento' %}" class="submenu-item {% if request.resolver_match.namespace == 'equipos' and 'reordenamiento' in request.resolver_match.url_name %}active{% endif %}">
-                            <i class="fas fa-tasks"></i>
-                            Reordenamiento
+                        <a href="{% url 'core:seleccionar_metodo' 'insumos' %}" class="submenu-item {% if request.resolver_match.namespace == 'insumos' %}active{% endif %}">
+                            <i class="fas fa-boxes"></i>
+                            Insumos
+                        </a>
+                        <a href="{% url 'guias:nueva' %}" class="submenu-item {% if request.resolver_match.namespace == 'guias' and request.resolver_match.url_name == 'nueva' %}active{% endif %}">
+                            <i class="fas fa-book-open"></i>
+                            Datos de Laboratorio
+                        </a>
+                        <a href="#" class="submenu-item">
+                            <i class="fas fa-archive"></i>
+                            Activos Fijos
                         </a>
                     </div>
                 </li>
 
-                <!-- Insumos -->
-                <li class="dropdown-menu" data-dropdown="dropdown-1">
-                    <button class="dropdown-toggle" onclick="toggleDropdown(this)">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <i class="fas fa-boxes dropdown-icon"></i>
-                            <span>Insumos</span>
-                        </div>
-                        <i class="fas fa-chevron-right dropdown-arrow"></i>
-                    </button>
-                    <div class="dropdown-content">
-                        <a href="{% url 'insumos:nuevo' %}" class="submenu-item {% if request.resolver_match.namespace == 'insumos' and request.resolver_match.url_name == 'nuevo' %}active{% endif %}">
-                            <i class="fas fa-plus-circle"></i>
-                            Ingreso de Insumos
-                        </a>
-                        <a href="{% url 'insumos:lista' %}" class="submenu-item {% if request.resolver_match.namespace == 'insumos' and request.resolver_match.url_name == 'lista' %}active{% endif %}">
-                            <i class="fas fa-list"></i>
-                            Lista de Insumos
-                        </a>
-                        <!-- Nueva opción: Reordenamiento Insumos -->
-                        <a href="{% url 'insumos:reordenamiento_insumos' %}" class="submenu-item {% if request.resolver_match.namespace == 'insumos' and 'reordenamiento' in request.resolver_match.url_name %}active{% endif %}">
-                            <i class="fas fa-tasks"></i>
-                            Reordenamiento
-                        </a>
-                    </div>
-                </li>
-                <!-- Guías de Laboratorio -->
+                <!-- 3. Gestión de Laboratorios (Visualización R2) - Enlace Directo -->
                 <li>
-                    <a href="#" class="menu-item" onclick="toggleSubmenu(this)">
-                        <i class="fas fa-book-open"></i>
-                        <span>Guías de Laboratorio</span>
-                        <i class="fas fa-chevron-down submenu-icon"></i>
-                    </a>
-                    <div class="submenu">
-                        <a href="{% url 'guias:nueva' %}" class="submenu-item {% if request.resolver_match.namespace == 'guias' and request.resolver_match.url_name == 'nueva' %}active{% endif %}">
-                            <i class="fas fa-plus"></i>
-                            Generar Nueva Guía
-                        </a>
-                        <a href="{% url 'guias:lista' %}" class="submenu-item {% if request.resolver_match.namespace == 'guias' and request.resolver_match.url_name == 'lista' %}active{% endif %}">
-                            <i class="fas fa-list"></i>
-                            Lista de Guías
-                        </a>
-                    </div>
-                </li>
-                <!-- Gestión de Información -->
-                <li>
-                    <a href="#" class="menu-item">
-                        <i class="fas fa-cogs"></i>
-                        Gestión de Información
-                    </a>
-                </li>
-                
-                <!-- Investigación y Servicios -->
-                <li>
-                    <a href="#" class="menu-item">
+                    <a href="{% url 'visualizacion:analisis' %}" class="menu-item {% if request.resolver_match.namespace == 'visualizacion' %}active{% endif %}">
                         <i class="fas fa-microscope"></i>
-                        Investigación y Servicios
+                        Gestión de Laboratorios
                     </a>
                 </li>
-                
-                <!-- Usuarios -->
+
+                <!-- 4. Usuarios -->
                 <li>
                     <a href="{% url 'usuarios:lista' %}" class="menu-item {% if request.resolver_match.namespace == 'usuarios' %}active{% endif %}">
                         <i class="fas fa-users"></i>
                         Usuarios
                     </a>
                 </li>
-
-                <!-- Malla Curricular -->
-                <li>
-                    <a href="{% url 'core:malla_curricular' %}" class="menu-item {% if request.resolver_match.namespace == 'core' and 'malla' in request.resolver_match.url_name %}active{% endif %}">
-                        <i class="fas fa-graduation-cap"></i>
-                        Malla Curricular
-                    </a>
-                </li>
-
                 
             </ul>
         </aside>
@@ -713,6 +789,50 @@
             button.classList.toggle('open');
         }
 
+        // Nueva función para manejar menús tipo burbuja
+        function toggleBubble(button) {
+            const content = button.nextElementSibling;
+            const arrow = button.querySelector('.dropdown-arrow');
+            const parentLi = button.closest('li');
+            
+            // Cerrar otras burbujas
+            document.querySelectorAll('.bubble-menu').forEach(bubble => {
+                if (bubble !== parentLi) {
+                    const bubbleContent = bubble.querySelector('.dropdown-content');
+                    const bubbleToggle = bubble.querySelector('.dropdown-toggle');
+                    const bubbleArrow = bubble.querySelector('.dropdown-arrow');
+                    
+                    bubbleContent.classList.remove('open');
+                    bubbleToggle.classList.remove('open');
+                    bubble.classList.remove('expanded');
+                    if (bubbleArrow) {
+                        bubbleArrow.style.transform = 'rotate(0deg)';
+                    }
+                }
+            });
+            
+            // Toggle burbuja actual
+            const isOpen = content.classList.contains('open');
+            
+            if (isOpen) {
+                // Cerrar burbuja
+                content.classList.remove('open');
+                button.classList.remove('open');
+                parentLi.classList.remove('expanded');
+                if (arrow) {
+                    arrow.style.transform = 'rotate(0deg)';
+                }
+            } else {
+                // Abrir burbuja
+                content.classList.add('open');
+                button.classList.add('open');
+                parentLi.classList.add('expanded');
+                if (arrow) {
+                    arrow.style.transform = 'rotate(90deg)';
+                }
+            }
+        }
+
         // Cerrar sidebar en mobile al hacer click fuera
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');
@@ -729,15 +849,24 @@
         document.addEventListener('DOMContentLoaded', function() {
             const currentPath = window.location.pathname;
             
-            // Verificar submenús activos y abrir su dropdown padre
+            // Verificar submenús activos y abrir su dropdown/burbuja padre
             document.querySelectorAll('.submenu-item.active').forEach(activeSubmenu => {
                 const parentDropdown = activeSubmenu.closest('.dropdown-menu');
                 if (parentDropdown) {
                     const toggle = parentDropdown.querySelector('.dropdown-toggle');
                     const content = parentDropdown.querySelector('.dropdown-content');
+                    const arrow = parentDropdown.querySelector('.dropdown-arrow');
                     
                     toggle.classList.add('open');
                     content.classList.add('open');
+                    
+                    // Si es un menú burbuja, agregar clases especiales
+                    if (parentDropdown.classList.contains('bubble-menu')) {
+                        parentDropdown.classList.add('expanded');
+                        if (arrow) {
+                            arrow.style.transform = 'rotate(90deg)';
+                        }
+                    }
                 }
             });
 
@@ -748,21 +877,31 @@
                 if (itemPath && currentPath.includes(itemPath) && itemPath !== '#') {
                     item.classList.add('active');
                     
-                    // Si es un submenu, abrir su dropdown padre
+                    // Si es un submenu, abrir su dropdown/burbuja padre
                     if (item.classList.contains('submenu-item')) {
                         const parentDropdown = item.closest('.dropdown-menu');
                         if (parentDropdown) {
                             const toggle = parentDropdown.querySelector('.dropdown-toggle');
                             const content = parentDropdown.querySelector('.dropdown-content');
+                            const arrow = parentDropdown.querySelector('.dropdown-arrow');
                             
                             toggle.classList.add('open');
                             content.classList.add('open');
+                            
+                            // Si es un menú burbuja, agregar clases especiales
+                            if (parentDropdown.classList.contains('bubble-menu')) {
+                                parentDropdown.classList.add('expanded');
+                                if (arrow) {
+                                    arrow.style.transform = 'rotate(90deg)';
+                                }
+                            }
                         }
                     }
                 }
             });
         });
         
+        // Función auxiliar para compatibilidad con dropdowns normales (si existen)
         function toggleDropdown(button) {
             const content = button.nextElementSibling;
             const arrow = button.querySelector('.dropdown-arrow');

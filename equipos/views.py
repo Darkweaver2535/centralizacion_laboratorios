@@ -105,6 +105,13 @@ def equipos_view(request):
     return render(request, 'equipos/lista.html', context)
 
 @login_required
+def importar_equipos_view(request):
+    """Vista para importar equipos desde Excel/CSV"""
+    return render(request, 'equipos/importar.html', {
+        'tipo': 'equipos'
+    })
+
+@login_required
 def nuevo_equipo_view(request):
     """Vista para crear un nuevo equipo con todas las 24 columnas"""
     
@@ -1322,3 +1329,41 @@ def cargar_practicas_ajax(request):
         practicas_data = []
     
     return JsonResponse({'practicas': practicas_data})
+
+@login_required
+def cargar_equipos_ualp_ajax(request):
+    """Cargar equipos disponibles de la UALP para equipos requeridos"""
+    query = request.GET.get('query', '').strip()
+    
+    # Filtrar equipos de la UALP
+    ualp = UnidadAcademica.objects.filter(nombre='UALP').first()
+    if not ualp:
+        return JsonResponse({'equipos': []})
+    
+    equipos_query = Equipo.objects.filter(unidad_academica=ualp)
+    
+    # Si hay un término de búsqueda, filtrar por nombre del equipo
+    if query:
+        equipos_query = equipos_query.filter(
+            equipo_existente__icontains=query
+        )
+    
+    # Obtener equipos únicos por nombre (evitar duplicados)
+    equipos = equipos_query.values('equipo_existente', 'marca', 'modelo', 'estado').distinct()[:50]
+    
+    equipos_data = []
+    for equipo in equipos:
+        # Crear texto descriptivo
+        texto = equipo['equipo_existente']
+        if equipo['marca'] and equipo['marca'] != 'Por definir':
+            texto += f" - {equipo['marca']}"
+        if equipo['modelo'] and equipo['modelo'] != 'Por definir':
+            texto += f" ({equipo['modelo']})"
+        
+        equipos_data.append({
+            'id': equipo['equipo_existente'],  # Usar el nombre como ID
+            'text': texto,
+            'estado': equipo['estado']
+        })
+    
+    return JsonResponse({'equipos': equipos_data})
