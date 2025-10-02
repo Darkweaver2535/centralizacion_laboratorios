@@ -515,7 +515,8 @@ def agregar_datos_malla_view(request):
                                     'objetivo_practica': request.POST.get(f'objetivo_practica_{i}_{grupo_index}', ''),
                                     'fundamento_teorico': request.POST.get(f'fundamento_teorico_{i}_{grupo_index}', ''),
                                     'materiales': request.POST.get(f'materiales_{i}_{grupo_index}', ''),
-                                    'herramientas_equipos': request.POST.get(f'herramientas_equipos_{i}_{grupo_index}', ''),
+                                    'herramientas': request.POST.get(f'herramientas_{i}_{grupo_index}', ''),
+                                    'equipos': request.POST.get(f'equipos_{i}_{grupo_index}', ''),
                                     'procedimientos': request.POST.get(f'procedimientos_{i}_{grupo_index}', ''),
                                     'calculos_resultados': request.POST.get(f'calculos_resultados_{i}_{grupo_index}', ''),
                                     'cuestionario': request.POST.get(f'cuestionario_{i}_{grupo_index}', ''),
@@ -584,11 +585,21 @@ def agregar_datos_malla_view(request):
                                             orden=grupo_index + 1
                                         )
                                     
-                                    # Crear herramientas y equipos si existe
-                                    if campos_grupo['herramientas_equipos'].strip():
+                                    # Crear herramientas si existe
+                                    if campos_grupo['herramientas'].strip():
                                         MaterialesHerramientasEquipos.objects.create(
                                             contenido_analitico=contenido,
-                                            nombre=campos_grupo['herramientas_equipos'][:200],
+                                            nombre=campos_grupo['herramientas'][:200],
+                                            tipo_elemento='herramienta',
+                                            cantidad='1',
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear equipos si existe
+                                    if campos_grupo['equipos'].strip():
+                                        MaterialesHerramientasEquipos.objects.create(
+                                            contenido_analitico=contenido,
+                                            nombre=campos_grupo['equipos'][:200],
                                             tipo_elemento='equipo',
                                             cantidad='1',
                                             orden=grupo_index + 1
