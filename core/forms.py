@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import modelformset_factory, inlineformset_factory
+from django_ckeditor_5.widgets import CKEditor5Widget
 from .models import (
     Asignatura, Carrera, UnidadAcademica, CriterioDesempeno, UnidadDidactica, 
     ContenidoAnalitico, Bibliografia, PracticaLaboratorio, Titulo, Competencias,
@@ -354,3 +355,26 @@ class UnidadAcademicaCarreraForm(forms.Form):
                 self.fields['carrera'].empty_label = "Selecciona una carrera"
             except (ValueError, TypeError):
                 pass
+
+# Formulario de prueba para CKEditor 5
+class FundamentoTeoricoForm(forms.ModelForm):
+    """Formulario para probar CKEditor 5"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["contenido"].required = False
+        self.fields["referencias"].required = False
+
+    class Meta:
+        model = FundamentoTeorico
+        fields = ('contenido', 'referencias')
+        widgets = {
+            'contenido': CKEditor5Widget(
+                attrs={'class': 'django_ckeditor_5'},
+                config_name='extends'
+            ),
+            'referencias': CKEditor5Widget(
+                attrs={'class': 'django_ckeditor_5'},
+                config_name='default'
+            )
+        }

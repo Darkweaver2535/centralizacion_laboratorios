@@ -711,3 +711,31 @@ def agregar_componentes_contenido_view(request, contenido_id):
     return render(request, 'core/agregar_componentes_contenido.html', context)
 
 
+# Vista de prueba para CKEditor 5
+@login_required
+def prueba_ckeditor_view(request):
+    """Vista para probar CKEditor 5"""
+    from .forms import FundamentoTeoricoForm
+    
+    fundamento = None
+    
+    if request.method == 'POST':
+        form = FundamentoTeoricoForm(request.POST)
+        if form.is_valid():
+            # Crear un objeto temporal para mostrar
+            fundamento = form.save(commit=False)
+            # Como no tenemos contenido_analitico, vamos a crear uno temporal
+            # o simplemente mostrar los datos
+            print("Contenido:", form.cleaned_data['contenido'])
+            print("Referencias:", form.cleaned_data['referencias'])
+    else:
+        form = FundamentoTeoricoForm()
+    
+    context = {
+        'form': form,
+        'fundamento': fundamento,
+    }
+    
+    return render(request, 'core/prueba_ckeditor.html', context)
+
+

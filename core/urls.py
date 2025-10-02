@@ -23,6 +23,9 @@ urlpatterns = [
     path('ajax/contenidos-analiticos/', views.get_contenidos_analiticos_ajax, name='contenidos_analiticos'),
     path('api/carreras-por-unidad/', views.get_carreras_por_unidad_ajax, name='api_carreras_por_unidad'),
     
+    # Prueba CKEditor 5
+    path('prueba-ckeditor/', views.prueba_ckeditor_view, name='prueba_ckeditor'),
+    
     # Sistema de importación R1
     path('seleccionar-metodo/<str:tipo>/', seleccionar_metodo_carga, name='seleccionar_metodo'),
     path('importar-excel/<str:tipo>/', importar_excel_view, name='importar_excel'),

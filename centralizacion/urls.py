@@ -357,8 +357,8 @@ urlpatterns = [
     path('guias/', include('guias.urls')),
     path('usuarios/', include('usuarios.urls')),
     path('dashboard/', include('core.urls')),
-    # CKEditor URLs
-    path('ckeditor/', include('ckeditor_uploader.urls')),
+    # CKEditor 5 URLs
+    path('ckeditor5/', include('django_ckeditor_5.urls')),
     # API endpoints
     path('api/carreras/', api_carreras, name='api_carreras'),
     path('api/asignaturas/', api_asignaturas, name='api_asignaturas'),

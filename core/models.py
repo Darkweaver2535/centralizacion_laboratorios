@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django_ckeditor_5.fields import CKEditor5Field
 
 class UnidadAcademica(models.Model):
     """Modelo base para las unidades académicas"""
@@ -469,8 +470,8 @@ class FundamentoTeorico(models.Model):
     """Fundamentos teóricos del contenido analítico"""
     contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='fundamentos_teoricos')
     titulo = models.CharField(max_length=200, verbose_name="Título del fundamento")
-    contenido = models.TextField(verbose_name="Contenido teórico")
-    referencias = models.TextField(blank=True, verbose_name="Referencias adicionales")
+    contenido = CKEditor5Field('Contenido teórico', config_name='extends')
+    referencias = CKEditor5Field('Referencias adicionales', config_name='default', blank=True)
     orden = models.PositiveIntegerField(default=1, verbose_name="Orden de presentación")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -517,10 +518,10 @@ class Procedimientos(models.Model):
     contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='procedimientos')
     numero_paso = models.PositiveIntegerField(verbose_name="Número del paso")
     titulo_paso = models.CharField(max_length=200, verbose_name="Título del paso")
-    descripcion = models.TextField(verbose_name="Descripción detallada del paso")
+    descripcion = CKEditor5Field('Descripción detallada del paso', config_name='extends')
     tiempo_estimado = models.CharField(max_length=50, blank=True, verbose_name="Tiempo estimado")
-    precauciones = models.TextField(blank=True, verbose_name="Precauciones especiales")
-    observaciones = models.TextField(blank=True, verbose_name="Observaciones")
+    precauciones = CKEditor5Field('Precauciones especiales', config_name='default', blank=True)
+    observaciones = CKEditor5Field('Observaciones', config_name='default', blank=True)
     orden = models.PositiveIntegerField(default=1, verbose_name="Orden del procedimiento")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Prueba CKEditor 5{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Prueba de CKEditor 5</h1>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group mb-3">
+            <label for="fundamento">Fundamento Teórico:</label>
+            {{ form.contenido }}
+        </div>
+        
+        <div class="form-group mb-3">
+            <label for="referencias">Referencias:</label>
+            {{ form.referencias }}
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Guardar</button>
+    </form>
+    
+    {% if fundamento %}
+    <div class="mt-4">
+        <h3>Resultado guardado:</h3>
+        <div class="alert alert-success">
+            <h5>Contenido:</h5>
+            {{ fundamento.contenido|safe }}
+            
+            <h5 class="mt-3">Referencias:</h5>
+            {{ fundamento.referencias|safe }}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
