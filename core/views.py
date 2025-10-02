@@ -4,7 +4,10 @@ from django.http import JsonResponse
 from django.db.models import Count
 from .models import (
     UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, 
-    Practica, Laboratorio, CriterioDesempeno, UnidadDidactica, ContenidoAnalitico
+    Practica, Laboratorio, CriterioDesempeno, UnidadDidactica, ContenidoAnalitico,
+    Bibliografia, PracticaLaboratorio, Titulo, Competencias, ObjetivoPractica,
+    FundamentoTeorico, MaterialesHerramientasEquipos, Procedimientos, 
+    CalculosResultados, Cuestionario
 )
 
 @login_required
@@ -108,6 +111,7 @@ def get_carreras_por_unidad_ajax(request):
     ]
     
     return JsonResponse({'carreras': carreras_data})
+
 
 @login_required
 def get_asignaturas_por_carrera_ajax(request):
@@ -426,66 +430,211 @@ def agregar_datos_malla_view(request):
     """Vista principal para agregar datos completos de malla curricular"""
     
     if request.method == 'POST':
-        # Procesar formulario principal
-        asignatura_form = AsignaturaCompletaForm(request.POST)
-        unidad_carrera_form = UnidadAcademicaCarreraForm(request.POST)
-        
-        if asignatura_form.is_valid() and unidad_carrera_form.is_valid():
-            try:
-                with transaction.atomic():
-                    # Guardar asignatura
-                    asignatura = asignatura_form.save()
+        try:
+            with transaction.atomic():
+                # 1. Datos básicos de la asignatura
+                unidad_academica_id = request.POST.get('unidad_academica')
+                carrera_id = request.POST.get('carrera')
+                
+                # Validar que existan la unidad académica y carrera
+                unidad_academica = get_object_or_404(UnidadAcademica, id=unidad_academica_id)
+                carrera = get_object_or_404(Carrera, id=carrera_id)
+                
+                # 2. Crear o actualizar asignatura
+                asignatura, created = Asignatura.objects.get_or_create(
+                    nombre=request.POST.get('asignatura'),
+                    carrera=carrera,
+                    semestre=int(request.POST.get('semestre')),
+                    defaults={
+                        'codigo_competencia': request.POST.get('codigo_competencia', ''),
+                        'sigla_curricular': request.POST.get('sigla_curricular', ''),
+                        'carga_horaria_semanal': int(request.POST.get('carga_horaria_semanal', 4)),
+                        'carga_horaria_semestral': int(request.POST.get('carga_horaria_semestral', 80)),
+                    }
+                )
+                
+                if not created:
+                    # Si la asignatura ya existe, actualizar los campos
+                    asignatura.codigo_competencia = request.POST.get('codigo_competencia', '')
+                    asignatura.sigla_curricular = request.POST.get('sigla_curricular', '')
+                    asignatura.carga_horaria_semanal = int(request.POST.get('carga_horaria_semanal', 4))
+                    asignatura.carga_horaria_semestral = int(request.POST.get('carga_horaria_semestral', 80))
+                    asignatura.save()
+                
+                # 3. Crear criterio de desempeño (único)
+                criterio_desc = request.POST.get('criterio_desempeno', '').strip()
+                if criterio_desc:
+                    CriterioDesempeno.objects.update_or_create(
+                        asignatura=asignatura,
+                        defaults={
+                            'nombre': criterio_desc[:200],
+                            'descripcion': criterio_desc
+                        }
+                    )
+                
+                # 4. Crear unidad didáctica (única)
+                unidad_didactica_nombre = request.POST.get('unidad_didactica', '').strip()
+                if unidad_didactica_nombre:
+                    unidad_didactica, _ = UnidadDidactica.objects.update_or_create(
+                        asignatura=asignatura,
+                        defaults={
+                            'nombre': unidad_didactica_nombre[:200],
+                            'descripcion': unidad_didactica_nombre
+                        }
+                    )
                     
-                    # Crear criterios de desempeño si se proporcionaron
-                    criterios_data = request.POST.getlist('criterios_desempeno')
-                    for criterio_desc in criterios_data:
-                        if criterio_desc.strip():
-                            CriterioDesempeno.objects.create(
-                                nombre=criterio_desc[:200],  # Limitar longitud
-                                descripcion=criterio_desc,
-                                asignatura=asignatura
-                            )
+                    # 5. Procesar contenidos analíticos (múltiples)
+                    contenidos_nombres = request.POST.getlist('contenidos_analiticos[]')
                     
-                    # Crear unidades didácticas si se proporcionaron
-                    unidades_data = request.POST.getlist('unidades_didacticas')
-                    unidades_desc = request.POST.getlist('unidades_didacticas_desc')
+                    # Limpiar contenidos existentes para esta unidad
+                    ContenidoAnalitico.objects.filter(unidad_didactica=unidad_didactica).delete()
                     
-                    for i, unidad_nombre in enumerate(unidades_data):
-                        if unidad_nombre.strip():
-                            descripcion = unidades_desc[i] if i < len(unidades_desc) else ''
-                            unidad_didactica = UnidadDidactica.objects.create(
-                                nombre=unidad_nombre[:200],
-                                descripcion=descripcion,
-                                asignatura=asignatura
+                    for i, contenido_nombre in enumerate(contenidos_nombres):
+                        if contenido_nombre.strip():
+                            contenido = ContenidoAnalitico.objects.create(
+                                nombre=contenido_nombre[:300],
+                                descripcion=contenido_nombre,
+                                unidad_didactica=unidad_didactica
                             )
                             
-                            # Crear contenidos analíticos para esta unidad
-                            contenidos_data = request.POST.getlist(f'contenidos_analiticos_{i}')
-                            contenidos_desc = request.POST.getlist(f'contenidos_analiticos_desc_{i}')
-                            
-                            for j, contenido_nombre in enumerate(contenidos_data):
-                                if contenido_nombre.strip():
-                                    desc_contenido = contenidos_desc[j] if j < len(contenidos_desc) else ''
-                                    ContenidoAnalitico.objects.create(
-                                        nombre=contenido_nombre[:300],
-                                        descripcion=desc_contenido,
-                                        unidad_didactica=unidad_didactica
-                                    )
-                    
-                    messages.success(request, f'Asignatura "{asignatura}" creada exitosamente con todos sus componentes.')
-                    return redirect('core:malla_curricular')
-                    
-            except Exception as e:
-                messages.error(request, f'Error al guardar los datos: {str(e)}')
-        else:
-            messages.error(request, 'Por favor corrige los errores en el formulario.')
-    else:
-        asignatura_form = AsignaturaCompletaForm()
-        unidad_carrera_form = UnidadAcademicaCarreraForm()
+                            # 6. Procesar grupos de datos adicionales para este contenido
+                            # Buscar todos los campos que pertenecen a este contenido
+                            grupo_index = 0
+                            while True:
+                                # Verificar si existe al menos un campo para este grupo
+                                bibliografia_key = f'bibliografia_{i}_{grupo_index}'
+                                if bibliografia_key not in request.POST:
+                                    break
+                                
+                                # Procesar todos los campos del grupo
+                                campos_grupo = {
+                                    'bibliografia': request.POST.get(f'bibliografia_{i}_{grupo_index}', ''),
+                                    'practica_laboratorio': request.POST.get(f'practica_laboratorio_{i}_{grupo_index}', ''),
+                                    'titulo': request.POST.get(f'titulo_{i}_{grupo_index}', ''),
+                                    'competencias': request.POST.get(f'competencias_{i}_{grupo_index}', ''),
+                                    'objetivo_practica': request.POST.get(f'objetivo_practica_{i}_{grupo_index}', ''),
+                                    'fundamento_teorico': request.POST.get(f'fundamento_teorico_{i}_{grupo_index}', ''),
+                                    'materiales': request.POST.get(f'materiales_{i}_{grupo_index}', ''),
+                                    'herramientas_equipos': request.POST.get(f'herramientas_equipos_{i}_{grupo_index}', ''),
+                                    'procedimientos': request.POST.get(f'procedimientos_{i}_{grupo_index}', ''),
+                                    'calculos_resultados': request.POST.get(f'calculos_resultados_{i}_{grupo_index}', ''),
+                                    'cuestionario': request.POST.get(f'cuestionario_{i}_{grupo_index}', ''),
+                                }
+                                
+                                # Solo crear registros si hay contenido en al menos un campo
+                                if any(valor.strip() for valor in campos_grupo.values()):
+                                    
+                                    # Crear bibliografía si existe
+                                    if campos_grupo['bibliografia'].strip():
+                                        Bibliografia.objects.create(
+                                            contenido_analitico=contenido,
+                                            titulo=campos_grupo['bibliografia'][:300],
+                                            autor='No especificado',
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear práctica de laboratorio si existe
+                                    if campos_grupo['practica_laboratorio'].strip():
+                                        PracticaLaboratorio.objects.create(
+                                            contenido_analitico=contenido,
+                                            nombre=campos_grupo['practica_laboratorio'][:300],
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear título si existe
+                                    if campos_grupo['titulo'].strip():
+                                        Titulo.objects.create(
+                                            contenido_analitico=contenido,
+                                            texto=campos_grupo['titulo'][:300],
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear competencias si existe
+                                    if campos_grupo['competencias'].strip():
+                                        Competencias.objects.create(
+                                            contenido_analitico=contenido,
+                                            descripcion=campos_grupo['competencias'],
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear objetivo de práctica si existe
+                                    if campos_grupo['objetivo_practica'].strip():
+                                        ObjetivoPractica.objects.create(
+                                            contenido_analitico=contenido,
+                                            descripcion=campos_grupo['objetivo_practica'],
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear fundamento teórico si existe
+                                    if campos_grupo['fundamento_teorico'].strip():
+                                        FundamentoTeorico.objects.create(
+                                            contenido_analitico=contenido,
+                                            titulo=f'Fundamento {grupo_index + 1}',
+                                            contenido=campos_grupo['fundamento_teorico'],
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear materiales si existe
+                                    if campos_grupo['materiales'].strip():
+                                        MaterialesHerramientasEquipos.objects.create(
+                                            contenido_analitico=contenido,
+                                            nombre=campos_grupo['materiales'][:200],
+                                            tipo_elemento='material',
+                                            cantidad='1',
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear herramientas y equipos si existe
+                                    if campos_grupo['herramientas_equipos'].strip():
+                                        MaterialesHerramientasEquipos.objects.create(
+                                            contenido_analitico=contenido,
+                                            nombre=campos_grupo['herramientas_equipos'][:200],
+                                            tipo_elemento='equipo',
+                                            cantidad='1',
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear procedimientos si existe
+                                    if campos_grupo['procedimientos'].strip():
+                                        Procedimientos.objects.create(
+                                            contenido_analitico=contenido,
+                                            numero_paso=grupo_index + 1,
+                                            titulo_paso=f'Procedimiento {grupo_index + 1}',
+                                            descripcion=campos_grupo['procedimientos'],
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear cálculos y resultados si existe
+                                    if campos_grupo['calculos_resultados'].strip():
+                                        CalculosResultados.objects.create(
+                                            contenido_analitico=contenido,
+                                            titulo=f'Cálculo {grupo_index + 1}',
+                                            procedimiento_calculo=campos_grupo['calculos_resultados'],
+                                            orden=grupo_index + 1
+                                        )
+                                    
+                                    # Crear cuestionario si existe
+                                    if campos_grupo['cuestionario'].strip():
+                                        Cuestionario.objects.create(
+                                            contenido_analitico=contenido,
+                                            numero_pregunta=grupo_index + 1,
+                                            pregunta=campos_grupo['cuestionario'],
+                                            orden=grupo_index + 1
+                                        )
+                                
+                                grupo_index += 1
+                
+                action_text = 'creada' if created else 'actualizada'
+                messages.success(request, f'Asignatura "{asignatura}" {action_text} exitosamente con todos sus componentes.')
+                return redirect('core:malla_curricular')
+                
+        except Exception as e:
+            messages.error(request, f'Error al guardar los datos: {str(e)}')
+            import traceback
+            print(traceback.format_exc())  # Para debugging
     
+    # GET request o error en POST
     context = {
-        'asignatura_form': asignatura_form,
-        'unidad_carrera_form': unidad_carrera_form,
         'unidades_academicas': UnidadAcademica.objects.all(),
         'carreras': Carrera.objects.all(),
     }
@@ -551,23 +700,3 @@ def agregar_componentes_contenido_view(request, contenido_id):
     return render(request, 'core/agregar_componentes_contenido.html', context)
 
 
-@login_required
-def get_carreras_por_unidad_ajax(request):
-    """API para obtener carreras filtradas por unidad académica"""
-    unidad_id = request.GET.get('unidad_id')
-    
-    if unidad_id:
-        carreras = Carrera.objects.filter(unidad_academica_id=unidad_id)
-    else:
-        carreras = Carrera.objects.all()
-    
-    carreras_data = [
-        {
-            'id': carrera.id,
-            'nombre': carrera.nombre,
-            'display': carrera.get_nombre_display()
-        }
-        for carrera in carreras
-    ]
-    
-    return JsonResponse({'carreras': carreras_data})

@@ -108,6 +108,10 @@
         background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
     }
 
+    #agregar-datos-malla-page .content-section .section-header {
+        background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%) !important;
+    }
+
     /* Grid system mejorado con flexbox y gap */
     #agregar-datos-malla-page .row {
         display: flex !important;
@@ -607,105 +611,82 @@
                             <i class="fas fa-tasks"></i>
                             Criterio de Desempeño
                         </div>
-                        <button type="button" class="btn btn-add" onclick="agregarCriterio()">
-                            <i class="fas fa-plus"></i>
-                            Agregar Criterio
-                        </button>
                     </div>
                     <div class="section-body">
-                        <div class="dynamic-section">
-                            <div id="criterios-container">
-                                <div class="dynamic-item">
-                                    <div class="input-group">
-                                        <input type="text" name="criterios_desempeno[]" class="form-input" 
-                                               placeholder="Descripción del criterio de desempeño" required>
-                                        <button type="button" class="btn btn-remove" onclick="eliminarCriterio(this)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label class="form-label">Criterio de Desempeño</label>
+                            <textarea name="criterio_desempeno" class="form-input" 
+                                     placeholder="Descripción del criterio de desempeño" rows="4" required></textarea>
                         </div>
                     </div>
                 </div>
 
-                <!-- Sección 4: Unidad Didáctica y Contenido Analítico -->
+                <!-- Sección 4: Unidad Didáctica -->
                 <div class="form-section units-section">
                     <div class="section-header">
                         <div>
-                            <i class="fas fa-list-alt"></i>
+                            <i class="fas fa-graduation-cap"></i>
                             Unidad Didáctica
                         </div>
-                        <button type="button" class="btn btn-add" onclick="agregarUnidadDidactica()">
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label class="form-label">Unidad Didáctica</label>
+                            <input type="text" name="unidad_didactica" class="form-input" 
+                                   placeholder="Nombre de la unidad didáctica" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 5: Contenido Analítico (Múltiple) -->
+                <div class="form-section content-section">
+                    <div class="section-header">
+                        <div>
+                            <i class="fas fa-list-alt"></i>
+                            Contenido Analítico
+                        </div>
+                        <button type="button" class="btn btn-add" onclick="agregarContenidoAnalitico()">
                             <i class="fas fa-plus"></i>
-                            Agregar Unidad Didáctica
+                            Agregar Contenido Analítico
                         </button>
                     </div>
                     <div class="section-body">
                         <div class="dynamic-section">
-                            <div id="unidades-container">
-                                <div class="dynamic-item" data-unidad="0">
-                                    <div class="form-group">
-                                        <label class="form-label">Unidad Didáctica</label>
-                                        <input type="text" name="unidades_didacticas[]" class="form-input" 
-                                               placeholder="Nombre de la unidad didáctica" required>
-                                    </div>
-                                    
-                                    <!-- Contenidos Analíticos -->
-                                    <div style="margin-top: 30px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                                            <label class="form-label" style="margin-bottom: 0;">Contenido Analítico</label>
-                                            <button type="button" class="btn btn-add" onclick="agregarContenidoAnalitico(0)">
-                                                <i class="fas fa-plus"></i>
-                                                Agregar Contenido Analítico
-                                            </button>
-                                        </div>
-                                        <div class="contenidos-container" data-unidad="0">
-                                            <div class="dynamic-item contenido-analitico-item" data-contenido="0">
-                                                <div class="row">
-                                                    <div class="col-12">
-                                                        <div class="form-group">
-                                                            <label class="form-label">Contenido Analítico</label>
-                                                            <input type="text" name="contenidos_analiticos_0[]" class="form-input" 
-                                                                   placeholder="Nombre del contenido analítico" required>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <!-- Sección de múltiples grupos de datos adicionales -->
-                                                <div class="grupos-datos-adicionales" data-unidad="0" data-contenido="0">
-                                                    <div style="margin-top: 20px; text-align: center; border-top: 2px dashed #e5e7eb; padding-top: 20px;">
-                                                        <h5 style="color: #374151; margin-bottom: 15px; font-weight: 600;">
-                                                            <i class="fas fa-layer-group"></i> Grupos de Datos Adicionales
-                                                        </h5>
-                                                        <button type="button" class="btn btn-secondary" onclick="agregarGrupoDatosAdicionales(0, 0)">
-                                                            <i class="fas fa-plus-circle"></i>
-                                                            Agregar Grupo de Datos Adicionales
-                                                        </button>
-                                                    </div>
-                                                    
-                                                    <!-- Container para los grupos de datos adicionales -->
-                                                    <div class="container-grupos-datos" id="container-grupos-0-0">
-                                                        <!-- Los grupos se agregarán dinámicamente aquí -->
-                                                    </div>
-                                                </div>
-                                                
-                                                <!-- Botón para eliminar contenido analítico -->
-                                                <div style="text-align: right; margin-top: 15px;">
-                                                    <button type="button" class="btn btn-remove" onclick="eliminarContenido(this)">
-                                                        <i class="fas fa-trash"></i>
-                                                        Eliminar Contenido
-                                                    </button>
-                                                </div>
+                            <div id="contenidos-container">
+                                <div class="dynamic-item contenido-analitico-item" data-contenido="0">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <label class="form-label">Contenido Analítico</label>
+                                                <input type="text" name="contenidos_analiticos[]" class="form-input" 
+                                                       placeholder="Nombre del contenido analítico" required>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <!-- Botón para eliminar unidad didáctica -->
-                                    <div style="text-align: right; margin-top: 25px;">
-                                        <button type="button" class="btn btn-remove" onclick="eliminarUnidadDidactica(this)">
+                                    <!-- Sección de múltiples grupos de datos adicionales -->
+                                    <div class="grupos-datos-adicionales" data-contenido="0">
+                                        <div style="margin-top: 20px; text-align: center; border-top: 2px dashed #e5e7eb; padding-top: 20px;">
+                                            <h5 style="color: #374151; margin-bottom: 15px; font-weight: 600;">
+                                                <i class="fas fa-layer-group"></i> Grupos de Datos Adicionales
+                                            </h5>
+                                            <button type="button" class="btn btn-secondary" onclick="agregarGrupoDatosAdicionales(0)">
+                                                <i class="fas fa-plus-circle"></i>
+                                                Agregar Grupo de Datos Adicionales
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Container para los grupos de datos adicionales -->
+                                        <div class="container-grupos-datos" id="container-grupos-0">
+                                            <!-- Los grupos se agregarán dinámicamente aquí -->
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Botón para eliminar contenido analítico -->
+                                    <div style="text-align: right; margin-top: 15px;">
+                                        <button type="button" class="btn btn-remove" onclick="eliminarContenido(this)">
                                             <i class="fas fa-trash"></i>
-                                            Eliminar Unidad Didáctica
+                                            Eliminar Contenido
                                         </button>
                                     </div>
                                 </div>
@@ -732,8 +713,7 @@
 </div>
 
 <script>
-    let contadorUnidades = 1;
-    let contadorContenidos = {}; // Para rastrear contenidos por unidad
+    let contadorContenidos = 1; // Contador para contenidos analíticos
     let contadorGruposDatos = {}; // Para rastrear grupos de datos adicionales por contenido
 
     // Ajustar margin-top dinámicamente basado en la altura del header del sistema
@@ -747,9 +727,8 @@
             formWrapper.style.minHeight = `calc(100vh - ${navbarHeight + 40}px)`;
         }
         
-        // Inicializar contadores para unidad 0
-        contadorContenidos[0] = 1;
-        contadorGruposDatos['0-0'] = 0; // unidad-contenido
+        // Inicializar contador de grupos para contenido 0
+        contadorGruposDatos['0'] = 0;
         
         // Filtrar carreras por unidad académica
         const unidadSelect = document.querySelector('[name="unidad_academica"]');
@@ -760,7 +739,7 @@
                 const unidadId = this.value;
                 
                 if (unidadId) {
-                    fetch(`/api/carreras-por-unidad/?unidad_id=${unidadId}`)
+                    fetch(`{% url 'core:carreras_por_unidad' %}?unidad_id=${unidadId}`)
                         .then(response => response.json())
                         .then(data => {
                             carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
@@ -777,16 +756,15 @@
     });
 
     // Función para agregar un grupo de datos adicionales
-    function agregarGrupoDatosAdicionales(unidadIndex, contenidoIndex) {
-        const containerId = `container-grupos-${unidadIndex}-${contenidoIndex}`;
+    function agregarGrupoDatosAdicionales(contenidoIndex) {
+        const containerId = `container-grupos-${contenidoIndex}`;
         const container = document.getElementById(containerId);
-        const grupoKey = `${unidadIndex}-${contenidoIndex}`;
         
-        if (!contadorGruposDatos[grupoKey]) {
-            contadorGruposDatos[grupoKey] = 0;
+        if (!contadorGruposDatos[contenidoIndex]) {
+            contadorGruposDatos[contenidoIndex] = 0;
         }
         
-        const grupoIndex = contadorGruposDatos[grupoKey];
+        const grupoIndex = contadorGruposDatos[contenidoIndex];
         
         const div = document.createElement('div');
         div.className = 'grupo-datos-adicionales';
@@ -807,14 +785,14 @@
                 <div class="col-6">
                     <div class="form-group">
                         <label class="form-label">Bibliografía</label>
-                        <textarea name="bibliografia_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <textarea name="bibliografia_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                  placeholder="Bibliografía recomendada" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="col-6">
                     <div class="form-group">
                         <label class="form-label">Práctica de Laboratorio</label>
-                        <textarea name="practica_laboratorio_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <textarea name="practica_laboratorio_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                  placeholder="Descripción de la práctica" rows="3"></textarea>
                     </div>
                 </div>
@@ -824,21 +802,21 @@
                 <div class="col-4">
                     <div class="form-group">
                         <label class="form-label">Título</label>
-                        <input type="text" name="titulo_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <input type="text" name="titulo_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                placeholder="Título de la práctica">
                     </div>
                 </div>
                 <div class="col-4">
                     <div class="form-group">
                         <label class="form-label">Competencias</label>
-                        <input type="text" name="competencias_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <input type="text" name="competencias_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                placeholder="Competencias a desarrollar">
                     </div>
                 </div>
                 <div class="col-4">
                     <div class="form-group">
                         <label class="form-label">Objetivo de la Práctica</label>
-                        <input type="text" name="objetivo_practica_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <input type="text" name="objetivo_practica_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                placeholder="Objetivo principal">
                     </div>
                 </div>
@@ -848,14 +826,14 @@
                 <div class="col-6">
                     <div class="form-group">
                         <label class="form-label">Fundamento Teórico</label>
-                        <textarea name="fundamento_teorico_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <textarea name="fundamento_teorico_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                  placeholder="Fundamento teórico de la práctica" rows="4"></textarea>
                     </div>
                 </div>
                 <div class="col-6">
                     <div class="form-group">
                         <label class="form-label">Materiales</label>
-                        <textarea name="materiales_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <textarea name="materiales_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                  placeholder="Lista de materiales necesarios" rows="4"></textarea>
                     </div>
                 </div>
@@ -865,14 +843,14 @@
                 <div class="col-6">
                     <div class="form-group">
                         <label class="form-label">Herramientas y Equipos</label>
-                        <textarea name="herramientas_equipos_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <textarea name="herramientas_equipos_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                  placeholder="Herramientas y equipos requeridos" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="col-6">
                     <div class="form-group">
                         <label class="form-label">Procedimientos</label>
-                        <textarea name="procedimientos_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <textarea name="procedimientos_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                  placeholder="Pasos del procedimiento" rows="3"></textarea>
                     </div>
                 </div>
@@ -882,14 +860,14 @@
                 <div class="col-6">
                     <div class="form-group">
                         <label class="form-label">Cálculos y Resultados</label>
-                        <textarea name="calculos_resultados_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <textarea name="calculos_resultados_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                  placeholder="Cálculos esperados y resultados" rows="4"></textarea>
                     </div>
                 </div>
                 <div class="col-6">
                     <div class="form-group">
                         <label class="form-label">Cuestionario</label>
-                        <textarea name="cuestionario_${unidadIndex}_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                        <textarea name="cuestionario_${contenidoIndex}_${grupoIndex}" class="form-input" 
                                  placeholder="Preguntas del cuestionario" rows="4"></textarea>
                     </div>
                 </div>
@@ -897,7 +875,7 @@
         `;
         
         container.appendChild(div);
-        contadorGruposDatos[grupoKey] = grupoIndex + 1;
+        contadorGruposDatos[contenidoIndex] = grupoIndex + 1;
         
         // Animación de entrada
         setTimeout(() => {
@@ -938,119 +916,13 @@
         });
     }
 
-    function agregarCriterio() {
-        const container = document.getElementById('criterios-container');
-        const div = document.createElement('div');
-        div.className = 'dynamic-item';
-        div.innerHTML = `
-            <div class="input-group">
-                <input type="text" name="criterios_desempeno[]" class="form-input" 
-                       placeholder="Descripción del criterio de desempeño" required>
-                <button type="button" class="btn btn-remove" onclick="eliminarCriterio(this)">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        `;
-        container.appendChild(div);
-    }
-
-    function eliminarCriterio(button) {
-        const item = button.closest('.dynamic-item');
-        item.classList.add('removing');
-        setTimeout(() => item.remove(), 300);
-    }
-
-    function agregarUnidadDidactica() {
-        const container = document.getElementById('unidades-container');
-        const div = document.createElement('div');
-        div.className = 'dynamic-item';
-        div.setAttribute('data-unidad', contadorUnidades);
-        
-        // Inicializar contadores para esta nueva unidad
-        contadorContenidos[contadorUnidades] = 1;
-        contadorGruposDatos[`${contadorUnidades}-0`] = 0;
-        
-        div.innerHTML = `
-            <div class="form-group">
-                <label class="form-label">Unidad Didáctica</label>
-                <input type="text" name="unidades_didacticas[]" class="form-input" 
-                       placeholder="Nombre de la unidad didáctica" required>
-            </div>
-            
-            <!-- Contenidos Analíticos -->
-            <div style="margin-top: 30px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                    <label class="form-label" style="margin-bottom: 0;">Contenido Analítico</label>
-                    <button type="button" class="btn btn-add" onclick="agregarContenidoAnalitico(${contadorUnidades})">
-                        <i class="fas fa-plus"></i>
-                        Agregar Contenido Analítico
-                    </button>
-                </div>
-                <div class="contenidos-container" data-unidad="${contadorUnidades}">
-                    <div class="dynamic-item contenido-analitico-item" data-contenido="0">
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="form-group">
-                                    <label class="form-label">Contenido Analítico</label>
-                                    <input type="text" name="contenidos_analiticos_${contadorUnidades}[]" class="form-input" 
-                                           placeholder="Nombre del contenido analítico" required>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Sección de múltiples grupos de datos adicionales -->
-                        <div class="grupos-datos-adicionales" data-unidad="${contadorUnidades}" data-contenido="0">
-                            <div style="margin-top: 20px; text-align: center; border-top: 2px dashed #e5e7eb; padding-top: 20px;">
-                                <h5 style="color: #374151; margin-bottom: 15px; font-weight: 600;">
-                                    <i class="fas fa-layer-group"></i> Grupos de Datos Adicionales
-                                </h5>
-                                <button type="button" class="btn btn-secondary" onclick="agregarGrupoDatosAdicionales(${contadorUnidades}, 0)">
-                                    <i class="fas fa-plus-circle"></i>
-                                    Agregar Grupo de Datos Adicionales
-                                </button>
-                            </div>
-                            
-                            <!-- Container para los grupos de datos adicionales -->
-                            <div class="container-grupos-datos" id="container-grupos-${contadorUnidades}-0">
-                                <!-- Los grupos se agregarán dinámicamente aquí -->
-                            </div>
-                        </div>
-                        
-                        <!-- Botón para eliminar contenido analítico -->
-                        <div style="text-align: right; margin-top: 15px;">
-                            <button type="button" class="btn btn-remove" onclick="eliminarContenido(this)">
-                                <i class="fas fa-trash"></i>
-                                Eliminar Contenido
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Botón para eliminar unidad didáctica -->
-            <div style="text-align: right; margin-top: 25px;">
-                <button type="button" class="btn btn-remove" onclick="eliminarUnidadDidactica(this)">
-                    <i class="fas fa-trash"></i>
-                    Eliminar Unidad Didáctica
-                </button>
-            </div>
-        `;
-        container.appendChild(div);
-        contadorUnidades++;
-    }
-
-    function eliminarUnidadDidactica(button) {
-        const item = button.closest('.dynamic-item');
-        item.classList.add('removing');
-        setTimeout(() => item.remove(), 300);
-    }
-
-    function agregarContenidoAnalitico(unidadIndex) {
-        const container = document.querySelector(`[data-unidad="${unidadIndex}"].contenidos-container`);
-        const contenidoIndex = contadorContenidos[unidadIndex] || 0;
+    // Función para agregar contenido analítico
+    function agregarContenidoAnalitico() {
+        const container = document.getElementById('contenidos-container');
+        const contenidoIndex = contadorContenidos;
         
         // Inicializar contador de grupos para este nuevo contenido
-        contadorGruposDatos[`${unidadIndex}-${contenidoIndex}`] = 0;
+        contadorGruposDatos[contenidoIndex] = 0;
         
         const div = document.createElement('div');
         div.className = 'dynamic-item contenido-analitico-item';
@@ -1061,26 +933,26 @@
                 <div class="col-12">
                     <div class="form-group">
                         <label class="form-label">Contenido Analítico</label>
-                        <input type="text" name="contenidos_analiticos_${unidadIndex}[]" class="form-input" 
+                        <input type="text" name="contenidos_analiticos[]" class="form-input" 
                                placeholder="Nombre del contenido analítico" required>
                     </div>
                 </div>
             </div>
             
             <!-- Sección de múltiples grupos de datos adicionales -->
-            <div class="grupos-datos-adicionales" data-unidad="${unidadIndex}" data-contenido="${contenidoIndex}">
+            <div class="grupos-datos-adicionales" data-contenido="${contenidoIndex}">
                 <div style="margin-top: 20px; text-align: center; border-top: 2px dashed #e5e7eb; padding-top: 20px;">
                     <h5 style="color: #374151; margin-bottom: 15px; font-weight: 600;">
                         <i class="fas fa-layer-group"></i> Grupos de Datos Adicionales
                     </h5>
-                    <button type="button" class="btn btn-secondary" onclick="agregarGrupoDatosAdicionales(${unidadIndex}, ${contenidoIndex})">
+                    <button type="button" class="btn btn-secondary" onclick="agregarGrupoDatosAdicionales(${contenidoIndex})">
                         <i class="fas fa-plus-circle"></i>
                         Agregar Grupo de Datos Adicionales
                     </button>
                 </div>
                 
                 <!-- Container para los grupos de datos adicionales -->
-                <div class="container-grupos-datos" id="container-grupos-${unidadIndex}-${contenidoIndex}">
+                <div class="container-grupos-datos" id="container-grupos-${contenidoIndex}">
                     <!-- Los grupos se agregarán dinámicamente aquí -->
                 </div>
             </div>
@@ -1095,9 +967,10 @@
         `;
         
         container.appendChild(div);
-        contadorContenidos[unidadIndex] = contenidoIndex + 1;
+        contadorContenidos++;
     }
 
+    // Función para eliminar contenido analítico
     function eliminarContenido(button) {
         const item = button.closest('.dynamic-item');
         item.classList.add('removing');
