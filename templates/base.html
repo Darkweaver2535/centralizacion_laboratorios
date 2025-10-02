@@ -601,6 +601,9 @@
             }
         }
     </style>
+    
+    <!-- Bloque para CSS adicional de templates hijo -->
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     {% load static %}
@@ -911,5 +914,8 @@
             button.classList.toggle('open');
         }
     </script>
+    
+    <!-- Bloque para JavaScript adicional de templates hijo -->
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

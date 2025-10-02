@@ -328,3 +328,257 @@ class ContenidoAnalitico(models.Model):
     
     def __str__(self):
         return self.descripcion[:100] + "..." if self.descripcion and len(self.descripcion) > 100 else (self.descripcion or self.nombre)
+
+
+# =====================================
+# COMPONENTES DETALLADOS DE CONTENIDO ANALÍTICO
+# =====================================
+
+class Bibliografia(models.Model):
+    """Bibliografia dentro del contenido analítico"""
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='bibliografias')
+    titulo = models.CharField(max_length=300, verbose_name="Título de la bibliografía")
+    autor = models.CharField(max_length=200, verbose_name="Autor")
+    editorial = models.CharField(max_length=200, blank=True, verbose_name="Editorial")
+    año_publicacion = models.IntegerField(blank=True, null=True, verbose_name="Año de publicación")
+    paginas = models.CharField(max_length=50, blank=True, verbose_name="Páginas")
+    isbn = models.CharField(max_length=50, blank=True, verbose_name="ISBN")
+    tipo_referencia = models.CharField(max_length=50, choices=[
+        ('libro', 'Libro'),
+        ('articulo', 'Artículo'),
+        ('tesis', 'Tesis'),
+        ('manual', 'Manual'),
+        ('web', 'Página Web'),
+        ('otro', 'Otro')
+    ], default='libro')
+    orden = models.PositiveIntegerField(default=1, verbose_name="Orden de aparición")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Bibliografía"
+        verbose_name_plural = "Bibliografías"
+        ordering = ['orden', 'titulo']
+    
+    def __str__(self):
+        return f"{self.titulo} - {self.autor}"
+
+
+class PracticaLaboratorio(models.Model):
+    """Práctica de laboratorio dentro del contenido analítico"""
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='practicas_laboratorio')
+    nombre = models.CharField(max_length=300, verbose_name="Nombre de la práctica")
+    duracion_horas = models.DecimalField(max_digits=4, decimal_places=1, default=2.0, verbose_name="Duración en horas")
+    tipo_practica = models.CharField(max_length=50, choices=[
+        ('individual', 'Individual'),
+        ('grupal', 'Grupal'),
+        ('demostrativa', 'Demostrativa'),
+        ('virtual', 'Virtual')
+    ], default='grupal')
+    numero_estudiantes = models.PositiveIntegerField(default=1, verbose_name="Número de estudiantes")
+    orden = models.PositiveIntegerField(default=1, verbose_name="Orden de la práctica")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Práctica de Laboratorio"
+        verbose_name_plural = "Prácticas de Laboratorio"
+        ordering = ['orden', 'nombre']
+    
+    def __str__(self):
+        return f"Práctica {self.orden}: {self.nombre}"
+
+
+class Titulo(models.Model):
+    """Títulos/subtítulos dentro del contenido analítico"""
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='titulos')
+    texto = models.CharField(max_length=300, verbose_name="Texto del título")
+    nivel = models.PositiveIntegerField(default=1, choices=[
+        (1, 'Título Principal'),
+        (2, 'Subtítulo'),
+        (3, 'Sub-subtítulo'),
+        (4, 'Título de Sección'),
+        (5, 'Título de Subsección')
+    ], verbose_name="Nivel del título")
+    orden = models.PositiveIntegerField(default=1, verbose_name="Orden de aparición")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Título"
+        verbose_name_plural = "Títulos"
+        ordering = ['orden', 'nivel']
+    
+    def __str__(self):
+        return f"Nivel {self.nivel}: {self.texto}"
+
+
+class Competencias(models.Model):
+    """Competencias desarrolladas en el contenido analítico"""
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='competencias')
+    descripcion = models.TextField(verbose_name="Descripción de la competencia")
+    tipo_competencia = models.CharField(max_length=50, choices=[
+        ('conceptual', 'Conceptual'),
+        ('procedimental', 'Procedimental'),
+        ('actitudinal', 'Actitudinal'),
+        ('mixta', 'Mixta')
+    ], default='conceptual')
+    nivel_desarrollo = models.CharField(max_length=50, choices=[
+        ('inicial', 'Inicial'),
+        ('intermedio', 'Intermedio'),
+        ('avanzado', 'Avanzado'),
+        ('experto', 'Experto')
+    ], default='inicial')
+    orden = models.PositiveIntegerField(default=1, verbose_name="Orden de desarrollo")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Competencia"
+        verbose_name_plural = "Competencias"
+        ordering = ['orden', 'tipo_competencia']
+    
+    def __str__(self):
+        return f"{self.tipo_competencia}: {self.descripcion[:50]}..."
+
+
+class ObjetivoPractica(models.Model):
+    """Objetivos de las prácticas"""
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='objetivos_practica')
+    descripcion = models.TextField(verbose_name="Descripción del objetivo")
+    tipo_objetivo = models.CharField(max_length=50, choices=[
+        ('general', 'General'),
+        ('especifico', 'Específico'),
+        ('aprendizaje', 'De Aprendizaje'),
+        ('desempeno', 'De Desempeño')
+    ], default='especifico')
+    orden = models.PositiveIntegerField(default=1, verbose_name="Orden del objetivo")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Objetivo de la Práctica"
+        verbose_name_plural = "Objetivos de las Prácticas"
+        ordering = ['orden', 'tipo_objetivo']
+    
+    def __str__(self):
+        return f"{self.tipo_objetivo}: {self.descripcion[:50]}..."
+
+
+class FundamentoTeorico(models.Model):
+    """Fundamentos teóricos del contenido analítico"""
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='fundamentos_teoricos')
+    titulo = models.CharField(max_length=200, verbose_name="Título del fundamento")
+    contenido = models.TextField(verbose_name="Contenido teórico")
+    referencias = models.TextField(blank=True, verbose_name="Referencias adicionales")
+    orden = models.PositiveIntegerField(default=1, verbose_name="Orden de presentación")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Fundamento Teórico"
+        verbose_name_plural = "Fundamentos Teóricos"
+        ordering = ['orden', 'titulo']
+    
+    def __str__(self):
+        return f"{self.titulo}"
+
+
+class MaterialesHerramientasEquipos(models.Model):
+    """Materiales, herramientas y equipos necesarios"""
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='materiales_herramientas_equipos')
+    nombre = models.CharField(max_length=200, verbose_name="Nombre del material/herramienta/equipo")
+    tipo_elemento = models.CharField(max_length=50, choices=[
+        ('material', 'Material'),
+        ('herramienta', 'Herramienta'),
+        ('equipo', 'Equipo'),
+        ('reactivo', 'Reactivo'),
+        ('software', 'Software'),
+        ('otro', 'Otro')
+    ], default='material')
+    cantidad = models.CharField(max_length=50, verbose_name="Cantidad necesaria")
+    especificaciones = models.TextField(blank=True, verbose_name="Especificaciones técnicas")
+    es_obligatorio = models.BooleanField(default=True, verbose_name="¿Es obligatorio?")
+    orden = models.PositiveIntegerField(default=1, verbose_name="Orden de listado")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Material/Herramienta/Equipo"
+        verbose_name_plural = "Materiales/Herramientas/Equipos"
+        ordering = ['tipo_elemento', 'orden']
+    
+    def __str__(self):
+        return f"{self.tipo_elemento}: {self.nombre}"
+
+
+class Procedimientos(models.Model):
+    """Procedimientos paso a paso"""
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='procedimientos')
+    numero_paso = models.PositiveIntegerField(verbose_name="Número del paso")
+    titulo_paso = models.CharField(max_length=200, verbose_name="Título del paso")
+    descripcion = models.TextField(verbose_name="Descripción detallada del paso")
+    tiempo_estimado = models.CharField(max_length=50, blank=True, verbose_name="Tiempo estimado")
+    precauciones = models.TextField(blank=True, verbose_name="Precauciones especiales")
+    observaciones = models.TextField(blank=True, verbose_name="Observaciones")
+    orden = models.PositiveIntegerField(default=1, verbose_name="Orden del procedimiento")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Procedimiento"
+        verbose_name_plural = "Procedimientos"
+        ordering = ['orden', 'numero_paso']
+    
+    def __str__(self):
+        return f"Paso {self.numero_paso}: {self.titulo_paso}"
+
+
+class CalculosResultados(models.Model):
+    """Cálculos y resultados esperados"""
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='calculos_resultados')
+    titulo = models.CharField(max_length=200, verbose_name="Título del cálculo/resultado")
+    formula = models.TextField(blank=True, verbose_name="Fórmula utilizada")
+    procedimiento_calculo = models.TextField(verbose_name="Procedimiento de cálculo")
+    resultado_esperado = models.TextField(blank=True, verbose_name="Resultado esperado")
+    unidades = models.CharField(max_length=50, blank=True, verbose_name="Unidades de medida")
+    margen_error = models.CharField(max_length=50, blank=True, verbose_name="Margen de error aceptable")
+    orden = models.PositiveIntegerField(default=1, verbose_name="Orden de cálculo")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Cálculo y Resultado"
+        verbose_name_plural = "Cálculos y Resultados"
+        ordering = ['orden', 'titulo']
+    
+    def __str__(self):
+        return f"{self.titulo}"
+
+
+class Cuestionario(models.Model):
+    """Cuestionarios y preguntas de evaluación"""
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='cuestionarios')
+    numero_pregunta = models.PositiveIntegerField(verbose_name="Número de pregunta")
+    pregunta = models.TextField(verbose_name="Texto de la pregunta")
+    tipo_pregunta = models.CharField(max_length=50, choices=[
+        ('abierta', 'Pregunta Abierta'),
+        ('cerrada', 'Pregunta Cerrada'),
+        ('multiple', 'Opción Múltiple'),
+        ('verdadero_falso', 'Verdadero/Falso'),
+        ('calculo', 'Cálculo'),
+        ('analisis', 'Análisis')
+    ], default='abierta')
+    respuesta_esperada = models.TextField(blank=True, verbose_name="Respuesta esperada o criterios")
+    puntuacion = models.DecimalField(max_digits=5, decimal_places=2, default=1.0, verbose_name="Puntuación")
+    orden = models.PositiveIntegerField(default=1, verbose_name="Orden de la pregunta")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Cuestionario"
+        verbose_name_plural = "Cuestionarios"
+        ordering = ['orden', 'numero_pregunta']
+    
+    def __str__(self):
+        return f"Pregunta {self.numero_pregunta}: {self.pregunta[:50]}..."

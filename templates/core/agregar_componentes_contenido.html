@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Agregar Componentes - {{ contenido.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0"><i class="fas fa-puzzle-piece text-primary"></i> Agregar Componentes</h2>
+                    <p class="text-muted">Contenido Analítico: <strong>{{ contenido.nombre }}</strong></p>
+                    <small class="text-muted">
+                        {{ contenido.unidad_didactica.nombre }} → {{ contenido.unidad_didactica.asignatura.nombre }}
+                    </small>
+                </div>
+                <a href="{% url 'core:malla_curricular' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a Malla Curricular
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de Componentes -->
+    <form method="post" id="formulario-componentes">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Bibliografia -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-book"></i> Bibliografía</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ formsets.bibliografia.management_form }}
+                        {% for form in formsets.bibliografia %}
+                            <div class="bibliografia-form mb-3 border-bottom pb-3">
+                                {% for field in form %}
+                                    {% if field.name != 'DELETE' and field.name != 'id' %}
+                                        <div class="mb-2">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ form.DELETE }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prácticas de Laboratorio -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-flask"></i> Prácticas de Laboratorio</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ formsets.practicas.management_form }}
+                        {% for form in formsets.practicas %}
+                            <div class="practica-form mb-3 border-bottom pb-3">
+                                {% for field in form %}
+                                    {% if field.name != 'DELETE' and field.name != 'id' %}
+                                        <div class="mb-2">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ form.DELETE }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Títulos -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-heading"></i> Títulos</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ formsets.titulos.management_form }}
+                        {% for form in formsets.titulos %}
+                            <div class="titulo-form mb-3 border-bottom pb-3">
+                                {% for field in form %}
+                                    {% if field.name != 'DELETE' and field.name != 'id' %}
+                                        <div class="mb-2">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ form.DELETE }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competencias -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0"><i class="fas fa-medal"></i> Competencias</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ formsets.competencias.management_form }}
+                        {% for form in formsets.competencias %}
+                            <div class="competencia-form mb-3 border-bottom pb-3">
+                                {% for field in form %}
+                                    {% if field.name != 'DELETE' and field.name != 'id' %}
+                                        <div class="mb-2">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ form.DELETE }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Objetivos de Práctica -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0"><i class="fas fa-bullseye"></i> Objetivos de Práctica</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ formsets.objetivos.management_form }}
+                        {% for form in formsets.objetivos %}
+                            <div class="objetivo-form mb-3 border-bottom pb-3">
+                                {% for field in form %}
+                                    {% if field.name != 'DELETE' and field.name != 'id' %}
+                                        <div class="mb-2">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ form.DELETE }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fundamento Teórico -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0"><i class="fas fa-book-open"></i> Fundamento Teórico</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ formsets.fundamentos.management_form }}
+                        {% for form in formsets.fundamentos %}
+                            <div class="fundamento-form mb-3 border-bottom pb-3">
+                                {% for field in form %}
+                                    {% if field.name != 'DELETE' and field.name != 'id' %}
+                                        <div class="mb-2">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ form.DELETE }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Materiales/Herramientas/Equipos -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h6 class="mb-0"><i class="fas fa-tools"></i> Materiales/Herramientas/Equipos</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ formsets.materiales.management_form }}
+                        {% for form in formsets.materiales %}
+                            <div class="material-form mb-3 border-bottom pb-3">
+                                {% for field in form %}
+                                    {% if field.name != 'DELETE' and field.name != 'id' %}
+                                        <div class="mb-2">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ form.DELETE }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Procedimientos -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header" style="background-color: #6f42c1; color: white;">
+                        <h6 class="mb-0"><i class="fas fa-list-ol"></i> Procedimientos</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ formsets.procedimientos.management_form }}
+                        {% for form in formsets.procedimientos %}
+                            <div class="procedimiento-form mb-3 border-bottom pb-3">
+                                {% for field in form %}
+                                    {% if field.name != 'DELETE' and field.name != 'id' %}
+                                        <div class="mb-2">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ form.DELETE }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cálculos y Resultados -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header" style="background-color: #fd7e14; color: white;">
+                        <h6 class="mb-0"><i class="fas fa-calculator"></i> Cálculos y Resultados</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ formsets.calculos.management_form }}
+                        {% for form in formsets.calculos %}
+                            <div class="calculo-form mb-3 border-bottom pb-3">
+                                {% for field in form %}
+                                    {% if field.name != 'DELETE' and field.name != 'id' %}
+                                        <div class="mb-2">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ form.DELETE }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cuestionarios -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header" style="background-color: #20c997; color: white;">
+                        <h6 class="mb-0"><i class="fas fa-question-circle"></i> Cuestionarios</h6>
+                    </div>
+                    <div class="card-body">
+                        {{ formsets.cuestionarios.management_form }}
+                        {% for form in formsets.cuestionarios %}
+                            <div class="cuestionario-form mb-3 border-bottom pb-3">
+                                {% for field in form %}
+                                    {% if field.name != 'DELETE' and field.name != 'id' %}
+                                        <div class="mb-2">
+                                            {{ field.label_tag }}
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small">{{ field.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {{ form.DELETE }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'core:malla_curricular' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Guardar Componentes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar funcionalidad para eliminar formularios
+    const deleteButtons = document.querySelectorAll('input[name$="-DELETE"]');
+    deleteButtons.forEach(button => {
+        button.addEventListener('change', function() {
+            const form = this.closest('div[class$="-form"]');
+            if (this.checked) {
+                form.style.opacity = '0.5';
+                form.style.textDecoration = 'line-through';
+            } else {
+                form.style.opacity = '1';
+                form.style.textDecoration = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

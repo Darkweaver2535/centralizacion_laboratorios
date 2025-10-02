@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Count
@@ -218,7 +218,31 @@ def get_laboratorios_ajax(request):
 
 @login_required
 def malla_curricular_view(request):
-    """Vista principal de malla curricular"""
+    """Vista principal de malla curricular con django-filter integrado"""
+    
+    # Importar filtros de django-filter
+    from .filters import AsignaturaFilter
+    from django.core.paginator import Paginator
+    
+    # Obtener parámetros de filtrado
+    categoria = request.GET.get('categoria', 'asignaturas')
+    
+    # Aplicar filtros con django-filter
+    if categoria == 'asignaturas':
+        # Usar AsignaturaFilter para filtrado automático
+        filterset = AsignaturaFilter(request.GET, queryset=Asignatura.objects.select_related(
+            'carrera', 'carrera__unidad_academica'
+        ))
+        items = filterset.qs
+    else:
+        # Fallback para otras categorías
+        filterset = None
+        items = Asignatura.objects.select_related('carrera', 'carrera__unidad_academica')
+    
+    # Paginación
+    paginator = Paginator(items, 20)  # 20 elementos por página
+    page_number = request.GET.get('page')
+    items_page = paginator.get_page(page_number)
     
     # Estadísticas generales
     stats = {
@@ -250,6 +274,19 @@ def malla_curricular_view(request):
         'carreras_con_malla': carreras_con_malla,
         'unidades_academicas': unidades_academicas,
         'carreras': carreras,
+        
+        # Datos de paginación y filtros django-filter
+        'asignaturas': items_page,  # Para compatibilidad con template existente
+        'filterset': filterset,  # Para acceder a los filtros en el template
+        'filtered_count': items.count(),  # Número de elementos filtrados
+        'total_count': Asignatura.objects.count(),  # Total sin filtros
+        'categoria': categoria,
+        
+        # Valores seleccionados para mantener en formulario
+        'unidad_seleccionada': request.GET.get('unidad_academica', ''),
+        'carrera_seleccionada': request.GET.get('carrera', ''),
+        'semestre_seleccionado': request.GET.get('semestre', ''),
+        'search_term': request.GET.get('search', ''),
     }
     
     return render(request, 'core/malla_curricular.html', context)
@@ -366,3 +403,171 @@ def get_contenidos_analiticos_ajax(request):
     ]
     
     return JsonResponse({'contenidos_analiticos': contenidos_data})
+
+
+# =====================================
+# VISTAS PARA AGREGAR DATOS COMPLETOS
+# =====================================
+
+from .forms import (
+    AsignaturaCompletaForm, CriterioDesempenoForm, UnidadDidacticaForm, 
+    ContenidoAnaliticoForm, UnidadAcademicaCarreraForm,
+    BibliografiaFormSet, PracticaLaboratorioFormSet, TituloFormSet, 
+    CompetenciasFormSet, ObjetivoPracticaFormSet, FundamentoTeoricoFormSet,
+    MaterialesHerramientasEquiposFormSet, ProcedimientosFormSet, 
+    CalculosResultadosFormSet, CuestionarioFormSet
+)
+from django.contrib import messages
+from django.db import transaction
+
+
+@login_required
+def agregar_datos_malla_view(request):
+    """Vista principal para agregar datos completos de malla curricular"""
+    
+    if request.method == 'POST':
+        # Procesar formulario principal
+        asignatura_form = AsignaturaCompletaForm(request.POST)
+        unidad_carrera_form = UnidadAcademicaCarreraForm(request.POST)
+        
+        if asignatura_form.is_valid() and unidad_carrera_form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Guardar asignatura
+                    asignatura = asignatura_form.save()
+                    
+                    # Crear criterios de desempeño si se proporcionaron
+                    criterios_data = request.POST.getlist('criterios_desempeno')
+                    for criterio_desc in criterios_data:
+                        if criterio_desc.strip():
+                            CriterioDesempeno.objects.create(
+                                nombre=criterio_desc[:200],  # Limitar longitud
+                                descripcion=criterio_desc,
+                                asignatura=asignatura
+                            )
+                    
+                    # Crear unidades didácticas si se proporcionaron
+                    unidades_data = request.POST.getlist('unidades_didacticas')
+                    unidades_desc = request.POST.getlist('unidades_didacticas_desc')
+                    
+                    for i, unidad_nombre in enumerate(unidades_data):
+                        if unidad_nombre.strip():
+                            descripcion = unidades_desc[i] if i < len(unidades_desc) else ''
+                            unidad_didactica = UnidadDidactica.objects.create(
+                                nombre=unidad_nombre[:200],
+                                descripcion=descripcion,
+                                asignatura=asignatura
+                            )
+                            
+                            # Crear contenidos analíticos para esta unidad
+                            contenidos_data = request.POST.getlist(f'contenidos_analiticos_{i}')
+                            contenidos_desc = request.POST.getlist(f'contenidos_analiticos_desc_{i}')
+                            
+                            for j, contenido_nombre in enumerate(contenidos_data):
+                                if contenido_nombre.strip():
+                                    desc_contenido = contenidos_desc[j] if j < len(contenidos_desc) else ''
+                                    ContenidoAnalitico.objects.create(
+                                        nombre=contenido_nombre[:300],
+                                        descripcion=desc_contenido,
+                                        unidad_didactica=unidad_didactica
+                                    )
+                    
+                    messages.success(request, f'Asignatura "{asignatura}" creada exitosamente con todos sus componentes.')
+                    return redirect('core:malla_curricular')
+                    
+            except Exception as e:
+                messages.error(request, f'Error al guardar los datos: {str(e)}')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+    else:
+        asignatura_form = AsignaturaCompletaForm()
+        unidad_carrera_form = UnidadAcademicaCarreraForm()
+    
+    context = {
+        'asignatura_form': asignatura_form,
+        'unidad_carrera_form': unidad_carrera_form,
+        'unidades_academicas': UnidadAcademica.objects.all(),
+        'carreras': Carrera.objects.all(),
+    }
+    
+    return render(request, 'core/agregar_datos_malla.html', context)
+
+
+@login_required
+def agregar_componentes_contenido_view(request, contenido_id):
+    """Vista para agregar componentes detallados a un contenido analítico"""
+    
+    contenido = get_object_or_404(ContenidoAnalitico, id=contenido_id)
+    
+    if request.method == 'POST':
+        # Procesar todos los formsets
+        formsets_data = {
+            'bibliografia': BibliografiaFormSet(request.POST, instance=contenido, prefix='bibliografia'),
+            'practicas': PracticaLaboratorioFormSet(request.POST, instance=contenido, prefix='practicas'),
+            'titulos': TituloFormSet(request.POST, instance=contenido, prefix='titulos'),
+            'competencias': CompetenciasFormSet(request.POST, instance=contenido, prefix='competencias'),
+            'objetivos': ObjetivoPracticaFormSet(request.POST, instance=contenido, prefix='objetivos'),
+            'fundamentos': FundamentoTeoricoFormSet(request.POST, instance=contenido, prefix='fundamentos'),
+            'materiales': MaterialesHerramientasEquiposFormSet(request.POST, instance=contenido, prefix='materiales'),
+            'procedimientos': ProcedimientosFormSet(request.POST, instance=contenido, prefix='procedimientos'),
+            'calculos': CalculosResultadosFormSet(request.POST, instance=contenido, prefix='calculos'),
+            'cuestionarios': CuestionarioFormSet(request.POST, instance=contenido, prefix='cuestionarios'),
+        }
+        
+        all_valid = all(formset.is_valid() for formset in formsets_data.values())
+        
+        if all_valid:
+            try:
+                with transaction.atomic():
+                    for formset in formsets_data.values():
+                        formset.save()
+                    
+                    messages.success(request, f'Componentes agregados exitosamente al contenido "{contenido.nombre}".')
+                    return redirect('core:detalle_asignatura', asignatura_id=contenido.unidad_didactica.asignatura.id)
+                    
+            except Exception as e:
+                messages.error(request, f'Error al guardar los componentes: {str(e)}')
+        else:
+            messages.error(request, 'Por favor corrige los errores en los formularios.')
+    else:
+        formsets_data = {
+            'bibliografia': BibliografiaFormSet(instance=contenido, prefix='bibliografia'),
+            'practicas': PracticaLaboratorioFormSet(instance=contenido, prefix='practicas'),
+            'titulos': TituloFormSet(instance=contenido, prefix='titulos'),
+            'competencias': CompetenciasFormSet(instance=contenido, prefix='competencias'),
+            'objetivos': ObjetivoPracticaFormSet(instance=contenido, prefix='objetivos'),
+            'fundamentos': FundamentoTeoricoFormSet(instance=contenido, prefix='fundamentos'),
+            'materiales': MaterialesHerramientasEquiposFormSet(instance=contenido, prefix='materiales'),
+            'procedimientos': ProcedimientosFormSet(instance=contenido, prefix='procedimientos'),
+            'calculos': CalculosResultadosFormSet(instance=contenido, prefix='calculos'),
+            'cuestionarios': CuestionarioFormSet(instance=contenido, prefix='cuestionarios'),
+        }
+    
+    context = {
+        'contenido': contenido,
+        'formsets': formsets_data,
+    }
+    
+    return render(request, 'core/agregar_componentes_contenido.html', context)
+
+
+@login_required
+def get_carreras_por_unidad_ajax(request):
+    """API para obtener carreras filtradas por unidad académica"""
+    unidad_id = request.GET.get('unidad_id')
+    
+    if unidad_id:
+        carreras = Carrera.objects.filter(unidad_academica_id=unidad_id)
+    else:
+        carreras = Carrera.objects.all()
+    
+    carreras_data = [
+        {
+            'id': carrera.id,
+            'nombre': carrera.nombre,
+            'display': carrera.get_nombre_display()
+        }
+        for carrera in carreras
+    ]
+    
+    return JsonResponse({'carreras': carreras_data})

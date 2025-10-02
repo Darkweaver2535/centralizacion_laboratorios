@@ -732,8 +732,8 @@
                 <h1><i class="fas fa-book-open"></i> Sistema de Malla Curricular</h1>
                 <p class="header-subtitle">Gestión integral de planes de estudio y contenidos académicos del sistema de laboratorios</p>
             </div>
-            <a href="{% url 'admin:core_asignatura_changelist' %}" class="btn-admin">
-                <i class="fas fa-cog"></i> Administrar
+            <a href="{% url 'core:agregar_datos_malla' %}" class="btn-admin">
+                <i class="fas fa-plus"></i> Agregar Datos
             </a>
         </div>
     </div>
@@ -780,19 +780,72 @@
         </div>
     </div>
 
-    <!-- Filtros -->
+    <!-- Filtros con django-filter -->
     <div class="filters-panel">
         <div class="filter-header">
             <h3><i class="fas fa-filter"></i> Filtros de Búsqueda</h3>
             <div class="filter-actions">
-                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
+                <button type="button" class="btn btn-secondary" onclick="limpiarFiltrosDjango()">
                     <i class="fas fa-undo"></i> Limpiar
                 </button>
-                <a href="{% url 'admin:core_asignatura_changelist' %}" class="btn btn-success">
-                    <i class="fas fa-plus"></i> Nueva Asignatura
-                </a>
             </div>
         </div>
+        
+        {% if filterset %}
+        <form method="get" id="filtros-form">
+            <div class="filters-grid">
+                <!-- Búsqueda general -->
+                <div class="form-group">
+                    <label for="{{ filterset.form.search.id_for_label }}" class="form-label">Búsqueda General</label>
+                    {{ filterset.form.search }}
+                </div>
+                
+                <!-- Filtro por nombre específico -->
+                <div class="form-group">
+                    <label for="{{ filterset.form.nombre.id_for_label }}" class="form-label">Nombre de Asignatura</label>
+                    {{ filterset.form.nombre }}
+                </div>
+                
+                <!-- Unidad Académica -->
+                <div class="form-group">
+                    <label for="{{ filterset.form.unidad_academica.id_for_label }}" class="form-label">Unidad Académica</label>
+                    {{ filterset.form.unidad_academica }}
+                </div>
+                
+                <!-- Carrera -->
+                <div class="form-group">
+                    <label for="{{ filterset.form.carrera.id_for_label }}" class="form-label">Carrera</label>
+                    {{ filterset.form.carrera }}
+                </div>
+                
+                <!-- Semestre -->
+                <div class="form-group">
+                    <label for="{{ filterset.form.semestre.id_for_label }}" class="form-label">Semestre</label>
+                    {{ filterset.form.semestre }}
+                </div>
+                
+                <!-- Código de Competencia -->
+                <div class="form-group">
+                    <label for="{{ filterset.form.codigo_competencia.id_for_label }}" class="form-label">Código de Competencia</label>
+                    {{ filterset.form.codigo_competencia }}
+                </div>
+                
+                <!-- Sigla Curricular -->
+                <div class="form-group">
+                    <label for="{{ filterset.form.sigla_curricular.id_for_label }}" class="form-label">Sigla Curricular</label>
+                    {{ filterset.form.sigla_curricular }}
+                </div>
+                
+                <!-- Botón de aplicar filtros -->
+                <div class="form-group" style="align-self: end;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% else %}
+        <!-- Fallback a filtros tradicionales si no hay filterset -->
         <div class="filters-grid">
             <div class="form-group">
                 <label for="unidad_filter" class="form-label">Unidad Académica</label>
@@ -822,6 +875,7 @@
                 </select>
             </div>
         </div>
+        {% endif %}
     </div>
 
     <!-- Carreras con Malla Curricular -->
@@ -1072,11 +1126,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Función global para limpiar filtros
+// Funciones globales para filtros django-filter
+function limpiarFiltrosDjango() {
+    // Limpiar formulario de filtros django-filter
+    const form = document.getElementById('filtros-form');
+    if (form) {
+        // Limpiar todos los campos del formulario
+        const inputs = form.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (input.type === 'text' || input.type === 'search') {
+                input.value = '';
+            } else if (input.tagName === 'SELECT') {
+                input.selectedIndex = 0;
+            }
+        });
+        
+        // Enviar formulario vacío para mostrar todos los resultados
+        window.location.href = window.location.pathname;
+    }
+}
+
+// Función de respaldo para filtros tradicionales
 function limpiarFiltros() {
-    document.getElementById('unidad_filter').value = '';
-    document.getElementById('carrera_filter').value = '';
-    document.getElementById('semestre_filter').value = '';
+    const unidadFilter = document.getElementById('unidad_filter');
+    const carreraFilter = document.getElementById('carrera_filter');
+    const semestreFilter = document.getElementById('semestre_filter');
+    
+    if (unidadFilter) unidadFilter.value = '';
+    if (carreraFilter) carreraFilter.value = '';
+    if (semestreFilter) semestreFilter.value = '';
     
     // Mostrar todas las cards
     document.querySelectorAll('.carrera-card').forEach(card => {
@@ -1090,8 +1168,36 @@ function limpiarFiltros() {
     
     // Actualizar contador
     const totalCards = document.querySelectorAll('.carrera-card').length;
-    updateResultsCounter(totalCards);
+    if (window.updateResultsCounter) {
+        updateResultsCounter(totalCards);
+    }
 }
+
+// Auto-submit para filtros django-filter
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filtros-form');
+    if (form) {
+        // Auto-submit cuando cambian los selectores
+        const selects = form.querySelectorAll('select');
+        selects.forEach(select => {
+            select.addEventListener('change', function() {
+                form.submit();
+            });
+        });
+        
+        // Auto-submit para búsqueda después de una pausa
+        const searchInput = form.querySelector('input[name="search"]');
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    form.submit();
+                }, 1000); // 1 segundo de pausa
+            });
+        }
+    }
+});
 </script>
 {% endblock %}
 
