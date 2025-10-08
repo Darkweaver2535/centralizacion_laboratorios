@@ -134,7 +134,11 @@ def get_asignaturas_por_carrera_ajax(request):
             'display': asignatura.get_nombre_display(),
             'semestre': asignatura.semestre,
             'carga_semanal': asignatura.carga_horaria_semanal,
-            'carga_semestral': asignatura.carga_horaria_semestral
+            'carga_semestral': asignatura.carga_horaria_semestral,
+            'codigo_competencia': asignatura.codigo_competencia or '',
+            'sigla_curricular': asignatura.sigla_curricular or '',
+            'carga_horaria_semestral': asignatura.carga_horaria_semestral,
+            'carga_horaria_semanal': asignatura.carga_horaria_semanal
         }
         for asignatura in asignaturas
     ]
@@ -739,3 +743,102 @@ def prueba_ckeditor_view(request):
     return render(request, 'core/prueba_ckeditor.html', context)
 
 
+# =====================================
+# VISTAS API PARA FILTROS EN CASCADA
+# =====================================
+
+@login_required
+def get_asignaturas_por_carrera_ajax(request):
+    """Obtener asignaturas filtradas por carrera"""
+    carrera_id = request.GET.get('carrera_id')
+    
+    if carrera_id:
+        asignaturas = Asignatura.objects.filter(carrera_id=carrera_id).order_by('semestre', 'nombre')
+    else:
+        asignaturas = Asignatura.objects.all()
+    
+    asignaturas_data = [
+        {
+            'id': asignatura.id, 
+            'nombre': asignatura.get_nombre_display(),
+            'semestre': asignatura.semestre,
+            'codigo_competencia': asignatura.codigo_competencia or '',
+            'sigla_curricular': asignatura.sigla_curricular or '',
+            'carga_horaria_semestral': asignatura.carga_horaria_semestral,
+            'carga_horaria_semanal': asignatura.carga_horaria_semanal
+        }
+        for asignatura in asignaturas
+    ]
+    
+    return JsonResponse({'asignaturas': asignaturas_data})
+
+
+@login_required
+def get_criterios_desempeno_por_asignatura_ajax(request):
+    """Obtener criterios de desempeño filtrados por asignatura"""
+    asignatura_id = request.GET.get('asignatura_id')
+    
+    if asignatura_id:
+        criterios = CriterioDesempeno.objects.filter(asignatura_id=asignatura_id).order_by('nombre')
+    else:
+        criterios = CriterioDesempeno.objects.all()
+    
+    criterios_data = [
+        {
+            'id': criterio.id, 
+            'nombre': criterio.nombre,
+            'descripcion': criterio.descripcion
+        }
+        for criterio in criterios
+    ]
+    
+    return JsonResponse({'criterios': criterios_data})
+
+
+@login_required
+def get_unidades_didacticas_por_criterio_ajax(request):
+    """Obtener unidades didácticas filtradas por criterio de desempeño"""
+    criterio_id = request.GET.get('criterio_id')
+    
+    if criterio_id:
+        # Obtener la asignatura del criterio
+        try:
+            criterio = CriterioDesempeno.objects.get(id=criterio_id)
+            unidades = UnidadDidactica.objects.filter(asignatura=criterio.asignatura).order_by('nombre')
+        except CriterioDesempeno.DoesNotExist:
+            unidades = UnidadDidactica.objects.none()
+    else:
+        unidades = UnidadDidactica.objects.all()
+    
+    unidades_data = [
+        {
+            'id': unidad.id, 
+            'nombre': unidad.nombre,
+            'descripcion': unidad.descripcion
+        }
+        for unidad in unidades
+    ]
+    
+    return JsonResponse({'unidades': unidades_data})
+
+
+@login_required
+def get_contenidos_analiticos_por_unidad_ajax(request):
+    """Obtener contenidos analíticos filtrados por unidad didáctica"""
+    unidad_id = request.GET.get('unidad_id')
+    
+    if unidad_id:
+        contenidos = ContenidoAnalitico.objects.filter(unidad_didactica_id=unidad_id).order_by('nombre')
+    else:
+        contenidos = ContenidoAnalitico.objects.all()
+    
+    contenidos_data = [
+        {
+            'id': contenido.id, 
+            'nombre': contenido.nombre,
+            'descripcion': contenido.descripcion
+        }
+        for contenido in contenidos
+    ]
+    
+    return JsonResponse({'contenidos': contenidos_data})

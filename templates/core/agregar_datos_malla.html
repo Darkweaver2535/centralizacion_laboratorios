@@ -697,33 +697,23 @@
                             <div class="col-6">
                                 <div class="form-group">
                                     <label class="form-label">Asignatura</label>
-                                    <input type="text" name="asignatura" class="form-input" 
-                                           placeholder="Nombre de la asignatura" required>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="form-group">
-                                    <label class="form-label">Semestre</label>
-                                    <select name="semestre" class="form-select" required>
-                                        <option value="">Semestre</option>
-                                        <option value="1">1°</option>
-                                        <option value="2">2°</option>
-                                        <option value="3">3°</option>
-                                        <option value="4">4°</option>
-                                        <option value="5">5°</option>
-                                        <option value="6">6°</option>
-                                        <option value="7">7°</option>
-                                        <option value="8">8°</option>
-                                        <option value="9">9°</option>
-                                        <option value="10">10°</option>
+                                    <select name="asignatura" id="asignatura_select" class="form-select" required>
+                                        <option value="">Seleccione una asignatura</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-3">
                                 <div class="form-group">
+                                    <label class="form-label">Semestre</label>
+                                    <input type="number" name="semestre" id="semestre_input" class="form-input" 
+                                           placeholder="Semestre" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="form-group">
                                     <label class="form-label">Código de Competencia</label>
-                                    <input type="text" name="codigo_competencia" class="form-input" 
-                                           placeholder="Ej: CC001" required>
+                                    <input type="text" name="codigo_competencia" id="codigo_competencia_input" class="form-input" 
+                                           placeholder="Se carga automáticamente" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
                                 </div>
                             </div>
                         </div>
@@ -731,22 +721,22 @@
                             <div class="col-4">
                                 <div class="form-group">
                                     <label class="form-label">Sigla Curricular</label>
-                                    <input type="text" name="sigla_curricular" class="form-input" 
-                                           placeholder="Ej: MAT101" required>
+                                    <input type="text" name="sigla_curricular" id="sigla_curricular_input" class="form-input" 
+                                           placeholder="Se carga automáticamente" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
                                 </div>
                             </div>
                             <div class="col-4">
                                 <div class="form-group">
                                     <label class="form-label">Carga Horaria Semestral</label>
-                                    <input type="number" name="carga_horaria_semestral" class="form-input" 
-                                           placeholder="Horas por semestre" min="1" required>
+                                    <input type="number" name="carga_horaria_semestral" id="carga_horaria_semestral_input" class="form-input" 
+                                           placeholder="Se carga automáticamente" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
                                 </div>
                             </div>
                             <div class="col-4">
                                 <div class="form-group">
                                     <label class="form-label">Carga Horaria Semanal</label>
-                                    <input type="number" name="carga_horaria_semanal" class="form-input" 
-                                           placeholder="Horas por semana" min="1" required>
+                                    <input type="number" name="carga_horaria_semanal" id="carga_horaria_semanal_input" class="form-input" 
+                                           placeholder="Se carga automáticamente" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
                                 </div>
                             </div>
                         </div>
@@ -764,8 +754,9 @@
                     <div class="section-body">
                         <div class="form-group">
                             <label class="form-label">Criterio de Desempeño</label>
-                            <textarea name="criterio_desempeno" class="form-input" 
-                                     placeholder="Descripción del criterio de desempeño" rows="4" required></textarea>
+                            <select name="criterio_desempeno" id="criterio_desempeno_select" class="form-select" required>
+                                <option value="">Seleccione un criterio de desempeño</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -781,8 +772,9 @@
                     <div class="section-body">
                         <div class="form-group">
                             <label class="form-label">Unidad Didáctica</label>
-                            <input type="text" name="unidad_didactica" class="form-input" 
-                                   placeholder="Nombre de la unidad didáctica" required>
+                            <select name="unidad_didactica" id="unidad_didactica_select" class="form-select" required>
+                                <option value="">Seleccione una unidad didáctica</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -807,8 +799,9 @@
                                         <div class="col-12">
                                             <div class="form-group">
                                                 <label class="form-label">Contenido Analítico</label>
-                                                <input type="text" name="contenidos_analiticos[]" class="form-input" 
-                                                       placeholder="Nombre del contenido analítico" required>
+                                                <select name="contenidos_analiticos[]" class="form-select contenido-analitico-select" required>
+                                                    <option value="">Seleccione un contenido analítico</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -901,18 +894,116 @@
             unidadSelect.addEventListener('change', function() {
                 const unidadId = this.value;
                 
+                // Limpiar selecciones dependientes
+                resetSelectOptions(carreraSelect, 'Seleccione una carrera');
+                resetSelectOptions(document.getElementById('asignatura_select'), 'Seleccione una asignatura');
+                clearAutoFields();
+                
                 if (unidadId) {
                     fetch(`{% url 'core:carreras_por_unidad' %}?unidad_id=${unidadId}`)
                         .then(response => response.json())
                         .then(data => {
                             carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
                             data.carreras.forEach(carrera => {
-                                carreraSelect.innerHTML += `<option value="${carrera.id}">${carrera.nombre}</option>`;
+                                carreraSelect.innerHTML += `<option value="${carrera.id}">${carrera.display}</option>`;
                             });
                         })
                         .catch(error => console.error('Error:', error));
                 } else {
                     carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+                }
+            });
+        }
+        
+        // Filtrar asignaturas por carrera
+        if (carreraSelect) {
+            carreraSelect.addEventListener('change', function() {
+                const carreraId = this.value;
+                const asignaturaSelect = document.getElementById('asignatura_select');
+                
+                // Limpiar selecciones dependientes
+                resetSelectOptions(asignaturaSelect, 'Seleccione una asignatura');
+                clearAutoFields();
+                
+                if (carreraId) {
+                    fetch(`{% url 'core:asignaturas_por_carrera' %}?carrera_id=${carreraId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Respuesta asignaturas:', data); // Debug
+                            asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+                            if (data.asignaturas && data.asignaturas.length > 0) {
+                                data.asignaturas.forEach(asignatura => {
+                                    const nombre = asignatura.display || asignatura.nombre || 'Sin nombre';
+                                    const semestre = asignatura.semestre || '';
+                                    const codigo = asignatura.codigo_competencia || '';
+                                    const sigla = asignatura.sigla_curricular || '';
+                                    const horariaSemestral = asignatura.carga_horaria_semestral || asignatura.carga_semestral || '';
+                                    const horariaSemanal = asignatura.carga_horaria_semanal || asignatura.carga_semanal || '';
+                                    
+                                    asignaturaSelect.innerHTML += `<option value="${asignatura.id}" 
+                                        data-semestre="${semestre}" 
+                                        data-codigo="${codigo}" 
+                                        data-sigla="${sigla}" 
+                                        data-horaria-semestral="${horariaSemestral}" 
+                                        data-horaria-semanal="${horariaSemanal}">${nombre}</option>`;
+                                });
+                            } else {
+                                console.warn('No se encontraron asignaturas');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error cargando asignaturas:', error);
+                            asignaturaSelect.innerHTML = '<option value="">Error cargando asignaturas</option>';
+                        });
+                }
+            });
+        }
+        
+        // Cargar datos automáticamente cuando se selecciona asignatura
+        const asignaturaSelect = document.getElementById('asignatura_select');
+        if (asignaturaSelect) {
+            asignaturaSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                
+                if (selectedOption.value) {
+                    // Cargar campos automáticamente
+                    document.getElementById('semestre_input').value = selectedOption.dataset.semestre || '';
+                    document.getElementById('codigo_competencia_input').value = selectedOption.dataset.codigo || '';
+                    document.getElementById('sigla_curricular_input').value = selectedOption.dataset.sigla || '';
+                    document.getElementById('carga_horaria_semestral_input').value = selectedOption.dataset.horariaSemestral || '';
+                    document.getElementById('carga_horaria_semanal_input').value = selectedOption.dataset.horariaSemanal || '';
+                    
+                    // Cargar criterios de desempeño
+                    loadCriteriosDesempeno(selectedOption.value);
+                } else {
+                    clearAutoFields();
+                }
+            });
+        }
+        
+        // Cargar unidades didácticas cuando se selecciona criterio de desempeño
+        const criterioSelect = document.getElementById('criterio_desempeno_select');
+        if (criterioSelect) {
+            criterioSelect.addEventListener('change', function() {
+                const criterioId = this.value;
+                const unidadDidacticaSelect = document.getElementById('unidad_didactica_select');
+                
+                resetSelectOptions(unidadDidacticaSelect, 'Seleccione una unidad didáctica');
+                
+                if (criterioId) {
+                    loadUnidadesDidacticas(criterioId);
+                }
+            });
+        }
+        
+        // Cargar contenidos analíticos cuando se selecciona unidad didáctica
+        const unidadDidacticaSelect = document.getElementById('unidad_didactica_select');
+        if (unidadDidacticaSelect) {
+            unidadDidacticaSelect.addEventListener('change', function() {
+                const unidadId = this.value;
+                
+                if (unidadId) {
+                    loadContenidosAnaliticos(unidadId);
                 }
             });
         }
@@ -1139,8 +1230,9 @@
                 <div class="col-12">
                     <div class="form-group">
                         <label class="form-label">Contenido Analítico</label>
-                        <input type="text" name="contenidos_analiticos[]" class="form-input" 
-                               placeholder="Nombre del contenido analítico" required>
+                        <select name="contenidos_analiticos[]" class="form-select contenido-analitico-select" required>
+                            <option value="">Seleccione un contenido analítico</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -1174,6 +1266,12 @@
         
         container.appendChild(div);
         contadorContenidos++;
+        
+        // Cargar opciones de contenido analítico si hay una unidad didáctica seleccionada
+        const unidadDidacticaSelect = document.getElementById('unidad_didactica_select');
+        if (unidadDidacticaSelect && unidadDidacticaSelect.value) {
+            loadContenidosAnaliticos(unidadDidacticaSelect.value);
+        }
     }
 
     // Función para eliminar contenido analítico
@@ -1535,6 +1633,82 @@
             document.head.appendChild(script);
         }
     };
+
+    // Funciones auxiliares para filtros en cascada
+    function resetSelectOptions(selectElement, placeholder) {
+        if (selectElement) {
+            selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+        }
+    }
+    
+    function clearAutoFields() {
+        document.getElementById('semestre_input').value = '';
+        document.getElementById('codigo_competencia_input').value = '';
+        document.getElementById('sigla_curricular_input').value = '';
+        document.getElementById('carga_horaria_semestral_input').value = '';
+        document.getElementById('carga_horaria_semanal_input').value = '';
+        
+        // Limpiar selects dependientes
+        resetSelectOptions(document.getElementById('criterio_desempeno_select'), 'Seleccione un criterio de desempeño');
+        resetSelectOptions(document.getElementById('unidad_didactica_select'), 'Seleccione una unidad didáctica');
+        
+        // Limpiar contenidos analíticos
+        const contenidoSelects = document.querySelectorAll('.contenido-analitico-select');
+        contenidoSelects.forEach(select => {
+            resetSelectOptions(select, 'Seleccione un contenido analítico');
+        });
+    }
+    
+    function loadCriteriosDesempeno(asignaturaId) {
+        const criterioSelect = document.getElementById('criterio_desempeno_select');
+        
+        fetch(`{% url 'core:criterios_desempeno' %}?asignatura_id=${asignaturaId}`)
+            .then(response => response.json())
+            .then(data => {
+                criterioSelect.innerHTML = '<option value="">Seleccione un criterio de desempeño</option>';
+                data.criterios.forEach(criterio => {
+                    criterioSelect.innerHTML += `<option value="${criterio.id}">${criterio.nombre}</option>`;
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+    
+    function loadUnidadesDidacticas(criterioId) {
+        const unidadSelect = document.getElementById('unidad_didactica_select');
+        
+        // Para las unidades didácticas, necesitamos obtener la asignatura del criterio
+        // Por ahora vamos a usar la asignatura seleccionada
+        const asignaturaSelect = document.getElementById('asignatura_select');
+        const asignaturaId = asignaturaSelect.value;
+        
+        if (asignaturaId) {
+            fetch(`{% url 'core:unidades_didacticas' %}?asignatura_id=${asignaturaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    unidadSelect.innerHTML = '<option value="">Seleccione una unidad didáctica</option>';
+                    data.unidades_didacticas.forEach(unidad => {
+                        unidadSelect.innerHTML += `<option value="${unidad.id}">${unidad.nombre}</option>`;
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    }
+    
+    function loadContenidosAnaliticos(unidadId) {
+        const contenidoSelects = document.querySelectorAll('.contenido-analitico-select');
+        
+        fetch(`{% url 'core:contenidos_analiticos' %}?unidad_didactica_id=${unidadId}`)
+            .then(response => response.json())
+            .then(data => {
+                contenidoSelects.forEach(select => {
+                    select.innerHTML = '<option value="">Seleccione un contenido analítico</option>';
+                    data.contenidos_analiticos.forEach(contenido => {
+                        select.innerHTML += `<option value="${contenido.id}">${contenido.nombre}</option>`;
+                    });
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
 </script>
 {% endblock %}
 
