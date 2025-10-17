@@ -1717,16 +1717,16 @@
     function cargarEquiposEnSelect(equiposSelect, unidadId) {
         equiposSelect.innerHTML = '<option value="">Cargando equipos...</option>';
 
-        fetch(`/core/ajax/equipos-por-unidad/?unidad_id=${unidadId}`)
+        fetch(`/dashboard/ajax/equipos-por-unidad/?unidad_id=${unidadId}`)
             .then(response => response.json())
             .then(data => {
                 equiposSelect.innerHTML = '';
                 if (data && Array.isArray(data)) {
                     data.forEach(equipo => {
-                        if (equipo && equipo.descripcion_activo && equipo.descripcion_activo.trim()) {
+                        if (equipo && equipo.descripcion && equipo.descripcion.trim()) {
                             const option = document.createElement('option');
-                            option.value = equipo.descripcion_activo.trim();
-                            option.textContent = equipo.descripcion_activo.trim();
+                            option.value = equipo.descripcion.trim();
+                            option.textContent = equipo.descripcion.trim();
                             equiposSelect.appendChild(option);
                         }
                     });
@@ -1744,16 +1744,16 @@
     function cargarMaterialesEnSelect(materialesSelect, unidadId) {
         materialesSelect.innerHTML = '<option value="">Cargando materiales...</option>';
 
-        fetch(`/core/ajax/insumos-por-unidad/?unidad_id=${unidadId}&tipo=MATERIAL`)
+        fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Material`)
             .then(response => response.json())
             .then(data => {
                 materialesSelect.innerHTML = '';
                 if (data && Array.isArray(data)) {
                     data.forEach(material => {
-                        if (material && material.nombre_elemento && material.nombre_elemento.trim()) {
+                        if (material && material.nombre && material.nombre.trim()) {
                             const option = document.createElement('option');
-                            option.value = material.nombre_elemento.trim();
-                            option.textContent = material.nombre_elemento.trim();
+                            option.value = material.nombre.trim();
+                            option.textContent = material.nombre.trim();
                             materialesSelect.appendChild(option);
                         }
                     });
@@ -1771,16 +1771,16 @@
     function cargarHerramientasEnSelect(herramientasSelect, unidadId) {
         herramientasSelect.innerHTML = '<option value="">Cargando herramientas...</option>';
 
-        fetch(`/core/ajax/insumos-por-unidad/?unidad_id=${unidadId}&tipo=HERRAMIENTA`)
+        fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Herramienta`)
             .then(response => response.json())
             .then(data => {
                 herramientasSelect.innerHTML = '';
                 if (data && Array.isArray(data)) {
                     data.forEach(herramienta => {
-                        if (herramienta && herramienta.nombre_elemento && herramienta.nombre_elemento.trim()) {
+                        if (herramienta && herramienta.nombre && herramienta.nombre.trim()) {
                             const option = document.createElement('option');
-                            option.value = herramienta.nombre_elemento.trim();
-                            option.textContent = herramienta.nombre_elemento.trim();
+                            option.value = herramienta.nombre.trim();
+                            option.textContent = herramienta.nombre.trim();
                             herramientasSelect.appendChild(option);
                         }
                     });
@@ -2325,14 +2325,14 @@
             fetch(`/dashboard/ajax/equipos-por-unidad/?unidad_id=${unidadId}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Equipos recibidos:', data.equipos.length);
+                    console.log('Equipos recibidos:', data.length);
                     
                     // Buscar todos los selects de equipos en la página
                     var selectsEquipos = document.querySelectorAll('.equipos-select');
                     selectsEquipos.forEach(select => {
                         select.innerHTML = '<option value="">Seleccionar equipo...</option>';
-                        data.equipos.forEach(equipo => {
-                            select.innerHTML += `<option value="${equipo.id}">${equipo.nombre}</option>`;
+                        data.forEach(equipo => {
+                            select.innerHTML += `<option value="${equipo.descripcion}">${equipo.descripcion}</option>`;
                         });
                     });
                     
@@ -2340,25 +2340,25 @@
                     var selectEquipos = document.getElementById('select_equipos');
                     if (selectEquipos) {
                         selectEquipos.innerHTML = '<option value="">Seleccionar equipo...</option>';
-                        data.equipos.forEach(equipo => {
-                            selectEquipos.innerHTML += `<option value="${equipo.id}">${equipo.nombre}</option>`;
+                        data.forEach(equipo => {
+                            selectEquipos.innerHTML += `<option value="${equipo.descripcion}">${equipo.descripcion}</option>`;
                         });
                     }
                 })
                 .catch(error => console.error('Error cargando equipos:', error));
 
             // Cargar materiales para todos los selects de materiales
-            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=materiales`)
+            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Material`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Materiales recibidos:', data.insumos.length);
+                    console.log('Materiales recibidos:', data.length);
                     
                     // Buscar todos los selects de materiales en la página
                     var selectsMateriales = document.querySelectorAll('.materiales-select');
                     selectsMateriales.forEach(select => {
                         select.innerHTML = '<option value="">Seleccionar material...</option>';
-                        data.insumos.forEach(insumo => {
-                            select.innerHTML += `<option value="${insumo.id}">${insumo.nombre}</option>`;
+                        data.forEach(insumo => {
+                            select.innerHTML += `<option value="${insumo.nombre}">${insumo.nombre}</option>`;
                         });
                     });
                     
@@ -2366,25 +2366,25 @@
                     var selectMateriales = document.getElementById('select_materiales');
                     if (selectMateriales) {
                         selectMateriales.innerHTML = '<option value="">Seleccionar material...</option>';
-                        data.insumos.forEach(insumo => {
-                            selectMateriales.innerHTML += `<option value="${insumo.id}">${insumo.nombre}</option>`;
+                        data.forEach(insumo => {
+                            selectMateriales.innerHTML += `<option value="${insumo.nombre}">${insumo.nombre}</option>`;
                         });
                     }
                 })
                 .catch(error => console.error('Error cargando materiales:', error));
 
             // Cargar herramientas para todos los selects de herramientas
-            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=herramientas`)
+            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Herramienta`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Herramientas recibidas:', data.insumos.length);
+                    console.log('Herramientas recibidas:', data.length);
                     
                     // Buscar todos los selects de herramientas en la página
                     var selectsHerramientas = document.querySelectorAll('.herramientas-select');
                     selectsHerramientas.forEach(select => {
                         select.innerHTML = '<option value="">Seleccionar herramienta...</option>';
-                        data.insumos.forEach(insumo => {
-                            select.innerHTML += `<option value="${insumo.id}">${insumo.nombre}</option>`;
+                        data.forEach(insumo => {
+                            select.innerHTML += `<option value="${insumo.nombre}">${insumo.nombre}</option>`;
                         });
                     });
                 })
