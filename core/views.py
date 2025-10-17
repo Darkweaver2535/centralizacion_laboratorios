@@ -244,47 +244,94 @@ def malla_curricular_view(request):
     # Obtener parámetros de filtrado
     categoria = request.GET.get('categoria', 'asignaturas')
     
-    # Aplicar filtros con django-filter
+    # Aplicar filtros con django-filter - SOLO ASIGNATURAS DE UALP Y FILTRAR NOMBRES NUMÉRICOS
+    try:
+        ualp = UnidadAcademica.objects.get(id=1, nombre='UALP')
+        # Filtrar asignaturas de UALP y excluir las que tienen nombres solo numéricos
+        all_asignaturas = Asignatura.objects.filter(
+            carrera__unidad_academica=ualp
+        ).select_related('carrera', 'carrera__unidad_academica')
+        
+        # Filtrar las asignaturas problemáticas (nombres numéricos)
+        asignaturas_validas = []
+        for asig in all_asignaturas:
+            if not asig.nombre.isdigit():  # Excluir nombres que sean solo números
+                asignaturas_validas.append(asig.id)
+        
+        base_queryset = Asignatura.objects.filter(
+            id__in=asignaturas_validas
+        ).select_related('carrera', 'carrera__unidad_academica')
+        
+    except UnidadAcademica.DoesNotExist:
+        base_queryset = Asignatura.objects.none()
+    
     if categoria == 'asignaturas':
-        # Usar AsignaturaFilter para filtrado automático
-        filterset = AsignaturaFilter(request.GET, queryset=Asignatura.objects.select_related(
-            'carrera', 'carrera__unidad_academica'
-        ))
+        # Usar AsignaturaFilter para filtrado automático solo con asignaturas de UALP
+        filterset = AsignaturaFilter(request.GET, queryset=base_queryset)
         items = filterset.qs
     else:
         # Fallback para otras categorías
         filterset = None
-        items = Asignatura.objects.select_related('carrera', 'carrera__unidad_academica')
+        items = base_queryset
     
     # Paginación
     paginator = Paginator(items, 20)  # 20 elementos por página
     page_number = request.GET.get('page')
     items_page = paginator.get_page(page_number)
     
-    # Estadísticas generales
-    stats = {
-        'total_asignaturas': Asignatura.objects.count(),
-        'total_criterios': CriterioDesempeno.objects.count(),
-        'total_unidades_didacticas': UnidadDidactica.objects.count(),
-        'total_contenidos': ContenidoAnalitico.objects.count(),
-    }
+    # Estadísticas generales - SOLO DE UALP Y SIN ASIGNATURAS NUMÉRICAS
+    try:
+        ualp = UnidadAcademica.objects.get(id=1, nombre='UALP')
+        # Filtrar asignaturas válidas para estadísticas
+        asignaturas_ualp = Asignatura.objects.filter(carrera__unidad_academica=ualp)
+        asignaturas_validas_ids = [asig.id for asig in asignaturas_ualp if not asig.nombre.isdigit()]
+        
+        stats = {
+            'total_asignaturas': len(asignaturas_validas_ids),
+            'total_criterios': CriterioDesempeno.objects.filter(asignatura__id__in=asignaturas_validas_ids).count(),
+            'total_unidades_didacticas': UnidadDidactica.objects.filter(asignatura__id__in=asignaturas_validas_ids).count(),
+            'total_contenidos': ContenidoAnalitico.objects.filter(unidad_didactica__asignatura__id__in=asignaturas_validas_ids).count(),
+        }
+    except UnidadAcademica.DoesNotExist:
+        stats = {
+            'total_asignaturas': 0,
+            'total_criterios': 0,
+            'total_unidades_didacticas': 0,
+            'total_contenidos': 0,
+        }
     
-    # Asignaturas por carrera con datos de malla curricular
+    # Asignaturas por carrera con datos de malla curricular - SOLO UALP
     carreras_con_malla = []
-    for carrera in Carrera.objects.all():
-        asignaturas = Asignatura.objects.filter(carrera=carrera).order_by('semestre', 'nombre')
-        if asignaturas.exists():
-            carreras_con_malla.append({
-                'carrera': carrera,
-                'asignaturas': asignaturas,
-                'total_asignaturas': asignaturas.count(),
-                'con_codigo_competencia': asignaturas.exclude(codigo_competencia__in=['', None]).count(),
-                'con_sigla_curricular': asignaturas.exclude(sigla_curricular__in=['', None]).count(),
-            })
+    # Solo mostrar carreras de UALP (ID=1) para pruebas
+    try:
+        ualp = UnidadAcademica.objects.get(id=1, nombre='UALP')
+        carreras_ualp = Carrera.objects.filter(unidad_academica=ualp)
+        
+        for carrera in carreras_ualp:
+            # Filtrar asignaturas excluyendo nombres numéricos
+            all_asignaturas = Asignatura.objects.filter(carrera=carrera).order_by('semestre', 'nombre')
+            asignaturas_validas_ids = [asig.id for asig in all_asignaturas if not asig.nombre.isdigit()]
+            asignaturas = Asignatura.objects.filter(id__in=asignaturas_validas_ids).order_by('semestre', 'nombre')
+            
+            if asignaturas.exists():
+                carreras_con_malla.append({
+                    'carrera': carrera,
+                    'asignaturas': asignaturas,
+                    'total_asignaturas': asignaturas.count(),
+                    'con_codigo_competencia': asignaturas.exclude(codigo_competencia__in=['', None]).count(),
+                    'con_sigla_curricular': asignaturas.exclude(sigla_curricular__in=['', None]).count(),
+                })
+    except UnidadAcademica.DoesNotExist:
+        pass  # Si no existe UALP, no mostrar carreras
     
-    # Datos para filtros
-    unidades_academicas = UnidadAcademica.objects.all()
-    carreras = Carrera.objects.all()
+    # Datos para filtros - SOLO UALP
+    try:
+        ualp = UnidadAcademica.objects.get(id=1, nombre='UALP')
+        unidades_academicas = UnidadAcademica.objects.filter(id=1)  # Solo UALP
+        carreras = Carrera.objects.filter(unidad_academica=ualp)    # Solo carreras de UALP
+    except UnidadAcademica.DoesNotExist:
+        unidades_academicas = UnidadAcademica.objects.none()
+        carreras = Carrera.objects.none()
     
     context = {
         'stats': stats,
@@ -296,7 +343,7 @@ def malla_curricular_view(request):
         'asignaturas': items_page,  # Para compatibilidad con template existente
         'filterset': filterset,  # Para acceder a los filtros en el template
         'filtered_count': items.count(),  # Número de elementos filtrados
-        'total_count': Asignatura.objects.count(),  # Total sin filtros
+        'total_count': base_queryset.count(),  # Total sin filtros (solo UALP)
         'categoria': categoria,
         
         # Valores seleccionados para mantener en formulario
@@ -311,7 +358,7 @@ def malla_curricular_view(request):
 
 @login_required
 def detalle_asignatura_view(request, asignatura_id):
-    """Vista detallada de una asignatura con toda su malla curricular"""
+    """Vista detallada de una asignatura con toda su malla curricular y componentes completos"""
     
     asignatura = get_object_or_404(Asignatura, id=asignatura_id)
     
@@ -321,27 +368,61 @@ def detalle_asignatura_view(request, asignatura_id):
     # Unidades didácticas
     unidades_didacticas = UnidadDidactica.objects.filter(asignatura=asignatura)
     
-    # Contenidos analíticos por unidad didáctica
-    contenidos_por_unidad = {}
+    # Contenidos analíticos por unidad didáctica con TODOS sus componentes
+    contenidos_completos = {}
     for unidad in unidades_didacticas:
-        contenidos_por_unidad[unidad.id] = ContenidoAnalitico.objects.filter(unidad_didactica=unidad)
+        contenidos = ContenidoAnalitico.objects.filter(unidad_didactica=unidad)
+        contenidos_con_componentes = []
+        
+        for contenido in contenidos:
+            # Obtener TODOS los componentes de cada contenido analítico
+            componentes = {
+                'materiales_herramientas_equipos': MaterialesHerramientasEquipos.objects.filter(contenido_analitico=contenido),
+                'procedimientos': Procedimientos.objects.filter(contenido_analitico=contenido),
+                'calculos_resultados': CalculosResultados.objects.filter(contenido_analitico=contenido),
+                'cuestionario': Cuestionario.objects.filter(contenido_analitico=contenido),
+                'fundamentos_teoricos': FundamentoTeorico.objects.filter(contenido_analitico=contenido),
+                'objetivos_practica': ObjetivoPractica.objects.filter(contenido_analitico=contenido),
+                'bibliografia': Bibliografia.objects.filter(contenido_analitico=contenido),
+            }
+            
+            contenidos_con_componentes.append({
+                'contenido': contenido,
+                'componentes': componentes
+            })
+        
+        contenidos_completos[unidad.id] = {
+            'unidad': unidad,
+            'contenidos': contenidos_con_componentes
+        }
     
     # Unidades temáticas tradicionales (si existen)
     unidades_tematicas = UnidadTematica.objects.filter(asignatura=asignatura)
     
-    # Estadísticas de la asignatura
+    # Estadísticas completas de la asignatura
+    total_materiales = MaterialesHerramientasEquipos.objects.filter(
+        contenido_analitico__unidad_didactica__asignatura=asignatura
+    ).count()
+    
+    total_procedimientos = Procedimientos.objects.filter(
+        contenido_analitico__unidad_didactica__asignatura=asignatura
+    ).count()
+    
     asignatura_stats = {
         'criterios_count': criterios.count(),
         'unidades_didacticas_count': unidades_didacticas.count(),
-        'contenidos_count': sum(contenidos.count() for contenidos in contenidos_por_unidad.values()),
+        'contenidos_count': sum(len(data['contenidos']) for data in contenidos_completos.values()),
         'unidades_tematicas_count': unidades_tematicas.count(),
+        'materiales_equipos_count': total_materiales,
+        'procedimientos_count': total_procedimientos,
     }
     
     context = {
         'asignatura': asignatura,
         'criterios': criterios,
         'unidades_didacticas': unidades_didacticas,
-        'contenidos_por_unidad': contenidos_por_unidad,
+        'contenidos_completos': contenidos_completos,  # Datos completos nuevos
+        'contenidos_por_unidad': {uid: data['contenidos'] for uid, data in contenidos_completos.items()},  # Compatibilidad con template existente
         'unidades_tematicas': unidades_tematicas,
         'asignatura_stats': asignatura_stats,
     }
