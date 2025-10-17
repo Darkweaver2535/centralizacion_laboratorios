@@ -25,6 +25,12 @@ urlpatterns = [
     # Prueba CKEditor 5
     path('prueba-ckeditor/', views.prueba_ckeditor_view, name='prueba_ckeditor'),
     
+    # Equipos e Insumos AJAX
+    path('ajax/equipos-por-unidad/', views.get_equipos_por_unidad_ajax, name='equipos_por_unidad'),
+    path('ajax/insumos-por-unidad/', views.get_insumos_por_unidad_ajax, name='insumos_por_unidad'),
+    path('ajax/agregar-equipo-rapido/', views.agregar_equipo_rapido_ajax, name='agregar_equipo_rapido'),
+    path('ajax/agregar-insumo-rapido/', views.agregar_insumo_rapido_ajax, name='agregar_insumo_rapido'),
+    
     # Sistema de importación R1
     path('seleccionar-metodo/<str:tipo>/', seleccionar_metodo_carga, name='seleccionar_metodo'),
     path('importar-excel/<str:tipo>/', importar_excel_view, name='importar_excel'),

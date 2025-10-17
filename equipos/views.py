@@ -1332,38 +1332,42 @@ def cargar_practicas_ajax(request):
 
 @login_required
 def cargar_equipos_ualp_ajax(request):
-    """Cargar equipos disponibles de la UALP para equipos requeridos"""
+    """Cargar equipos disponibles de la UALP desde datos importados"""
     query = request.GET.get('query', '').strip()
     
+    # Importar el modelo aquí para evitar problemas de importación circular
+    from equipos.models import EquipoImportado
+    
     # Filtrar equipos de la UALP
-    ualp = UnidadAcademica.objects.filter(nombre='UALP').first()
-    if not ualp:
-        return JsonResponse({'equipos': []})
+    equipos_query = EquipoImportado.objects.filter(unidad_academica='UALP')
     
-    equipos_query = Equipo.objects.filter(unidad_academica=ualp)
-    
-    # Si hay un término de búsqueda, filtrar por nombre del equipo
+    # Si hay un término de búsqueda, filtrar por descripción o código
     if query:
         equipos_query = equipos_query.filter(
-            equipo_existente__icontains=query
+            Q(descripcion_activo__icontains=query) | 
+            Q(codigo__icontains=query)
         )
     
-    # Obtener equipos únicos por nombre (evitar duplicados)
-    equipos = equipos_query.values('equipo_existente', 'marca', 'modelo', 'estado').distinct()[:50]
+    # Obtener equipos limitados para evitar sobrecarga
+    equipos = equipos_query.values(
+        'codigo', 'descripcion_activo', 'responsable', 'estado', 'oficina'
+    ).distinct()[:50]
     
     equipos_data = []
     for equipo in equipos:
-        # Crear texto descriptivo
-        texto = equipo['equipo_existente']
-        if equipo['marca'] and equipo['marca'] != 'Por definir':
-            texto += f" - {equipo['marca']}"
-        if equipo['modelo'] and equipo['modelo'] != 'Por definir':
-            texto += f" ({equipo['modelo']})"
+        # Crear texto descriptivo con la información del Excel
+        texto = f"{equipo['codigo']} - {equipo['descripcion_activo']}"
+        if equipo['responsable']:
+            texto += f" (Resp: {equipo['responsable']})"
         
         equipos_data.append({
-            'id': equipo['equipo_existente'],  # Usar el nombre como ID
-            'text': texto,
-            'estado': equipo['estado']
+            'id': equipo['codigo'],
+            'texto': texto,
+            'codigo': equipo['codigo'],
+            'descripcion': equipo['descripcion_activo'],
+            'responsable': equipo['responsable'],
+            'estado': equipo['estado'],
+            'oficina': equipo['oficina']
         })
     
     return JsonResponse({'equipos': equipos_data})

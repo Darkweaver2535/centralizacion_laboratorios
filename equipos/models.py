@@ -542,3 +542,32 @@ class LogReordenamiento(models.Model):
     
     def __str__(self):
         return f"{self.tarea.titulo} - {self.accion} - {self.fecha.strftime('%d/%m/%Y %H:%M')}"
+
+
+class EquipoImportado(models.Model):
+    """
+    Modelo para importar equipos directamente desde Excel 
+    con todas las columnas tal como vienen en el archivo
+    """
+    # Columnas exactas del Excel
+    numero = models.IntegerField(verbose_name="N", null=True, blank=True)
+    unidad_academica = models.CharField(max_length=50, verbose_name="Unidad Académica")
+    responsable = models.CharField(max_length=200, verbose_name="Responsable")
+    ci = models.CharField(max_length=50, verbose_name="C.I.", blank=True)
+    cargo = models.CharField(max_length=100, verbose_name="Cargo", blank=True)
+    oficina = models.CharField(max_length=200, verbose_name="Oficina", blank=True)
+    codigo = models.CharField(max_length=100, verbose_name="Código", unique=True)
+    descripcion_activo = models.TextField(verbose_name="Descripción del Activo")
+    estado = models.CharField(max_length=100, verbose_name="Estado")
+    fecha_asignacion = models.CharField(max_length=50, verbose_name="Fecha de Asignación", blank=True)
+    
+    # Campos de auditoría
+    fecha_importacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Importación")
+    
+    class Meta:
+        verbose_name = "Equipo Importado"
+        verbose_name_plural = "Equipos Importados"
+        ordering = ['numero']
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion_activo[:50]}..."

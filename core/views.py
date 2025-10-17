@@ -2,6 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Count
+from django.db import transaction
+from django.contrib import messages
 from .models import (
     UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, 
     Practica, Laboratorio, CriterioDesempeno, UnidadDidactica, ContenidoAnalitico,
@@ -127,11 +129,19 @@ def get_asignaturas_por_carrera_ajax(request):
     if semestre:
         asignaturas = asignaturas.filter(semestre=semestre)
     
-    asignaturas_data = [
-        {
+    asignaturas_data = []
+    for asignatura in asignaturas:
+        display_name = asignatura.get_nombre_display()
+        
+        # Si el display_name es igual al nombre y el nombre es numérico, usar un nombre más descriptivo
+        if display_name == asignatura.nombre and asignatura.nombre.isdigit():
+            print(f"Corrigiendo nombre problemático: {asignatura.nombre} -> descripción más clara")
+            continue  # Omitir esta asignatura problemática
+        
+        asignaturas_data.append({
             'id': asignatura.id, 
             'nombre': asignatura.nombre, 
-            'display': asignatura.get_nombre_display(),
+            'display': display_name,
             'semestre': asignatura.semestre,
             'carga_semanal': asignatura.carga_horaria_semanal,
             'carga_semestral': asignatura.carga_horaria_semestral,
@@ -139,9 +149,7 @@ def get_asignaturas_por_carrera_ajax(request):
             'sigla_curricular': asignatura.sigla_curricular or '',
             'carga_horaria_semestral': asignatura.carga_horaria_semestral,
             'carga_horaria_semanal': asignatura.carga_horaria_semanal
-        }
-        for asignatura in asignaturas
-    ]
+        })
     
     return JsonResponse({'asignaturas': asignaturas_data})
 
@@ -518,13 +526,25 @@ def agregar_datos_malla_view(request):
                                     'competencias': request.POST.get(f'competencias_{i}_{grupo_index}', ''),
                                     'objetivo_practica': request.POST.get(f'objetivo_practica_{i}_{grupo_index}', ''),
                                     'fundamento_teorico': request.POST.get(f'fundamento_teorico_{i}_{grupo_index}', ''),
-                                    'materiales': request.POST.get(f'materiales_{i}_{grupo_index}', ''),
-                                    'herramientas': request.POST.get(f'herramientas_{i}_{grupo_index}', ''),
-                                    'equipos': request.POST.get(f'equipos_{i}_{grupo_index}', ''),
                                     'procedimientos': request.POST.get(f'procedimientos_{i}_{grupo_index}', ''),
                                     'calculos_resultados': request.POST.get(f'calculos_resultados_{i}_{grupo_index}', ''),
                                     'cuestionario': request.POST.get(f'cuestionario_{i}_{grupo_index}', ''),
                                 }
+                                
+                                # Procesar selecciones múltiples de recursos (nuevo formato)
+                                try:
+                                    import json
+                                    equipos_seleccionados_json = request.POST.get(f'equipos_seleccionados_{i}_{grupo_index}', '[]')
+                                    materiales_seleccionados_json = request.POST.get(f'materiales_seleccionados_{i}_{grupo_index}', '[]')
+                                    herramientas_seleccionados_json = request.POST.get(f'herramientas_seleccionados_{i}_{grupo_index}', '[]')
+                                    
+                                    equipos_seleccionados = json.loads(equipos_seleccionados_json) if equipos_seleccionados_json else []
+                                    materiales_seleccionados = json.loads(materiales_seleccionados_json) if materiales_seleccionados_json else []
+                                    herramientas_seleccionados = json.loads(herramientas_seleccionados_json) if herramientas_seleccionados_json else []
+                                except (json.JSONDecodeError, ValueError):
+                                    equipos_seleccionados = []
+                                    materiales_seleccionados = []
+                                    herramientas_seleccionados = []
                                 
                                 # Solo crear registros si hay contenido en al menos un campo
                                 if any(valor.strip() for valor in campos_grupo.values()):
@@ -579,35 +599,42 @@ def agregar_datos_malla_view(request):
                                             orden=grupo_index + 1
                                         )
                                     
-                                    # Crear materiales si existe
-                                    if campos_grupo['materiales'].strip():
-                                        MaterialesHerramientasEquipos.objects.create(
-                                            contenido_analitico=contenido,
-                                            nombre=campos_grupo['materiales'][:200],
-                                            tipo_elemento='material',
-                                            cantidad='1',
-                                            orden=grupo_index + 1
-                                        )
+                                    # Crear equipos seleccionados (múltiples)
+                                    orden_contador = 1
+                                    for equipo_nombre in equipos_seleccionados:
+                                        if equipo_nombre.strip():
+                                            MaterialesHerramientasEquipos.objects.create(
+                                                contenido_analitico=contenido,
+                                                nombre=equipo_nombre[:200],
+                                                tipo_elemento='equipo',
+                                                cantidad='1',
+                                                orden=(grupo_index * 100) + orden_contador
+                                            )
+                                            orden_contador += 1
                                     
-                                    # Crear herramientas si existe
-                                    if campos_grupo['herramientas'].strip():
-                                        MaterialesHerramientasEquipos.objects.create(
-                                            contenido_analitico=contenido,
-                                            nombre=campos_grupo['herramientas'][:200],
-                                            tipo_elemento='herramienta',
-                                            cantidad='1',
-                                            orden=grupo_index + 1
-                                        )
+                                    # Crear materiales seleccionados (múltiples)
+                                    for material_nombre in materiales_seleccionados:
+                                        if material_nombre.strip():
+                                            MaterialesHerramientasEquipos.objects.create(
+                                                contenido_analitico=contenido,
+                                                nombre=material_nombre[:200],
+                                                tipo_elemento='material',
+                                                cantidad='1',
+                                                orden=(grupo_index * 100) + orden_contador
+                                            )
+                                            orden_contador += 1
                                     
-                                    # Crear equipos si existe
-                                    if campos_grupo['equipos'].strip():
-                                        MaterialesHerramientasEquipos.objects.create(
-                                            contenido_analitico=contenido,
-                                            nombre=campos_grupo['equipos'][:200],
-                                            tipo_elemento='equipo',
-                                            cantidad='1',
-                                            orden=grupo_index + 1
-                                        )
+                                    # Crear herramientas seleccionadas (múltiples)
+                                    for herramienta_nombre in herramientas_seleccionados:
+                                        if herramienta_nombre.strip():
+                                            MaterialesHerramientasEquipos.objects.create(
+                                                contenido_analitico=contenido,
+                                                nombre=herramienta_nombre[:200],
+                                                tipo_elemento='herramienta',
+                                                cantidad='1',
+                                                orden=(grupo_index * 100) + orden_contador
+                                            )
+                                            orden_contador += 1
                                     
                                     # Crear procedimientos si existe
                                     if campos_grupo['procedimientos'].strip():
@@ -842,3 +869,183 @@ def get_contenidos_analiticos_por_unidad_ajax(request):
     ]
     
     return JsonResponse({'contenidos': contenidos_data})
+
+
+@login_required
+def get_equipos_por_unidad_ajax(request):
+    """Obtener equipos filtrados por unidad académica usando datos importados"""
+    unidad_id = request.GET.get('unidad_id')
+    
+    try:
+        from equipos.models import EquipoImportado
+        from core.models import UnidadAcademica
+        
+        # Obtener el nombre de la unidad académica
+        if unidad_id:
+            unidad = UnidadAcademica.objects.filter(id=unidad_id).first()
+            if unidad:
+                # Filtrar por el nombre de la unidad (UALP, UACB, etc.)
+                equipos = EquipoImportado.objects.filter(
+                    unidad_academica=unidad.nombre
+                ).order_by('descripcion_activo')
+            else:
+                equipos = EquipoImportado.objects.none()
+        else:
+            # Si no hay unidad específica, mostrar todos
+            equipos = EquipoImportado.objects.all().order_by('descripcion_activo')
+        
+        equipos_data = [
+            {
+                'id': equipo.codigo,
+                'nombre': f"{equipo.codigo} - {equipo.descripcion_activo}",
+                'codigo': equipo.codigo,
+                'descripcion': equipo.descripcion_activo,
+                'responsable': equipo.responsable or '',
+                'estado': equipo.estado,
+                'oficina': equipo.oficina or ''
+            }
+            for equipo in equipos[:100]  # Limitar a 100 para rendimiento
+        ]
+        
+    except ImportError:
+        equipos_data = []
+    
+    return JsonResponse(equipos_data, safe=False)
+
+
+@login_required
+def get_insumos_por_unidad_ajax(request):
+    """Obtener insumos filtrados por unidad académica"""
+    unidad_id = request.GET.get('unidad_id')
+    categoria = request.GET.get('categoria', '')  # Material, Herramienta, etc.
+    
+    try:
+        from insumos.models import Insumo
+        from core.models import UnidadAcademica
+        
+        if unidad_id:
+            unidad = UnidadAcademica.objects.filter(id=unidad_id).first()
+            if unidad:
+                # Buscar insumos para cualquier unidad académica
+                insumos = Insumo.objects.all()
+                
+                # Filtrar por categoría si se especifica
+                if categoria == 'Material':
+                    insumos = insumos.filter(categoria='materiales')
+                elif categoria == 'Herramienta':
+                    insumos = insumos.filter(categoria='herramientas')
+                elif categoria == 'Reactivo':
+                    insumos = insumos.filter(categoria='reactivos')
+                    
+                insumos = insumos.order_by('nombre_elemento')
+                
+                insumos_data = [
+                    {
+                        'id': insumo.id,
+                        'nombre': insumo.nombre_elemento,  # Cambiar a 'nombre' para JavaScript
+                        'categoria': insumo.get_categoria_display(),
+                        'marca': insumo.marca_modelo or '',
+                        'estado': insumo.estado,
+                        'descripcion': insumo.descripcion_caracteristicas or ''
+                    }
+                    for insumo in insumos
+                ]
+            else:
+                insumos_data = []
+        else:
+            # Si no hay unidad específica, devolver lista vacía
+            insumos_data = []
+            
+    except ImportError:
+        insumos_data = []
+    
+    return JsonResponse(insumos_data, safe=False)
+
+
+@login_required
+def agregar_equipo_rapido_ajax(request):
+    """Agregar un nuevo equipo rápidamente"""
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        unidad_id = request.POST.get('unidad_id')
+        marca = request.POST.get('marca', '')
+        modelo = request.POST.get('modelo', '')
+        
+        if nombre and unidad_id:
+            try:
+                from equipos.models import Equipo
+                from core.models import UnidadAcademica
+                
+                unidad = UnidadAcademica.objects.get(id=unidad_id)
+                
+                equipo = Equipo.objects.create(
+                    nombre_equipo_existente=nombre,
+                    unidad_academica=unidad,
+                    marca=marca,
+                    modelo=modelo,
+                    estado='bueno',  # Estado por defecto
+                    numero_unidades=1,  # Cantidad por defecto
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'equipo': {
+                        'id': equipo.id,
+                        'nombre': equipo.nombre_equipo_existente,
+                        'marca': equipo.marca,
+                        'modelo': equipo.modelo
+                    }
+                })
+                
+            except Exception as e:
+                return JsonResponse({'success': False, 'error': str(e)})
+        
+        return JsonResponse({'success': False, 'error': 'Datos incompletos'})
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+@login_required
+def agregar_insumo_rapido_ajax(request):
+    """Agregar un nuevo insumo rápidamente"""
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        unidad_id = request.POST.get('unidad_id')
+        categoria = request.POST.get('categoria', 'materiales')
+        marca = request.POST.get('marca', '')
+        modelo = request.POST.get('modelo', '')
+        
+        if nombre and unidad_id:
+            try:
+                from insumos.models import Insumo
+                from core.models import UnidadAcademica
+                
+                unidad = UnidadAcademica.objects.get(id=unidad_id)
+                
+                insumo = Insumo.objects.create(
+                    nombre=nombre,
+                    unidad_academica=unidad,
+                    categoria=categoria,
+                    marca=marca,
+                    modelo=modelo,
+                    estado='bueno',  # Estado por defecto
+                    cantidad_total=1,  # Cantidad por defecto
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'insumo': {
+                        'id': insumo.id,
+                        'nombre': insumo.nombre,
+                        'categoria': insumo.categoria,
+                        'marca': insumo.marca,
+                        'modelo': insumo.modelo
+                    }
+                })
+                
+            except Exception as e:
+                return JsonResponse({'success': False, 'error': str(e)})
+        
+        return JsonResponse({'success': False, 'error': 'Datos incompletos'})
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
