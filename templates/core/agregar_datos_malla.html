@@ -397,6 +397,29 @@
         text-decoration: none !important;
     }
 
+    /* Estilos para badges de recursos seleccionados con textos largos */
+    #agregar-datos-malla-page .badge.bg-primary {
+        min-height: 32px !important;
+        line-height: 1.2 !important;
+        padding: 6px 8px !important;
+    }
+    
+    #agregar-datos-malla-page .badge .fas.fa-times {
+        transition: all 0.2s ease !important;
+        border-radius: 50% !important;
+        width: 18px !important;
+        height: 18px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-left: 6px !important;
+    }
+    
+    #agregar-datos-malla-page .badge .fas.fa-times:hover {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        transform: scale(1.1) !important;
+    }
+
     /* Estilos para selección múltiple de recursos */
     #agregar-datos-malla-page .recursos-seleccionados-lista {
         max-height: 120px !important;
@@ -1826,8 +1849,21 @@
 
     // Agregar recurso personalizado
     function agregarOtroRecurso(tipoRecurso, contenidoIndex, grupoIndex) {
-        const inputId = `otro_${tipoRecurso.slice(0, -1)}_${contenidoIndex}_${grupoIndex}`;
+        // Generar el ID correcto según el tipo de recurso
+        let inputId;
+        if (tipoRecurso === 'equipos') {
+            inputId = `otro_equipo_${contenidoIndex}_${grupoIndex}`;
+        } else if (tipoRecurso === 'materiales') {
+            inputId = `otro_material_${contenidoIndex}_${grupoIndex}`;
+        } else if (tipoRecurso === 'herramientas') {
+            inputId = `otro_herramienta_${contenidoIndex}_${grupoIndex}`;
+        }
+        
         const input = document.getElementById(inputId);
+        if (!input) {
+            console.error('No se encontró el input con ID:', inputId);
+            return;
+        }
         const valor = input.value.trim();
         
         if (!valor) {
@@ -1861,10 +1897,13 @@
         listaDiv.innerHTML = '';
         recursosSeleccionados[key].forEach((recurso, index) => {
             const badge = document.createElement('span');
-            badge.className = 'badge bg-primary me-1 mb-1';
+            badge.className = 'badge bg-primary me-1 mb-1 d-inline-flex align-items-center';
+            badge.style.maxWidth = '300px';
+            badge.style.position = 'relative';
             badge.innerHTML = `
-                ${recurso} 
-                <i class="fas fa-times ms-1" style="cursor: pointer;" 
+                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 5px;">${recurso}</span>
+                <i class="fas fa-times ms-1" style="cursor: pointer; flex-shrink: 0; padding: 2px;" 
+                   title="Eliminar ${recurso}"
                    onclick="eliminarRecursoSeleccionado('${tipoRecurso}', ${contenidoIndex}, ${grupoIndex}, ${index})"></i>
             `;
             listaDiv.appendChild(badge);
@@ -2052,7 +2091,7 @@
                             <div class="input-group">
                                 <input type="text" class="form-control form-control-sm" 
                                        placeholder="Escribir otra herramienta..." 
-                                       id="otra_herramienta_${contenidoIndex}_${grupoIndex}">
+                                       id="otro_herramienta_${contenidoIndex}_${grupoIndex}">
                                 <button type="button" class="btn btn-sm btn-outline-primary" 
                                         onclick="agregarOtroRecurso('herramientas', ${contenidoIndex}, ${grupoIndex})">
                                     <i class="fas fa-plus"></i> Agregar
