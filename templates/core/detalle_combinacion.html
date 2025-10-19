@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Práctica de Laboratorio{% endblock %}
+
+{% block page_title %}Detalle de Práctica de Laboratorio{% endblock %}
+
+{% block page_description %}{{ datos.asignatura.get_nombre_display }} - Información Completa de la Práctica{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-color: #1e3a8a;
+        --secondary-color: #3730a3;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --info-color: #0891b2;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+    }
+
+    .detalle-practica-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: var(--gray-50);
+    }
+
+    .section-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .section-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-body {
+        padding: 1.5rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .info-item {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: var(--radius-md);
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        color: var(--gray-800);
+        font-size: 1rem;
+    }
+
+    .componente-item {
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .componente-title {
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: var(--gray-600);
+        padding: 2rem;
+        font-style: italic;
+    }
+
+    .breadcrumb-custom {
+        background: white;
+        padding: 1rem 1.5rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .recursos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1rem;
+    }
+</style>
+
+<div class="detalle-practica-container">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-custom">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'core:malla_curricular' %}">Malla Curricular</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'core:detalle_asignatura' asignatura.id %}">{{ asignatura.get_nombre_display }}</a></li>
+            <li class="breadcrumb-item active">
+                {% if datos.titulos %}
+                    {{ datos.titulos.first.texto }}
+                {% else %}
+                    {{ datos.contenido_analitico.nombre }}
+                {% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- INFORMACIÓN ACADÉMICA -->
+    <div class="section-card">
+        <div class="section-header">
+            <i class="fas fa-university"></i> Información Académica
+        </div>
+        <div class="section-body">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Unidad Académica</div>
+                    <div class="info-value">{{ datos.unidad_academica.get_nombre_display }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Carrera</div>
+                    <div class="info-value">{{ datos.carrera.get_nombre_display }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DATOS DE LA ASIGNATURA -->
+    <div class="section-card">
+        <div class="section-header">
+            <i class="fas fa-book"></i> Datos de la Asignatura
+        </div>
+        <div class="section-body">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Asignatura</div>
+                    <div class="info-value">{{ datos.asignatura.get_nombre_display }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Semestre</div>
+                    <div class="info-value">{{ datos.asignatura.semestre }}° Semestre</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Código de Competencia</div>
+                    <div class="info-value">{{ datos.asignatura.codigo_competencia|default:"No especificado" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Sigla Curricular</div>
+                    <div class="info-value">{{ datos.asignatura.sigla_curricular|default:"No especificado" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Carga Horaria Semestral</div>
+                    <div class="info-value">{{ datos.asignatura.carga_horaria_semestral|default:"No especificado" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Carga Horaria Semanal</div>
+                    <div class="info-value">{{ datos.asignatura.carga_horaria_semanal|default:"No especificado" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Criterio de Desempeño</div>
+                    <div class="info-value">{{ datos.criterio_desempeno.nombre|default:"No especificado" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UNIDAD DIDÁCTICA -->
+    <div class="section-card">
+        <div class="section-header">
+            <i class="fas fa-list-alt"></i> Unidad Didáctica
+        </div>
+        <div class="section-body">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Unidad Didáctica</div>
+                    <div class="info-value">{{ datos.unidad_didactica.nombre }}</div>
+                </div>
+            </div>
+            {% if datos.unidad_didactica.descripcion %}
+            <div class="mt-3">
+                <div class="info-label">Descripción</div>
+                <div class="info-value">{{ datos.unidad_didactica.descripcion|linebreaks }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- CONTENIDO ANALÍTICO -->
+    <div class="section-card">
+        <div class="section-header">
+            <i class="fas fa-file-alt"></i> Contenido Analítico
+        </div>
+        <div class="section-body">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Contenido Analítico</div>
+                    <div class="info-value">{{ datos.contenido_analitico.nombre }}</div>
+                </div>
+            </div>
+            {% if datos.contenido_analitico.descripcion %}
+            <div class="mt-3">
+                <div class="info-label">Descripción</div>
+                <div class="info-value">{{ datos.contenido_analitico.descripcion|linebreaks }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- GRUPOS DE DATOS ADICIONALES -->
+    <div class="section-card">
+        <div class="section-header">
+            <i class="fas fa-layer-group"></i> Grupos de Datos Adicionales
+        </div>
+        <div class="section-body">
+            
+            <!-- Bibliografía -->
+            <h6><i class="fas fa-book-open"></i> Bibliografía</h6>
+            {% if datos.bibliografia %}
+                {% for item in datos.bibliografia %}
+                <div class="componente-item">
+                    <div class="componente-title">{{ item.titulo }}</div>
+                    {% if item.autor %}<div><strong>Autor:</strong> {{ item.autor }}</div>{% endif %}
+                    {% if item.editorial %}<div><strong>Editorial:</strong> {{ item.editorial }}</div>{% endif %}
+                    {% if item.año %}<div><strong>Año:</strong> {{ item.año }}</div>{% endif %}
+                    {% if item.descripcion %}<div class="mt-2">{{ item.descripcion }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No hay bibliografía registrada</div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- PRÁCTICA DE LABORATORIO -->
+    <div class="section-card">
+        <div class="section-header">
+            <i class="fas fa-flask"></i> Práctica de Laboratorio
+        </div>
+        <div class="section-body">
+
+            <!-- Título -->
+            <h6><i class="fas fa-heading"></i> Título de la Práctica</h6>
+            <div class="componente-item">
+                <div class="componente-title">
+                    {% if datos.titulos %}
+                        {{ datos.titulos.first.texto }}
+                    {% else %}
+                        {{ datos.contenido_analitico.nombre }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Competencias -->
+            <h6 class="mt-4"><i class="fas fa-medal"></i> Competencias</h6>
+            {% if datos.competencias %}
+                {% for comp in datos.competencias %}
+                <div class="componente-item">
+                    <div class="componente-title">{{ comp.nombre }}</div>
+                    {% if comp.descripcion %}<div>{{ comp.descripcion }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No hay competencias registradas</div>
+            {% endif %}
+
+            <!-- Objetivo de la Práctica -->
+            <h6 class="mt-4"><i class="fas fa-bullseye"></i> Objetivo de la Práctica</h6>
+            {% if datos.objetivos_practica %}
+                {% for obj in datos.objetivos_practica %}
+                <div class="componente-item">
+                    <div class="componente-title">{{ obj.nombre }}</div>
+                    {% if obj.descripcion %}<div>{{ obj.descripcion }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No hay objetivos registrados</div>
+            {% endif %}
+
+            <!-- Fundamento Teórico -->
+            <h6 class="mt-4"><i class="fas fa-graduation-cap"></i> Fundamento Teórico</h6>
+            {% if datos.fundamentos_teoricos %}
+                {% for fund in datos.fundamentos_teoricos %}
+                <div class="componente-item">
+                    <div class="componente-title">{{ fund.titulo }}</div>
+                    {% if fund.contenido %}<div>{{ fund.contenido|safe }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No hay fundamentos teóricos registrados</div>
+            {% endif %}
+
+            <!-- Procedimientos -->
+            <h6 class="mt-4"><i class="fas fa-list-ol"></i> Procedimientos</h6>
+            {% if datos.procedimientos %}
+                {% for proc in datos.procedimientos %}
+                <div class="componente-item">
+                    <div class="componente-title">Paso {{ proc.numero_paso }}: {{ proc.titulo_paso }}</div>
+                    {% if proc.descripcion %}<div>{{ proc.descripcion }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No hay procedimientos registrados</div>
+            {% endif %}
+
+            <!-- Recursos -->
+            <div class="row mt-4">
+                <!-- Equipos -->
+                <div class="col-md-4">
+                    <h6><i class="fas fa-cog"></i> Equipos</h6>
+                    {% if datos.equipos %}
+                        {% for equipo in datos.equipos %}
+                        <div class="componente-item">
+                            <div class="componente-title">{{ equipo.nombre }}</div>
+                            {% if equipo.cantidad %}<div><strong>Cantidad:</strong> {{ equipo.cantidad }}</div>{% endif %}
+                            {% if equipo.especificaciones %}<div><strong>Especificaciones:</strong> {{ equipo.especificaciones }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">No hay equipos registrados</div>
+                    {% endif %}
+                </div>
+
+                <!-- Materiales -->
+                <div class="col-md-4">
+                    <h6><i class="fas fa-box"></i> Materiales</h6>
+                    {% if datos.materiales %}
+                        {% for material in datos.materiales %}
+                        <div class="componente-item">
+                            <div class="componente-title">{{ material.nombre }}</div>
+                            {% if material.cantidad %}<div><strong>Cantidad:</strong> {{ material.cantidad }}</div>{% endif %}
+                            {% if material.especificaciones %}<div><strong>Especificaciones:</strong> {{ material.especificaciones }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">No hay materiales registrados</div>
+                    {% endif %}
+                </div>
+
+                <!-- Herramientas -->
+                <div class="col-md-4">
+                    <h6><i class="fas fa-tools"></i> Herramientas</h6>
+                    {% if datos.herramientas %}
+                        {% for herramienta in datos.herramientas %}
+                        <div class="componente-item">
+                            <div class="componente-title">{{ herramienta.nombre }}</div>
+                            {% if herramienta.cantidad %}<div><strong>Cantidad:</strong> {{ herramienta.cantidad }}</div>{% endif %}
+                            {% if herramienta.especificaciones %}<div><strong>Especificaciones:</strong> {{ herramienta.especificaciones }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">No hay herramientas registradas</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Cálculos y Resultados -->
+            <h6 class="mt-4"><i class="fas fa-calculator"></i> Cálculos y Resultados</h6>
+            {% if datos.calculos_resultados %}
+                {% for calc in datos.calculos_resultados %}
+                <div class="componente-item">
+                    <div class="componente-title">{{ calc.titulo }}</div>
+                    {% if calc.descripcion %}<div>{{ calc.descripcion|safe }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No hay cálculos y resultados registrados</div>
+            {% endif %}
+
+            <!-- Cuestionario -->
+            <h6 class="mt-4"><i class="fas fa-question-circle"></i> Cuestionario</h6>
+            {% if datos.cuestionarios %}
+                {% for cuest in datos.cuestionarios %}
+                <div class="componente-item">
+                    <div class="componente-title">{{ cuest.pregunta }}</div>
+                    {% if cuest.tipo %}<div><strong>Tipo:</strong> {{ cuest.get_tipo_display }}</div>{% endif %}
+                    {% if cuest.puntaje %}<div><strong>Puntaje:</strong> {{ cuest.puntaje }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No hay cuestionarios registrados</div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- Botón de regreso -->
+    <div class="text-center">
+        <a href="{% url 'core:detalle_asignatura' asignatura.id %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Volver a {{ asignatura.get_nombre_display }}
+        </a>
+    </div>
+
+</div>
+{% endblock %}

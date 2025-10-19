@@ -356,7 +356,7 @@ urlpatterns = [
     path('insumos/', include('insumos.urls')),
     path('guias/', include('guias.urls')),
     path('usuarios/', include('usuarios.urls')),
-    path('dashboard/', include('core.urls')),
+    path('dashboard/', include('core.urls', namespace='core')),
     # CKEditor 5 URLs
     path('ckeditor5/', include('django_ckeditor_5.urls')),
     # API endpoints

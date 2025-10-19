@@ -583,3 +583,45 @@ class Cuestionario(models.Model):
     
     def __str__(self):
         return f"Pregunta {self.numero_pregunta}: {self.pregunta[:50]}..."
+
+
+# =====================================
+# SISTEMA DE AUDITORÍA Y LOGGING
+# =====================================
+
+class AuditoriaCreacionPractica(models.Model):
+    """Registro de auditoría para creación de prácticas de laboratorio"""
+    
+    # Información del usuario
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    
+    # Información de la asignatura donde se guardó
+    asignatura = models.ForeignKey(Asignatura, on_delete=models.SET_NULL, null=True)
+    asignatura_nombre = models.CharField(max_length=300)  # Backup del nombre
+    asignatura_id_usado = models.PositiveIntegerField()  # ID que se usó
+    
+    # Información de la práctica creada
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.SET_NULL, null=True)
+    practica_nombre = models.CharField(max_length=500)
+    
+    # Metadatos de la creación
+    unidad_academica_nombre = models.CharField(max_length=100)
+    carrera_nombre = models.CharField(max_length=200)
+    semestre = models.PositiveIntegerField()
+    
+    # Información de validación
+    asignaturas_similares_detectadas = models.JSONField(default=list)  # Lista de asignaturas similares
+    confirmacion_usuario = models.BooleanField(default=False)  # Si el usuario confirmó
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Auditoría de Creación de Práctica"
+        verbose_name_plural = "Auditorías de Creación de Prácticas"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.practica_nombre} → {self.asignatura_nombre} ({self.created_at.strftime('%Y-%m-%d %H:%M')})"

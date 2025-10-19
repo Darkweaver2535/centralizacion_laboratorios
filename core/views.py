@@ -8,6 +8,7 @@ from .models import (
     UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, 
     Practica, Laboratorio, CriterioDesempeno, UnidadDidactica, ContenidoAnalitico,
     Bibliografia, PracticaLaboratorio, Titulo, Competencias, ObjetivoPractica,
+    AuditoriaCreacionPractica,
     FundamentoTeorico, MaterialesHerramientasEquipos, Procedimientos, 
     CalculosResultados, Cuestionario
 )
@@ -118,11 +119,14 @@ def get_carreras_por_unidad_ajax(request):
 
 @login_required
 def get_asignaturas_por_carrera_ajax(request):
-    """Obtener asignaturas filtradas por carrera y semestre"""
+    """Obtener asignaturas filtradas por carrera y semestre con información adicional"""
     carrera_id = request.GET.get('carrera_id')
     semestre = request.GET.get('semestre')
     
-    asignaturas = Asignatura.objects.all()
+    # Consulta optimizada con conteo de contenidos analíticos
+    asignaturas = Asignatura.objects.annotate(
+        contenido_analitico_count=Count('unidaddidactica__contenidoanalitico')
+    ).select_related('carrera')
     
     if carrera_id:
         asignaturas = asignaturas.filter(carrera_id=carrera_id)
@@ -134,23 +138,59 @@ def get_asignaturas_por_carrera_ajax(request):
     for asignatura in asignaturas:
         display_name = asignatura.get_nombre_display()
         
-        # Si el display_name es igual al nombre y el nombre es numérico, usar un nombre más descriptivo
-        if display_name == asignatura.nombre and asignatura.nombre.isdigit():
-            print(f"Corrigiendo nombre problemático: {asignatura.nombre} -> descripción más clara")
+        # FILTRO DE SEGURIDAD ESTRICTO: Omitir asignaturas con nombres problemáticos
+        es_numerica = asignatura.nombre.isdigit()
+        es_muy_corta = len(asignatura.nombre.strip()) <= 3
+        tiene_solo_numeros = asignatura.nombre.replace(' ', '').isdigit()
+        
+        if es_numerica or (es_muy_corta and tiene_solo_numeros):
+            print(f"⚠️ FILTRO ESTRICTO: Omitiendo asignatura problemática '{asignatura.nombre}' (ID: {asignatura.id})")
             continue  # Omitir esta asignatura problemática
+        
+        # FILTRO ADICIONAL: Omitir asignaturas duplicadas con nombres confusos
+        nombres_similares = ['168', '169', '170', '171', '172', '173', '174', '175']
+        if asignatura.nombre in nombres_similares:
+            print(f"⚠️ FILTRO NOMBRES CONFUSOS: Omitiendo '{asignatura.nombre}' (ID: {asignatura.id})")
+            continue
+        
+        # FORMATO MEJORADO: Mostrar ID + nombre completo para máxima claridad
+        display_text = f"[ID:{asignatura.id}] {display_name}"
+        if asignatura.sigla_curricular:
+            display_text += f" ({asignatura.sigla_curricular})"
+        
+        # Agregar información adicional si es útil
+        info_adicional = []
+        if asignatura.contenido_analitico_count > 0:
+            info_adicional.append(f"{asignatura.contenido_analitico_count} prácticas existentes")
+        
+        if info_adicional:
+            display_text += f" - {', '.join(info_adicional)}"
         
         asignaturas_data.append({
             'id': asignatura.id, 
             'nombre': asignatura.nombre, 
-            'display': display_name,
+            'display': display_text,  # Formato mejorado con ID
+            'display_simple': display_name,  # Nombre original por compatibilidad
             'semestre': asignatura.semestre,
             'carga_semanal': asignatura.carga_horaria_semanal,
             'carga_semestral': asignatura.carga_horaria_semestral,
             'codigo_competencia': asignatura.codigo_competencia or '',
             'sigla_curricular': asignatura.sigla_curricular or '',
             'carga_horaria_semestral': asignatura.carga_horaria_semestral,
-            'carga_horaria_semanal': asignatura.carga_horaria_semanal
+            'carga_horaria_semanal': asignatura.carga_horaria_semanal,
+            'warning_similar': False  # Se calculará después
         })
+        
+    # DETECCIÓN DE NOMBRES SIMILARES: Marcar asignaturas que podrían confundir
+    nombres_vistos = {}
+    for asig_data in asignaturas_data:
+        nombre_base = asig_data['display_simple'].lower().strip()
+        if nombre_base in nombres_vistos:
+            # Marcar ambas como potencialmente confusas
+            asig_data['warning_similar'] = True
+            nombres_vistos[nombre_base]['warning_similar'] = True
+        else:
+            nombres_vistos[nombre_base] = asig_data
     
     return JsonResponse({'asignaturas': asignaturas_data})
 
@@ -358,76 +398,184 @@ def malla_curricular_view(request):
 
 @login_required
 def detalle_asignatura_view(request, asignatura_id):
-    """Vista detallada de una asignatura con toda su malla curricular y componentes completos"""
+    """Vista detallada mostrando las COMBINACIONES específicas creadas por el usuario"""
     
     asignatura = get_object_or_404(Asignatura, id=asignatura_id)
     
-    # Criterios de desempeño
-    criterios = CriterioDesempeno.objects.filter(asignatura=asignatura)
+    # Obtener todas las COMBINACIONES (contenidos analíticos) con sus componentes completos
+    combinaciones = []
     
-    # Unidades didácticas
+    # Cada contenido analítico es una "combinación" creada por el usuario
+    contenidos_analiticos = ContenidoAnalitico.objects.filter(
+        unidad_didactica__asignatura=asignatura
+    ).select_related('unidad_didactica').order_by('-created_at')  # Más recientes primero
+    
+    for indice, contenido in enumerate(contenidos_analiticos, 1):  # Enumerar desde 1
+        # Para cada combinación, obtener TODOS sus componentes
+        combinacion = {
+            'id': contenido.id,  # ID real para URLs
+            'numero_combinacion': indice,  # Número secuencial amigable
+            'contenido_analitico': contenido,
+            'unidad_didactica': contenido.unidad_didactica,
+            
+            # Todos los componentes de esta combinación específica
+            'materiales_herramientas_equipos': MaterialesHerramientasEquipos.objects.filter(
+                contenido_analitico=contenido
+            ).order_by('tipo_elemento', 'orden'),
+            
+            'procedimientos': Procedimientos.objects.filter(
+                contenido_analitico=contenido
+            ).order_by('numero_paso'),
+            
+            'calculos_resultados': CalculosResultados.objects.filter(
+                contenido_analitico=contenido
+            ),
+            
+            'cuestionarios': Cuestionario.objects.filter(
+                contenido_analitico=contenido
+            ),
+            
+            'fundamentos_teoricos': FundamentoTeorico.objects.filter(
+                contenido_analitico=contenido
+            ),
+            
+            'objetivos_practica': ObjetivoPractica.objects.filter(
+                contenido_analitico=contenido
+            ),
+            
+            'bibliografia': Bibliografia.objects.filter(
+                contenido_analitico=contenido
+            ),
+            
+            # Campos adicionales para la vista simplificada
+            'titulos': Titulo.objects.filter(
+                contenido_analitico=contenido
+            ).order_by('orden'),
+            
+            'competencias': Competencias.objects.filter(
+                contenido_analitico=contenido
+            ).order_by('orden'),
+        }
+        
+        # Calcular estadísticas de esta combinación
+        combinacion['stats'] = {
+            'total_materiales': combinacion['materiales_herramientas_equipos'].filter(tipo_elemento='material').count(),
+            'total_herramientas': combinacion['materiales_herramientas_equipos'].filter(tipo_elemento='herramienta').count(),
+            'total_equipos': combinacion['materiales_herramientas_equipos'].filter(tipo_elemento='equipo').count(),
+            'total_procedimientos': combinacion['procedimientos'].count(),
+            'total_calculos': combinacion['calculos_resultados'].count(),
+            'total_cuestionarios': combinacion['cuestionarios'].count(),
+        }
+        
+        combinaciones.append(combinacion)
+    
+    # Criterios de desempeño y unidades didácticas para contexto
+    criterios = CriterioDesempeno.objects.filter(asignatura=asignatura)
     unidades_didacticas = UnidadDidactica.objects.filter(asignatura=asignatura)
     
-    # Contenidos analíticos por unidad didáctica con TODOS sus componentes
-    contenidos_completos = {}
-    for unidad in unidades_didacticas:
-        contenidos = ContenidoAnalitico.objects.filter(unidad_didactica=unidad)
-        contenidos_con_componentes = []
-        
-        for contenido in contenidos:
-            # Obtener TODOS los componentes de cada contenido analítico
-            componentes = {
-                'materiales_herramientas_equipos': MaterialesHerramientasEquipos.objects.filter(contenido_analitico=contenido),
-                'procedimientos': Procedimientos.objects.filter(contenido_analitico=contenido),
-                'calculos_resultados': CalculosResultados.objects.filter(contenido_analitico=contenido),
-                'cuestionario': Cuestionario.objects.filter(contenido_analitico=contenido),
-                'fundamentos_teoricos': FundamentoTeorico.objects.filter(contenido_analitico=contenido),
-                'objetivos_practica': ObjetivoPractica.objects.filter(contenido_analitico=contenido),
-                'bibliografia': Bibliografia.objects.filter(contenido_analitico=contenido),
-            }
-            
-            contenidos_con_componentes.append({
-                'contenido': contenido,
-                'componentes': componentes
-            })
-        
-        contenidos_completos[unidad.id] = {
-            'unidad': unidad,
-            'contenidos': contenidos_con_componentes
-        }
-    
-    # Unidades temáticas tradicionales (si existen)
-    unidades_tematicas = UnidadTematica.objects.filter(asignatura=asignatura)
-    
-    # Estadísticas completas de la asignatura
-    total_materiales = MaterialesHerramientasEquipos.objects.filter(
-        contenido_analitico__unidad_didactica__asignatura=asignatura
-    ).count()
-    
-    total_procedimientos = Procedimientos.objects.filter(
-        contenido_analitico__unidad_didactica__asignatura=asignatura
-    ).count()
+    # Estadísticas globales de todas las combinaciones
+    total_combinaciones = len(combinaciones)
+    total_componentes = sum(
+        comb['stats']['total_materiales'] + 
+        comb['stats']['total_herramientas'] + 
+        comb['stats']['total_equipos'] + 
+        comb['stats']['total_procedimientos']
+        for comb in combinaciones
+    )
     
     asignatura_stats = {
+        'total_combinaciones': total_combinaciones,
+        'total_componentes': total_componentes,
         'criterios_count': criterios.count(),
         'unidades_didacticas_count': unidades_didacticas.count(),
-        'contenidos_count': sum(len(data['contenidos']) for data in contenidos_completos.values()),
-        'unidades_tematicas_count': unidades_tematicas.count(),
-        'materiales_equipos_count': total_materiales,
-        'procedimientos_count': total_procedimientos,
     }
     
     context = {
         'asignatura': asignatura,
+        'combinaciones': combinaciones,  # Esta es la clave: las combinaciones específicas
         'criterios': criterios,
         'unidades_didacticas': unidades_didacticas,
-        'contenidos_completos': contenidos_completos,  # Datos completos nuevos
-        'contenidos_por_unidad': {uid: data['contenidos'] for uid, data in contenidos_completos.items()},  # Compatibilidad con template existente
-        'unidades_tematicas': unidades_tematicas,
         'asignatura_stats': asignatura_stats,
+        
+        # Mantener compatibilidad con template existente (por si acaso)
+        'contenidos_completos': {ud.id: {'contenidos': combinaciones} for ud in unidades_didacticas},
+        'contenidos_por_unidad': {ud.id: combinaciones for ud in unidades_didacticas},
     }
     
     return render(request, 'core/detalle_asignatura.html', context)
+
+
+@login_required
+def detalle_combinacion_view(request, combinacion_id):
+    """Vista detallada de una combinación específica con TODA la información completa"""
+    
+    # Obtener el contenido analítico (que representa la combinación)
+    contenido_analitico = get_object_or_404(ContenidoAnalitico, id=combinacion_id)
+    asignatura = contenido_analitico.unidad_didactica.asignatura
+    carrera = asignatura.carrera
+    unidad_academica = carrera.unidad_academica
+    
+    # Calcular el número secuencial de esta combinación
+    todos_contenidos = ContenidoAnalitico.objects.filter(
+        unidad_didactica__asignatura=asignatura
+    ).order_by('unidad_didactica__nombre', 'nombre')
+    
+    numero_combinacion = 1
+    for indice, contenido in enumerate(todos_contenidos, 1):
+        if contenido.id == combinacion_id:
+            numero_combinacion = indice
+            break
+    
+    # Obtener el criterio de desempeño asociado
+    criterio = CriterioDesempeno.objects.filter(asignatura=asignatura).first()
+    
+    # Obtener TODOS los componentes de esta combinación
+    datos_combinacion = {
+        # INFORMACIÓN ACADÉMICA
+        'unidad_academica': unidad_academica,
+        'carrera': carrera,
+        
+        # DATOS DE LA ASIGNATURA  
+        'asignatura': asignatura,
+        'criterio_desempeno': criterio,
+        
+        # UNIDAD DIDÁCTICA
+        'unidad_didactica': contenido_analitico.unidad_didactica,
+        
+        # CONTENIDO ANALÍTICO
+        'contenido_analitico': contenido_analitico,
+        
+        # GRUPOS DE DATOS ADICIONALES - Todos los componentes
+        'bibliografia': Bibliografia.objects.filter(contenido_analitico=contenido_analitico),
+        
+        # PRÁCTICA DE LABORATORIO - Todos los componentes
+        'titulo': contenido_analitico.nombre,  # El título viene del contenido analítico
+        'titulos': Titulo.objects.filter(contenido_analitico=contenido_analitico).order_by('orden'),  # Títulos específicos de la práctica
+        'competencias': Competencias.objects.filter(contenido_analitico=contenido_analitico),
+        'objetivos_practica': ObjetivoPractica.objects.filter(contenido_analitico=contenido_analitico),
+        'fundamentos_teoricos': FundamentoTeorico.objects.filter(contenido_analitico=contenido_analitico),
+        'procedimientos': Procedimientos.objects.filter(contenido_analitico=contenido_analitico).order_by('numero_paso'),
+        
+        # RECURSOS (Equipos, Materiales, Herramientas)
+        'equipos': MaterialesHerramientasEquipos.objects.filter(contenido_analitico=contenido_analitico, tipo_elemento='equipo').order_by('orden'),
+        'materiales': MaterialesHerramientasEquipos.objects.filter(contenido_analitico=contenido_analitico, tipo_elemento='material').order_by('orden'),  
+        'herramientas': MaterialesHerramientasEquipos.objects.filter(contenido_analitico=contenido_analitico, tipo_elemento='herramienta').order_by('orden'),
+        
+        # CÁLCULOS Y RESULTADOS
+        'calculos_resultados': CalculosResultados.objects.filter(contenido_analitico=contenido_analitico),
+        
+        # CUESTIONARIO
+        'cuestionarios': Cuestionario.objects.filter(contenido_analitico=contenido_analitico),
+    }
+    
+    context = {
+        'combinacion_id': combinacion_id,
+        'numero_combinacion': numero_combinacion,  # Número secuencial amigable
+        'datos': datos_combinacion,
+        'asignatura': asignatura,  # Para el breadcrumb
+    }
+    
+    return render(request, 'core/detalle_combinacion.html', context)
 
 
 @login_required
@@ -525,6 +673,18 @@ def agregar_datos_malla_view(request):
     
     if request.method == 'POST':
         try:
+            # 🚨 DEBUG TEMPORAL: Logging completo de datos recibidos
+            print("\n" + "="*80)
+            print("🚨 DEBUGGING FORMULARIO - DATOS RECIBIDOS:")
+            print("="*80)
+            print(f"📊 Método: {request.method}")
+            print(f"👤 Usuario: {request.user}")
+            print(f"🌐 IP: {request.META.get('REMOTE_ADDR', 'unknown')}")
+            print("\n📋 DATOS POST COMPLETOS:")
+            for key, value in request.POST.items():
+                print(f"   {key}: '{value}'")
+            print("\n" + "="*80)
+            
             with transaction.atomic():
                 # 1. Datos básicos de la asignatura
                 unidad_academica_id = request.POST.get('unidad_academica')
@@ -534,219 +694,315 @@ def agregar_datos_malla_view(request):
                 unidad_academica = get_object_or_404(UnidadAcademica, id=unidad_academica_id)
                 carrera = get_object_or_404(Carrera, id=carrera_id)
                 
-                # 2. Crear o actualizar asignatura
-                asignatura, created = Asignatura.objects.get_or_create(
-                    nombre=request.POST.get('asignatura'),
+                # VALIDACIÓN ESPECÍFICA: Verificar que es la unidad correcta (UALP)
+                if unidad_academica.id != 1:  # Solo UALP permitida
+                    messages.error(request, 
+                        f"⚠️ ERROR: Solo se permite crear prácticas para UALP. "
+                        f"Unidad seleccionada: {unidad_academica.nombre}")
+                    return redirect('core:agregar_datos_malla')
+                
+                # 2. Obtener asignatura por ID (el formulario envía IDs, no nombres)
+                asignatura_id = request.POST.get('asignatura')
+                
+                # Validar que la asignatura existe
+                try:
+                    asignatura = Asignatura.objects.get(id=asignatura_id)
+                    print(f"📚 Asignatura encontrada: {asignatura.nombre} (ID: {asignatura.id})")
+                except Asignatura.DoesNotExist:
+                    messages.error(request, f"🚨 ERROR: Asignatura con ID {asignatura_id} no encontrada.")
+                    return redirect('core:agregar_datos_malla')
+                
+                # VALIDACIÓN CRÍTICA: Prevenir uso de asignaturas problemáticas por NOMBRE
+                asignatura_nombre = asignatura.nombre
+                if asignatura_nombre.isdigit() or len(asignatura_nombre.strip()) <= 3:
+                    messages.error(request, 
+                        f"🚨 ERROR CRÍTICO: No se permite crear prácticas en asignaturas con nombres "
+                        f"problemáticos: '{asignatura_nombre}'. Por favor seleccione una asignatura "
+                        f"con nombre descriptivo (ej: FISICA I, QUIMICA GENERAL).")
+                    return redirect('core:agregar_datos_malla')
+                
+                # Lista negra de nombres problemáticos
+                nombres_prohibidos = ['168', '169', '170', '171', '172', '173', '174', '175', '176', '177']
+                if asignatura_nombre in nombres_prohibidos:
+                    messages.error(request, 
+                        f"🚨 ERROR: La asignatura '{asignatura_nombre}' está en la lista negra. "
+                        f"Use el nombre completo (ej: FISICA I, QUIMICA GENERAL).")
+                    return redirect('core:agregar_datos_malla')
+                
+                # 3. Actualizar datos de la asignatura existente
+                asignatura.codigo_competencia = request.POST.get('codigo_competencia', '')
+                asignatura.sigla_curricular = request.POST.get('sigla_curricular', '')
+                asignatura.codigo_competencia = request.POST.get('codigo_competencia', '')
+                asignatura.sigla_curricular = request.POST.get('sigla_curricular', '')
+                asignatura.carga_horaria_semanal = int(request.POST.get('carga_horaria_semanal', 4))
+                asignatura.carga_horaria_semestral = int(request.POST.get('carga_horaria_semestral', 80))
+                asignatura.semestre = int(request.POST.get('semestre'))
+                asignatura.save()
+                created = False
+                
+                # VALIDACIÓN CRÍTICA: Verificar información de la asignatura
+                print(f"\n🎯 CREANDO PRÁCTICA EN:")
+                print(f"   📚 Asignatura: {asignatura.nombre} (ID: {asignatura.id})")
+                print(f"   🎓 Carrera: {carrera.nombre}")
+                print(f"   📊 Semestre: {asignatura.semestre}")
+                print(f"   🏫 Unidad: {unidad_academica.nombre}")
+                
+                # Verificar si hay asignaturas similares que podrían confundir al usuario
+                asignaturas_similares = Asignatura.objects.filter(
                     carrera=carrera,
-                    semestre=int(request.POST.get('semestre')),
-                    defaults={
-                        'codigo_competencia': request.POST.get('codigo_competencia', ''),
-                        'sigla_curricular': request.POST.get('sigla_curricular', ''),
-                        'carga_horaria_semanal': int(request.POST.get('carga_horaria_semanal', 4)),
-                        'carga_horaria_semestral': int(request.POST.get('carga_horaria_semestral', 80)),
-                    }
-                )
+                    semestre=asignatura.semestre
+                ).exclude(id=asignatura.id)
                 
-                if not created:
-                    # Si la asignatura ya existe, actualizar los campos
-                    asignatura.codigo_competencia = request.POST.get('codigo_competencia', '')
-                    asignatura.sigla_curricular = request.POST.get('sigla_curricular', '')
-                    asignatura.carga_horaria_semanal = int(request.POST.get('carga_horaria_semanal', 4))
-                    asignatura.carga_horaria_semestral = int(request.POST.get('carga_horaria_semestral', 80))
-                    asignatura.save()
+                if asignaturas_similares.exists():
+                    print(f"   ⚠️ ATENCIÓN: Hay {asignaturas_similares.count()} asignaturas similares:")
+                    for similar in asignaturas_similares:
+                        print(f"      - {similar.nombre} (ID: {similar.id})")
                 
-                # 3. Crear criterio de desempeño (único)
-                criterio_desc = request.POST.get('criterio_desempeno', '').strip()
-                if criterio_desc:
-                    CriterioDesempeno.objects.update_or_create(
-                        asignatura=asignatura,
-                        defaults={
-                            'nombre': criterio_desc[:200],
-                            'descripcion': criterio_desc
-                        }
-                    )
+                # Agregar mensaje informativo para el usuario
+                messages.info(request, 
+                    f"📝 Creando práctica en: {asignatura.nombre} (ID: {asignatura.id}) - "
+                    f"Carrera: {carrera.nombre} - Semestre: {asignatura.semestre}")
                 
-                # 4. Crear unidad didáctica (única)
-                unidad_didactica_nombre = request.POST.get('unidad_didactica', '').strip()
-                if unidad_didactica_nombre:
-                    unidad_didactica, _ = UnidadDidactica.objects.update_or_create(
-                        asignatura=asignatura,
-                        defaults={
-                            'nombre': unidad_didactica_nombre[:200],
-                            'descripcion': unidad_didactica_nombre
-                        }
-                    )
+                # 4. Obtener criterio de desempeño por ID (el formulario envía IDs)
+                criterio_id = request.POST.get('criterio_desempeno', '').strip()
+                if criterio_id:
+                    try:
+                        criterio = CriterioDesempeno.objects.get(id=criterio_id)
+                        print(f"🎯 Criterio encontrado: {criterio.nombre} (ID: {criterio.id})")
+                    except CriterioDesempeno.DoesNotExist:
+                        print(f"⚠️ Criterio ID {criterio_id} no encontrado, creando nuevo...")
+                        criterio = CriterioDesempeno.objects.create(
+                            asignatura=asignatura,
+                            nombre=f'Criterio {criterio_id}',
+                            descripcion=f'Criterio de desempeño {criterio_id}'
+                        )
+                
+                # 5. Obtener unidad didáctica por ID (el formulario envía IDs)
+                unidad_didactica_id = request.POST.get('unidad_didactica', '').strip()
+                if unidad_didactica_id:
+                    try:
+                        unidad_didactica = UnidadDidactica.objects.get(id=unidad_didactica_id)
+                        print(f"📖 Unidad didáctica encontrada: {unidad_didactica.nombre} (ID: {unidad_didactica.id})")
+                    except UnidadDidactica.DoesNotExist:
+                        messages.error(request, f"🚨 ERROR: Unidad didáctica con ID {unidad_didactica_id} no encontrada.")
+                        return redirect('core:agregar_datos_malla')
                     
-                    # 5. Procesar contenidos analíticos (múltiples)
-                    contenidos_nombres = request.POST.getlist('contenidos_analiticos[]')
+                    # 6. CREAR NUEVA PRÁCTICA INDEPENDIENTE
+                    # Obtener el título de la práctica (será el nombre del nuevo contenido analítico)
+                    titulo_practica = request.POST.get('titulo_0_0', '').strip()
                     
-                    # Limpiar contenidos existentes para esta unidad
-                    ContenidoAnalitico.objects.filter(unidad_didactica=unidad_didactica).delete()
+                    print(f"\n🚀 NUEVA LÓGICA: Título recibido: '{titulo_practica}'")
                     
-                    for i, contenido_nombre in enumerate(contenidos_nombres):
-                        if contenido_nombre.strip():
-                            contenido = ContenidoAnalitico.objects.create(
-                                nombre=contenido_nombre[:300],
-                                descripcion=contenido_nombre,
-                                unidad_didactica=unidad_didactica
+                    if titulo_practica:
+                        # Crear un nuevo ContenidoAnalitico con el título como nombre
+                        contenido = ContenidoAnalitico.objects.create(
+                            nombre=titulo_practica,
+                            descripcion=f"Práctica de laboratorio: {titulo_practica}",
+                            unidad_didactica=unidad_didactica
+                        )
+                        
+                        print(f"\n🧪 CREANDO NUEVA PRÁCTICA INDEPENDIENTE:")
+                        print(f"   📝 Nombre: {contenido.nombre}")
+                        print(f"   🎯 En asignatura: {asignatura.nombre} (ID: {asignatura.id})")
+                        print(f"   📚 Unidad didáctica: {unidad_didactica.nombre}")
+                        print(f"   🔗 Nuevo ID: {contenido.id}")
+                        
+                        
+                        print(f"   ✅ ÉXITO: ContenidoAnalítico creado con ID: {contenido.id}")
+                        print(f"   🔗 Accessible en: /dashboard/malla-curricular/asignatura/{asignatura.id}/")
+                        
+                        # REGISTRO DE AUDITORÍA: Guardar información completa de la creación
+                        try:
+                            # Obtener información del request
+                            ip_address = request.META.get('REMOTE_ADDR', '')
+                            user_agent = request.META.get('HTTP_USER_AGENT', '')
+                            
+                            # Detectar asignaturas similares que podrían confundir
+                            asignaturas_similares = list(Asignatura.objects.filter(
+                                carrera=carrera,
+                                semestre=asignatura.semestre
+                            ).exclude(id=asignatura.id).values('id', 'nombre'))
+                            
+                            # Crear registro de auditoría
+                            auditoria = AuditoriaCreacionPractica.objects.create(
+                                usuario=request.user,
+                                ip_address=ip_address,
+                                user_agent=user_agent[:500],  # Truncar si es muy largo
+                                
+                                asignatura=asignatura,
+                                asignatura_nombre=asignatura.nombre,
+                                asignatura_id_usado=asignatura.id,
+                                
+                                contenido_analitico=contenido,
+                                practica_nombre=contenido.nombre[:500],
+                                
+                                unidad_academica_nombre=unidad_academica.nombre,
+                                carrera_nombre=carrera.get_nombre_display(),
+                                semestre=asignatura.semestre,
+                                
+                                asignaturas_similares_detectadas=asignaturas_similares,
+                                confirmacion_usuario=True  # Asumimos que pasó la validación JS
                             )
                             
-                            # 6. Procesar grupos de datos adicionales para este contenido
-                            # Buscar todos los campos que pertenecen a este contenido
-                            grupo_index = 0
-                            while True:
-                                # Verificar si existe al menos un campo para este grupo
-                                bibliografia_key = f'bibliografia_{i}_{grupo_index}'
-                                if bibliografia_key not in request.POST:
-                                    break
-                                
-                                # Procesar todos los campos del grupo
-                                campos_grupo = {
-                                    'bibliografia': request.POST.get(f'bibliografia_{i}_{grupo_index}', ''),
-                                    'practica_laboratorio': request.POST.get(f'practica_laboratorio_{i}_{grupo_index}', ''),
-                                    'titulo': request.POST.get(f'titulo_{i}_{grupo_index}', ''),
-                                    'competencias': request.POST.get(f'competencias_{i}_{grupo_index}', ''),
-                                    'objetivo_practica': request.POST.get(f'objetivo_practica_{i}_{grupo_index}', ''),
-                                    'fundamento_teorico': request.POST.get(f'fundamento_teorico_{i}_{grupo_index}', ''),
-                                    'procedimientos': request.POST.get(f'procedimientos_{i}_{grupo_index}', ''),
-                                    'calculos_resultados': request.POST.get(f'calculos_resultados_{i}_{grupo_index}', ''),
-                                    'cuestionario': request.POST.get(f'cuestionario_{i}_{grupo_index}', ''),
-                                }
-                                
-                                # Procesar selecciones múltiples de recursos (nuevo formato)
-                                try:
-                                    import json
-                                    equipos_seleccionados_json = request.POST.get(f'equipos_seleccionados_{i}_{grupo_index}', '[]')
-                                    materiales_seleccionados_json = request.POST.get(f'materiales_seleccionados_{i}_{grupo_index}', '[]')
-                                    herramientas_seleccionados_json = request.POST.get(f'herramientas_seleccionados_{i}_{grupo_index}', '[]')
-                                    
-                                    equipos_seleccionados = json.loads(equipos_seleccionados_json) if equipos_seleccionados_json else []
-                                    materiales_seleccionados = json.loads(materiales_seleccionados_json) if materiales_seleccionados_json else []
-                                    herramientas_seleccionados = json.loads(herramientas_seleccionados_json) if herramientas_seleccionados_json else []
-                                except (json.JSONDecodeError, ValueError):
-                                    equipos_seleccionados = []
-                                    materiales_seleccionados = []
-                                    herramientas_seleccionados = []
-                                
-                                # Solo crear registros si hay contenido en al menos un campo
-                                if any(valor.strip() for valor in campos_grupo.values()):
-                                    
-                                    # Crear bibliografía si existe
-                                    if campos_grupo['bibliografia'].strip():
-                                        Bibliografia.objects.create(
-                                            contenido_analitico=contenido,
-                                            titulo=campos_grupo['bibliografia'][:300],
-                                            autor='No especificado',
-                                            orden=grupo_index + 1
-                                        )
-                                    
-                                    # Crear práctica de laboratorio si existe
-                                    if campos_grupo['practica_laboratorio'].strip():
-                                        PracticaLaboratorio.objects.create(
-                                            contenido_analitico=contenido,
-                                            nombre=campos_grupo['practica_laboratorio'][:300],
-                                            orden=grupo_index + 1
-                                        )
-                                    
-                                    # Crear título si existe
-                                    if campos_grupo['titulo'].strip():
-                                        Titulo.objects.create(
-                                            contenido_analitico=contenido,
-                                            texto=campos_grupo['titulo'][:300],
-                                            orden=grupo_index + 1
-                                        )
-                                    
-                                    # Crear competencias si existe
-                                    if campos_grupo['competencias'].strip():
-                                        Competencias.objects.create(
-                                            contenido_analitico=contenido,
-                                            descripcion=campos_grupo['competencias'],
-                                            orden=grupo_index + 1
-                                        )
-                                    
-                                    # Crear objetivo de práctica si existe
-                                    if campos_grupo['objetivo_practica'].strip():
-                                        ObjetivoPractica.objects.create(
-                                            contenido_analitico=contenido,
-                                            descripcion=campos_grupo['objetivo_practica'],
-                                            orden=grupo_index + 1
-                                        )
-                                    
-                                    # Crear fundamento teórico si existe
-                                    if campos_grupo['fundamento_teorico'].strip():
-                                        FundamentoTeorico.objects.create(
-                                            contenido_analitico=contenido,
-                                            titulo=f'Fundamento {grupo_index + 1}',
-                                            contenido=campos_grupo['fundamento_teorico'],
-                                            orden=grupo_index + 1
-                                        )
-                                    
-                                    # Crear equipos seleccionados (múltiples)
-                                    orden_contador = 1
-                                    for equipo_nombre in equipos_seleccionados:
-                                        if equipo_nombre.strip():
-                                            MaterialesHerramientasEquipos.objects.create(
-                                                contenido_analitico=contenido,
-                                                nombre=equipo_nombre[:200],
-                                                tipo_elemento='equipo',
-                                                cantidad='1',
-                                                orden=(grupo_index * 100) + orden_contador
-                                            )
-                                            orden_contador += 1
-                                    
-                                    # Crear materiales seleccionados (múltiples)
-                                    for material_nombre in materiales_seleccionados:
-                                        if material_nombre.strip():
-                                            MaterialesHerramientasEquipos.objects.create(
-                                                contenido_analitico=contenido,
-                                                nombre=material_nombre[:200],
-                                                tipo_elemento='material',
-                                                cantidad='1',
-                                                orden=(grupo_index * 100) + orden_contador
-                                            )
-                                            orden_contador += 1
-                                    
-                                    # Crear herramientas seleccionadas (múltiples)
-                                    for herramienta_nombre in herramientas_seleccionados:
-                                        if herramienta_nombre.strip():
-                                            MaterialesHerramientasEquipos.objects.create(
-                                                contenido_analitico=contenido,
-                                                nombre=herramienta_nombre[:200],
-                                                tipo_elemento='herramienta',
-                                                cantidad='1',
-                                                orden=(grupo_index * 100) + orden_contador
-                                            )
-                                            orden_contador += 1
-                                    
-                                    # Crear procedimientos si existe
-                                    if campos_grupo['procedimientos'].strip():
-                                        Procedimientos.objects.create(
-                                            contenido_analitico=contenido,
-                                            numero_paso=grupo_index + 1,
-                                            titulo_paso=f'Procedimiento {grupo_index + 1}',
-                                            descripcion=campos_grupo['procedimientos'],
-                                            orden=grupo_index + 1
-                                        )
-                                    
-                                    # Crear cálculos y resultados si existe
-                                    if campos_grupo['calculos_resultados'].strip():
-                                        CalculosResultados.objects.create(
-                                            contenido_analitico=contenido,
-                                            titulo=f'Cálculo {grupo_index + 1}',
-                                            procedimiento_calculo=campos_grupo['calculos_resultados'],
-                                            orden=grupo_index + 1
-                                        )
-                                    
-                                    # Crear cuestionario si existe
-                                    if campos_grupo['cuestionario'].strip():
-                                        Cuestionario.objects.create(
-                                            contenido_analitico=contenido,
-                                            numero_pregunta=grupo_index + 1,
-                                            pregunta=campos_grupo['cuestionario'],
-                                            orden=grupo_index + 1
-                                        )
-                                
-                                grupo_index += 1
+                            print(f"   📋 Auditoría registrada: ID {auditoria.id}")
+                            
+                        except Exception as e:
+                            print(f"   ⚠️ Error en auditoría: {e}")
+                            # No interrumpir el proceso principal si falla la auditoría
+                        
+                        # 7. Procesar datos adicionales para la nueva práctica (usando i=0)
+                        i = 0  # Solo procesamos una práctica
+                        grupo_index = 0
+                        
+                        # Procesar todos los campos del formulario (formato: campo_0_0)
+                        campos_grupo = {
+                            'bibliografia': request.POST.get(f'bibliografia_{i}_{grupo_index}', ''),
+                            'practica_laboratorio': request.POST.get(f'practica_laboratorio_{i}_{grupo_index}', ''),
+                            'titulo': request.POST.get(f'titulo_{i}_{grupo_index}', ''),
+                            'competencias': request.POST.get(f'competencias_{i}_{grupo_index}', ''),
+                            'objetivo_practica': request.POST.get(f'objetivo_practica_{i}_{grupo_index}', ''),
+                            'fundamento_teorico': request.POST.get(f'fundamento_teorico_{i}_{grupo_index}', ''),
+                            'procedimientos': request.POST.get(f'procedimientos_{i}_{grupo_index}', ''),
+                            'calculos_resultados': request.POST.get(f'calculos_resultados_{i}_{grupo_index}', ''),
+                            'cuestionario': request.POST.get(f'cuestionario_{i}_{grupo_index}', ''),
+                        }
+                        
+                        # Procesar selecciones múltiples de recursos
+                        try:
+                            import json
+                            equipos_seleccionados_json = request.POST.get(f'equipos_seleccionados_{i}_{grupo_index}', '[]')
+                            materiales_seleccionados_json = request.POST.get(f'materiales_seleccionados_{i}_{grupo_index}', '[]')
+                            herramientas_seleccionados_json = request.POST.get(f'herramientas_seleccionados_{i}_{grupo_index}', '[]')
+                            
+                            equipos_seleccionados = json.loads(equipos_seleccionados_json) if equipos_seleccionados_json else []
+                            materiales_seleccionados = json.loads(materiales_seleccionados_json) if materiales_seleccionados_json else []
+                            herramientas_seleccionados = json.loads(herramientas_seleccionados_json) if herramientas_seleccionados_json else []
+                        except (json.JSONDecodeError, ValueError):
+                            equipos_seleccionados = []
+                            materiales_seleccionados = []
+                            herramientas_seleccionados = []
+                        
+                        # Solo crear registros si hay contenido en al menos un campo
+                        if any(valor.strip() for valor in campos_grupo.values()):
+                            
+                            # Crear bibliografía si existe
+                            if campos_grupo['bibliografia'].strip():
+                                Bibliografia.objects.create(
+                                    contenido_analitico=contenido,
+                                    titulo=campos_grupo['bibliografia'][:300],
+                                    autor='No especificado',
+                                    orden=grupo_index + 1
+                                )
+                            
+                            # Crear práctica de laboratorio si existe
+                            if campos_grupo['practica_laboratorio'].strip():
+                                PracticaLaboratorio.objects.create(
+                                    contenido_analitico=contenido,
+                                    nombre=campos_grupo['practica_laboratorio'][:300],
+                                    orden=grupo_index + 1
+                                )
+                            
+                            # Crear título si existe
+                            if campos_grupo['titulo'].strip():
+                                Titulo.objects.create(
+                                    contenido_analitico=contenido,
+                                    texto=campos_grupo['titulo'][:300],
+                                    orden=grupo_index + 1
+                                )
+                            
+                            # Crear competencias si existe
+                            if campos_grupo['competencias'].strip():
+                                Competencias.objects.create(
+                                    contenido_analitico=contenido,
+                                    descripcion=campos_grupo['competencias'],
+                                    orden=grupo_index + 1
+                                )
+                            
+                            # Crear objetivo de práctica si existe
+                            if campos_grupo['objetivo_practica'].strip():
+                                ObjetivoPractica.objects.create(
+                                    contenido_analitico=contenido,
+                                    descripcion=campos_grupo['objetivo_practica'],
+                                    orden=grupo_index + 1
+                                )
+                            
+                            # Crear fundamento teórico si existe
+                            if campos_grupo['fundamento_teorico'].strip():
+                                FundamentoTeorico.objects.create(
+                                    contenido_analitico=contenido,
+                                    titulo=f'Fundamento {grupo_index + 1}',
+                                    contenido=campos_grupo['fundamento_teorico'],
+                                    orden=grupo_index + 1
+                                )
+                            
+                            # Crear equipos seleccionados (múltiples)
+                            orden_contador = 1
+                            for equipo_nombre in equipos_seleccionados:
+                                if equipo_nombre.strip():
+                                    MaterialesHerramientasEquipos.objects.create(
+                                        contenido_analitico=contenido,
+                                        nombre=equipo_nombre[:200],
+                                        tipo_elemento='equipo',
+                                        cantidad='1',
+                                        orden=(grupo_index * 100) + orden_contador
+                                    )
+                                    orden_contador += 1
+                            
+                            # Crear materiales seleccionados (múltiples)
+                            for material_nombre in materiales_seleccionados:
+                                if material_nombre.strip():
+                                    MaterialesHerramientasEquipos.objects.create(
+                                        contenido_analitico=contenido,
+                                        nombre=material_nombre[:200],
+                                        tipo_elemento='material',
+                                        cantidad='1',
+                                        orden=(grupo_index * 100) + orden_contador
+                                    )
+                                    orden_contador += 1
+                            
+                            # Crear herramientas seleccionadas (múltiples)
+                            for herramienta_nombre in herramientas_seleccionados:
+                                if herramienta_nombre.strip():
+                                    MaterialesHerramientasEquipos.objects.create(
+                                        contenido_analitico=contenido,
+                                        nombre=herramienta_nombre[:200],
+                                        tipo_elemento='herramienta',
+                                        cantidad='1',
+                                        orden=(grupo_index * 100) + orden_contador
+                                    )
+                                    orden_contador += 1
+                            
+                            # Crear procedimientos si existe
+                            if campos_grupo['procedimientos'].strip():
+                                Procedimientos.objects.create(
+                                    contenido_analitico=contenido,
+                                    numero_paso=grupo_index + 1,
+                                    titulo_paso=f'Procedimiento {grupo_index + 1}',
+                                    descripcion=campos_grupo['procedimientos'],
+                                    orden=grupo_index + 1
+                                )
+                            
+                            # Crear cálculos y resultados si existe
+                            if campos_grupo['calculos_resultados'].strip():
+                                CalculosResultados.objects.create(
+                                    contenido_analitico=contenido,
+                                    titulo=f'Cálculo {grupo_index + 1}',
+                                    procedimiento_calculo=campos_grupo['calculos_resultados'],
+                                    orden=grupo_index + 1
+                                )
+                            
+                            # Crear cuestionario si existe
+                            if campos_grupo['cuestionario'].strip():
+                                Cuestionario.objects.create(
+                                    contenido_analitico=contenido,
+                                    numero_pregunta=grupo_index + 1,
+                                    pregunta=campos_grupo['cuestionario'],
+                                    orden=grupo_index + 1
+                                )
+                    
+                    else:
+                        messages.error(request, "⚠️ Por favor complete al menos el título de la práctica.")
+                        return redirect('core:agregar_datos_malla')
                 
                 action_text = 'creada' if created else 'actualizada'
                 messages.success(request, f'Asignatura "{asignatura}" {action_text} exitosamente con todos sus componentes.')

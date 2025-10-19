@@ -17,6 +17,7 @@ urlpatterns = [
     path('malla-curricular/', views.malla_curricular_view, name='malla_curricular'),
     path('malla-curricular/asignatura/<int:asignatura_id>/', views.detalle_asignatura_view, name='detalle_asignatura'),
     path('malla-curricular/agregar-datos/', views.agregar_datos_malla_view, name='agregar_datos_malla'),
+    path('malla-curricular/combinacion/<int:combinacion_id>/', views.detalle_combinacion_view, name='detalle_combinacion'),
     path('malla-curricular/contenido/<int:contenido_id>/componentes/', views.agregar_componentes_contenido_view, name='agregar_componentes_contenido'),
     path('ajax/criterios-desempeno/', views.get_criterios_desempeno_ajax, name='criterios_desempeno'),
     path('ajax/unidades-didacticas/', views.get_unidades_didacticas_ajax, name='unidades_didacticas'),

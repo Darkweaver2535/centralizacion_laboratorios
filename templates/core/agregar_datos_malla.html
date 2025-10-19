@@ -2327,6 +2327,91 @@
             })
             .catch(error => console.error('Error:', error));
     }
+    
+    // ==================================================
+    // VALIDACIÓN ANTES DE SUBMIT - PREVENIR ERRORES
+    // ==================================================
+    document.getElementById('formulario-completo').addEventListener('submit', function(e) {
+        const asignaturaSelect = document.getElementById('id_asignatura');
+        const unidadAcademicaSelect = document.getElementById('id_unidad_academica');
+        const carreraSelect = document.getElementById('id_carrera');
+        
+        // Obtener información de la selección
+        const asignaturaSeleccionada = asignaturaSelect.options[asignaturaSelect.selectedIndex];
+        const unidadSeleccionada = unidadAcademicaSelect.options[unidadAcademicaSelect.selectedIndex];
+        const carreraSeleccionada = carreraSelect.options[carreraSelect.selectedIndex];
+        
+        if (!asignaturaSeleccionada || !asignaturaSeleccionada.value) {
+            alert('⚠️ Debe seleccionar una asignatura');
+            e.preventDefault();
+            return false;
+        }
+        
+        // CONFIRMACIÓN CRÍTICA: Mostrar exactamente dónde se guardará
+        const contenidosNombres = [];
+        document.querySelectorAll('input[name="contenidos_analiticos[]"]').forEach(input => {
+            if (input.value.trim()) {
+                contenidosNombres.push(input.value.trim());
+            }
+        });
+        
+        if (contenidosNombres.length === 0) {
+            alert('⚠️ Debe agregar al menos un contenido analítico');
+            e.preventDefault();
+            return false;
+        }
+        
+        // Construir mensaje de confirmación detallado
+        let mensaje = `📝 CONFIRMACIÓN DE CREACIÓN\n\n`;
+        mensaje += `Sus prácticas se guardarán en:\n`;
+        mensaje += `🎯 Asignatura: ${asignaturaSeleccionada.text}\n`;
+        mensaje += `🎓 Carrera: ${carreraSeleccionada.text}\n`;
+        mensaje += `🏫 Unidad: ${unidadSeleccionada.text}\n\n`;
+        mensaje += `🧪 Prácticas a crear (${contenidosNombres.length}):\n`;
+        contenidosNombres.forEach((nombre, index) => {
+            mensaje += `   ${index + 1}. ${nombre}\n`;
+        });
+        mensaje += `\n¿Confirma que esta información es correcta?`;
+        
+        if (!confirm(mensaje)) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Mostrar indicador de procesamiento detallado
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando práctica...';
+        submitBtn.disabled = true;
+        
+        // Mostrar mensaje de estado en la página
+        const formContainer = document.querySelector('.form-container');
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'alert alert-info mt-3';
+        statusDiv.innerHTML = `
+            <strong>⏳ Procesando...</strong><br>
+            Su práctica se está creando. Por favor espere...<br>
+            <small>No cierre esta ventana ni presione el botón nuevamente.</small>
+        `;
+        formContainer.appendChild(statusDiv);
+        
+        // Timeout de seguridad (30 segundos)
+        setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                statusDiv.className = 'alert alert-warning mt-3';
+                statusDiv.innerHTML = `
+                    <strong>⚠️ Tiempo de espera agotado</strong><br>
+                    Si la práctica no se creó, intente nuevamente.<br>
+                    <small>Puede verificar en la lista de asignaturas si se creó correctamente.</small>
+                `;
+            }
+        }, 30000);
+        
+        return true;
+    });
 </script>
 {% endblock %}
 
