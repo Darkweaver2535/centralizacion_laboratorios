@@ -224,6 +224,44 @@ class Equipo(models.Model):
         verbose_name="Responsable (del Excel)",
         help_text="Nombre del responsable según los datos importados del Excel"
     )
+    
+    # Campos adicionales del Excel "DATOS EQUIPOS.xlsx"
+    ci_responsable = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="C.I. del Responsable",
+        help_text="Cédula de identidad del responsable"
+    )
+    cargo_responsable = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Cargo del Responsable",
+        help_text="Cargo que ocupa el responsable"
+    )
+    oficina = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Oficina",
+        help_text="Oficina donde se encuentra ubicado"
+    )
+    codigo_excel = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Código (del Excel)",
+        help_text="Código del equipo según el archivo Excel"
+    )
+    descripcion_excel = models.TextField(
+        blank=True,
+        verbose_name="Descripción del Activo (del Excel)",
+        help_text="Descripción detallada del activo según el Excel"
+    )
+    fecha_asignacion = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Asignación",
+        help_text="Fecha en que fue asignado el equipo"
+    )
+    
     observaciones = models.TextField(
         blank=True,
         verbose_name="Observaciones"

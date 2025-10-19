@@ -5,6 +5,7 @@ app_name = 'equipos'
 
 urlpatterns = [
     path('', views.equipos_view, name='lista'),
+    path('excel/', views.equipos_excel_view, name='lista_excel'),
     path('nuevo/', views.nuevo_equipo_view, name='nuevo'),
     path('importar/', views.importar_equipos_view, name='importar'),
     path('<int:pk>/', views.detalle_equipo_view, name='detalle'),

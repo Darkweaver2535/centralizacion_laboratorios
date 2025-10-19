@@ -163,17 +163,45 @@
                     <table class="results-table">
                         <thead>
                             <tr>
-                                <th>Nombre</th>
-                                <th>Descripción</th>
-                                <th>Unidad Académica</th>
-                                <th>Carrera</th>
-                                <th>Semestre</th>
                                 {% if categoria == 'equipos' %}
+                                    <!-- Columnas del Excel (10 oficiales) -->
+                                    <th>N°</th>
+                                    <th>Unidad Académica</th>
+                                    <th>Responsable</th>
+                                    <th>C.I.</th>
+                                    <th>Cargo</th>
+                                    <th>Oficina</th>
+                                    <th>Código</th>
+                                    <th>Descripción del Activo</th>
                                     <th>Estado</th>
-                                {% elif categoria == 'insumos' %}
-                                    <th>Categoría</th>
-                                {% elif categoria == 'guias' %}
-                                    <th>Tipo</th>
+                                    <th>Fecha de Asignación</th>
+                                    
+                                    <!-- Columnas académicas adicionales (14) -->
+                                    <th>Carrera</th>
+                                    <th>Semestre</th>
+                                    <th>Asignatura</th>
+                                    <th>Carga Horaria Semestral</th>
+                                    <th>Carga Horaria Semanal</th>
+                                    <th>Criterio Desempeño</th>
+                                    <th>Unidad Didáctica</th>
+                                    <th>Contenido Analítico</th>
+                                    <th>Guía Laboratorio</th>
+                                    <th>Práctica</th>
+                                    <th>Equipo Existente</th>
+                                    <th>Marca</th>
+                                    <th>Modelo</th>
+                                    <th>Laboratorio</th>
+                                {% else %}
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Unidad Académica</th>
+                                    <th>Carrera</th>
+                                    <th>Semestre</th>
+                                    {% if categoria == 'insumos' %}
+                                        <th>Categoría</th>
+                                    {% elif categoria == 'guias' %}
+                                        <th>Tipo</th>
+                                    {% endif %}
                                 {% endif %}
                                 <th>Acciones</th>
                             </tr>
@@ -182,11 +210,15 @@
                             {% if categoria == 'equipos' and equipos %}
                                 {% for equipo in equipos %}
                                 <tr>
-                                    <td><strong>{{ equipo.equipo_existente|default:"Sin nombre" }}</strong></td>
-                                    <td>{{ equipo.marca }} {{ equipo.modelo }}</td>
-                                    <td>{{ equipo.unidad_academica.nombre|default:"N/A" }}</td>
-                                    <td>{{ equipo.carrera.nombre|default:"N/A" }}</td>
-                                    <td>{% if equipo.semestre %}{{ equipo.semestre }}° Semestre{% else %}N/A{% endif %}</td>
+                                    <!-- Columnas del Excel (10 oficiales) -->
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ equipo.unidad_academica.get_nombre_display|default:"N/A" }}</td>
+                                    <td>{{ equipo.responsable.nombre_completo|default:"-" }}</td>
+                                    <td>{{ equipo.ci_responsable|default:"-" }}</td>
+                                    <td>{{ equipo.cargo_responsable|default:"-" }}</td>
+                                    <td>{{ equipo.oficina|default:"-" }}</td>
+                                    <td>{{ equipo.codigo_excel|default:"-" }}</td>
+                                    <td>{{ equipo.descripcion_excel|default:"-" }}</td>
                                     <td>
                                         {% if equipo.estado == 'bueno' %}
                                             <span class="badge bg-success">Bueno</span>
@@ -198,6 +230,24 @@
                                             <span class="badge bg-secondary">{{ equipo.estado|default:"Sin estado" }}</span>
                                         {% endif %}
                                     </td>
+                                    <td>{{ equipo.fecha_asignacion|default:"-" }}</td>
+                                    
+                                    <!-- Columnas académicas adicionales (14) -->
+                                    <td>{{ equipo.carrera.get_nombre_display|default:"N/A" }}</td>
+                                    <td>{% if equipo.semestre %}{{ equipo.semestre }}°{% else %}N/A{% endif %}</td>
+                                    <td>{{ equipo.asignatura.get_nombre_display|default:"N/A" }}</td>
+                                    <td>{{ equipo.carga_horaria_semestral|default:"-" }}</td>
+                                    <td>{{ equipo.carga_horaria_semanal|default:"-" }}</td>
+                                    <td>{{ equipo.criterio_desempeno.descripcion|default:"-" }}</td>
+                                    <td>{{ equipo.unidad_didactica.descripcion|default:"-" }}</td>
+                                    <td>{{ equipo.contenido_analitico.descripcion|default:"-" }}</td>
+                                    <td>{{ equipo.guia_laboratorio.get_nombre_display|default:"-" }}</td>
+                                    <td>{{ equipo.practica.get_nombre_display|default:"-" }}</td>
+                                    <td><strong>{{ equipo.equipo_existente|default:"Sin nombre" }}</strong></td>
+                                    <td>{{ equipo.marca|default:"-" }}</td>
+                                    <td>{{ equipo.modelo|default:"-" }}</td>
+                                    <td>{{ equipo.laboratorio.get_nombre_display|default:"N/A" }}</td>
+                                    
                                     <td>
                                         <button class="btn-action" onclick="verDetalle('equipos', {{ equipo.id }})">
                                             <i class="fas fa-eye"></i> Ver

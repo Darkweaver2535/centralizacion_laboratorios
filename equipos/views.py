@@ -105,6 +105,87 @@ def equipos_view(request):
     return render(request, 'equipos/lista.html', context)
 
 @login_required
+def equipos_excel_view(request):
+    """Vista de equipos con formato del Excel - mostrar las 10 columnas del Excel"""
+    
+    # Obtener filtros específicos para la vista Excel
+    filtros = {
+        'unidad_academica': request.GET.get('unidad_academica', ''),
+        'responsable': request.GET.get('responsable', ''),
+        'codigo': request.GET.get('codigo', ''),
+        'estado': request.GET.get('estado', ''),
+        'busqueda': request.GET.get('busqueda', ''),
+    }
+    
+    # Construir queryset con filtros
+    equipos = Equipo.objects.select_related(
+        'unidad_academica', 'carrera'
+    ).all()
+    
+    # Aplicar filtros
+    if filtros['unidad_academica']:
+        equipos = equipos.filter(unidad_academica_id=filtros['unidad_academica'])
+    
+    if filtros['responsable']:
+        equipos = equipos.filter(
+            Q(responsable_excel__icontains=filtros['responsable'])
+        )
+    
+    if filtros['codigo']:
+        equipos = equipos.filter(
+            Q(codigo_excel__icontains=filtros['codigo']) |
+            Q(codigo_inventario__icontains=filtros['codigo'])
+        )
+    
+    if filtros['estado']:
+        # Mapear estados del Excel a estados del modelo
+        estado_map = {
+            'Bueno': 'bueno',
+            'Regular': 'regular', 
+            'Malo': 'malo'
+        }
+        estado_modelo = estado_map.get(filtros['estado'])
+        if estado_modelo:
+            equipos = equipos.filter(estado=estado_modelo)
+    
+    if filtros['busqueda']:
+        equipos = equipos.filter(
+            Q(descripcion_excel__icontains=filtros['busqueda']) |
+            Q(oficina__icontains=filtros['busqueda']) |
+            Q(cargo_responsable__icontains=filtros['busqueda']) |
+            Q(equipo_existente__icontains=filtros['busqueda'])
+        )
+    
+    # Ordenar por unidad académica y responsable
+    equipos = equipos.order_by('unidad_academica__nombre', 'responsable_excel')
+    
+    # Paginación
+    paginator = Paginator(equipos, 50)  # 50 equipos por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Estadísticas
+    stats = {
+        'total': equipos.count(),
+        'bueno': equipos.filter(estado='bueno').count(),
+        'regular': equipos.filter(estado='regular').count(),
+        'malo': equipos.filter(estado='malo').count(),
+    }
+    
+    # Obtener todas las unidades académicas para los filtros
+    unidades = UnidadAcademica.objects.all().order_by('nombre')
+    
+    context = {
+        'page_obj': page_obj,
+        'filtros': filtros,
+        'unidades': unidades,
+        'stats': stats,
+        'view_type': 'excel',
+    }
+    
+    return render(request, 'equipos/lista_excel.html', context)
+
+@login_required
 def importar_equipos_view(request):
     """Vista para importar equipos desde Excel/CSV"""
     return render(request, 'equipos/importar.html', {

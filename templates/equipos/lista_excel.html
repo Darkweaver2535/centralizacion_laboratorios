@@ -1,0 +1,720 @@
+{% extends 'base.html' %}
+
+{% block title %}Equipos - Vista Excel - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Equipos - Vista Completa del Excel{% endblock %}
+
+{% block page_description %}Visualización completa con todas las columnas del archivo "DATOS EQUIPOS.xlsx"{% endblock %}
+
+{% block content %}
+<div class="equipos-excel-container">
+    <!-- Panel de Estadísticas -->
+    <div class="stats-panel">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="total-equipos">{{ stats.total }}</h3>
+                    <p>Total Equipos</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #06d6a0 0%, #118ab2 100%);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="equipos-bueno">{{ stats.bueno }}</h3>
+                    <p>Bueno</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ffd166 0%, #f77f00 100%);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="equipos-regular">{{ stats.regular }}</h3>
+                    <p>Regular</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ef476f 0%, #ffd166 100%);">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="equipos-malo">{{ stats.malo }}</h3>
+                    <p>Malo</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Acciones -->
+    <div class="actions-panel">
+        <div class="action-buttons">
+            <a href="{% url 'equipos:lista' %}" class="btn btn-secondary">
+                <i class="fas fa-table"></i> Vista Académica (24 columnas)
+            </a>
+            <button type="button" class="btn btn-success" onclick="exportarEquiposExcel()">
+                <i class="fas fa-file-excel"></i> Exportar Excel Completo
+            </button>
+            <button type="button" class="btn btn-info" onclick="actualizarVista()">
+                <i class="fas fa-sync"></i> Actualizar
+            </button>
+        </div>
+    </div>
+
+    <!-- Panel de Filtros Simplificados -->
+    <div class="filters-panel-excel">
+        <div class="filter-header">
+            <h3><i class="fas fa-search"></i> Búsqueda Rápida</h3>
+        </div>
+        
+        <form method="GET" id="filtrosFormExcel" class="filters-grid-excel">
+            <div class="filter-group">
+                <label>Unidad Académica</label>
+                <select name="unidad_academica" class="filter-select" onchange="aplicarFiltrosExcel()">
+                    <option value="">Todas las unidades</option>
+                    {% for unidad in unidades %}
+                        <option value="{{ unidad.id }}" {% if filtros.unidad_academica == unidad.id|stringformat:"s" %}selected{% endif %}>
+                            {{ unidad.get_nombre_display }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Responsable</label>
+                <input type="text" 
+                       name="responsable" 
+                       class="filter-input" 
+                       placeholder="Buscar por nombre del responsable..."
+                       value="{{ filtros.responsable }}" 
+                       onkeyup="buscarEnTiempoReal(this.value)">
+            </div>
+            
+            <div class="filter-group">
+                <label>Código</label>
+                <input type="text" 
+                       name="codigo" 
+                       class="filter-input" 
+                       placeholder="Buscar por código..."
+                       value="{{ filtros.codigo }}" 
+                       onkeyup="buscarEnTiempoReal(this.value)">
+            </div>
+            
+            <div class="filter-group">
+                <label>Estado</label>
+                <select name="estado" class="filter-select" onchange="aplicarFiltrosExcel()">
+                    <option value="">Todos los estados</option>
+                    <option value="Bueno" {% if filtros.estado == 'Bueno' %}selected{% endif %}>Bueno</option>
+                    <option value="Regular" {% if filtros.estado == 'Regular' %}selected{% endif %}>Regular</option>
+                    <option value="Malo" {% if filtros.estado == 'Malo' %}selected{% endif %}>Malo</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Búsqueda General</label>
+                <input type="text" 
+                       name="busqueda" 
+                       class="filter-input" 
+                       placeholder="Buscar en descripción, oficina..."
+                       value="{{ filtros.busqueda }}" 
+                       onkeyup="buscarEnTiempoReal(this.value)">
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Completa del Excel -->
+    <div class="table-excel-container">
+        <div class="table-header">
+            <h3><i class="fas fa-table"></i> Equipos - Vista Completa del Excel</h3>
+            <span class="results-count">Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }} equipos</span>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="equipos-excel-table">
+                <thead>
+                    <tr>
+                        <th>N°</th>
+                        <th>UNIDAD ACADÉMICA</th>
+                        <th>RESPONSABLE</th>
+                        <th>C.I.</th>
+                        <th>CARGO</th>
+                        <th>OFICINA</th>
+                        <th>CÓDIGO</th>
+                        <th>DESCRIPCIÓN DEL ACTIVO</th>
+                        <th>ESTADO</th>
+                        <th>FECHA DE ASIGNACIÓN</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for equipo in page_obj %}
+                    <tr>
+                        <td class="numero">{{ forloop.counter|add:page_obj.start_index|add:"-1" }}</td>
+                        <td class="unidad-academica">{{ equipo.unidad_academica.get_nombre_display }}</td>
+                        <td class="responsable">
+                            <strong>{{ equipo.responsable_excel|default:"-" }}</strong>
+                        </td>
+                        <td class="ci">{{ equipo.ci_responsable|default:"-" }}</td>
+                        <td class="cargo">{{ equipo.cargo_responsable|default:"-" }}</td>
+                        <td class="oficina">{{ equipo.oficina|default:"-" }}</td>
+                        <td class="codigo">
+                            <span class="codigo-badge">{{ equipo.codigo_excel|default:equipo.codigo_inventario|default:"-" }}</span>
+                        </td>
+                        <td class="descripcion">
+                            <div class="descripcion-content">
+                                {{ equipo.descripcion_excel|default:equipo.equipo_existente|truncatechars:80 }}
+                            </div>
+                        </td>
+                        <td class="estado">
+                            <span class="estado-badge estado-{{ equipo.estado|lower }}">
+                                {{ equipo.get_estado_display }}
+                            </span>
+                        </td>
+                        <td class="fecha">{{ equipo.fecha_asignacion|date:"d/m/Y"|default:"-" }}</td>
+                        <td class="acciones">
+                            <div class="action-buttons-row">
+                                <a href="{% url 'equipos:detalle' equipo.id %}" class="btn btn-sm btn-primary" title="Ver Detalle">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'equipos:editar' equipo.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="empty-state">
+                            <div class="empty-content">
+                                <i class="fas fa-inbox"></i>
+                                <h3>No se encontraron equipos</h3>
+                                <p>No hay equipos que coincidan con los criterios de búsqueda</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination-container">
+        <nav aria-label="Paginación de equipos">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i> Primera
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                            <i class="fas fa-angle-left"></i> Anterior
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                            Siguiente <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                            Última <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function aplicarFiltrosExcel() {
+    document.getElementById('filtrosFormExcel').submit();
+}
+
+function buscarEnTiempoReal(valor) {
+    clearTimeout(window.busquedaTimeout);
+    window.busquedaTimeout = setTimeout(() => {
+        if (valor.length >= 2 || valor.length === 0) {
+            aplicarFiltrosExcel();
+        }
+    }, 500);
+}
+
+function exportarEquiposExcel() {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '{% url "equipos:exportar_excel" %}?' + params.toString();
+}
+
+function actualizarVista() {
+    window.location.reload();
+}
+
+// Auto-aplicar filtros cuando cambian los selects
+document.addEventListener('DOMContentLoaded', function() {
+    const selects = document.querySelectorAll('.filter-select');
+    selects.forEach(select => {
+        select.addEventListener('change', aplicarFiltrosExcel);
+    });
+});
+</script>
+
+<style>
+.equipos-excel-container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.stats-panel {
+    margin-bottom: 2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.stat-content p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.actions-panel {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filters-panel-excel {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-header h3 {
+    margin: 0 0 1.5rem 0;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filters-grid-excel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.filter-select, .filter-input {
+    padding: 0.75rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease;
+}
+
+.filter-select:focus, .filter-input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.table-excel-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.table-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.results-count {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.equipos-excel-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.equipos-excel-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.equipos-excel-table th {
+    background: #f8f9fa;
+    padding: 1rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+    font-size: 0.8rem;
+}
+
+.equipos-excel-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: top;
+}
+
+.equipos-excel-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.numero {
+    text-align: center;
+    font-weight: bold;
+    color: #6c757d;
+    width: 60px;
+}
+
+.unidad-academica {
+    min-width: 120px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.responsable {
+    min-width: 150px;
+}
+
+.ci {
+    min-width: 80px;
+    text-align: center;
+    font-family: monospace;
+}
+
+.cargo {
+    min-width: 200px;
+    font-size: 0.8rem;
+}
+
+.oficina {
+    min-width: 150px;
+    font-size: 0.8rem;
+}
+
+.codigo {
+    min-width: 100px;
+}
+
+.codigo-badge {
+    background: #007bff;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.8rem;
+}
+
+.descripcion {
+    min-width: 250px;
+    max-width: 300px;
+}
+
+.descripcion-content {
+    font-size: 0.8rem;
+    line-height: 1.3;
+    color: #495057;
+}
+
+.estado {
+    text-align: center;
+    min-width: 80px;
+}
+
+.estado-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.estado-bueno {
+    background: #d4edda;
+    color: #155724;
+}
+
+.estado-regular {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.estado-malo {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.fecha {
+    min-width: 100px;
+    text-align: center;
+    font-family: monospace;
+    color: #6c757d;
+}
+
+.acciones {
+    min-width: 100px;
+    text-align: center;
+    position: sticky;
+    right: 0;
+    background: white;
+}
+
+.action-buttons-row {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: center;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-content {
+    color: #6c757d;
+}
+
+.empty-content i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.pagination-container {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 0.25rem;
+}
+
+.page-item {
+    display: flex;
+}
+
+.page-link {
+    padding: 0.75rem 1rem;
+    color: #007bff;
+    text-decoration: none;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.page-link:hover {
+    background-color: #e9ecef;
+}
+
+.page-item.active .page-link {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .equipos-excel-container {
+        padding: 0.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .filters-grid-excel {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .table-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .equipos-excel-table th,
+    .equipos-excel-table td {
+        padding: 0.5rem 0.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .equipos-excel-table {
+        font-size: 0.7rem;
+    }
+    
+    .descripcion {
+        min-width: 150px;
+        max-width: 150px;
+    }
+}
+</style>
+{% endblock %}

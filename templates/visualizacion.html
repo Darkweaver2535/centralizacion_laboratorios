@@ -175,37 +175,57 @@
                         <table class="table table-striped table-bordered equipos-table">
                             <thead>
                                 <tr>
-                                    <th>UNIDAD ACADÉMICA</th>
-                                    <th>CARRERA</th>
-                                    <th>SEMESTRE</th>
-                                    <th>ASIGNATURA</th>
-                                    <th>CARGA HORARIA SEMESTRAL</th>
-                                    <th>CARGA HORARIA SEMANAL</th>
-                                    <th>CRITERIO DE DESEMPEÑO</th>
-                                    <th>UNIDAD DIDACTICA</th>
-                                    <th>CONTENIDO ANALITICO</th>
-                                    <th>GUÍA DE LABORATORIO</th>
-                                    <th>PRÁCTICA</th>
-                                    <th>NOMBRE DE EQUIPO EXISTENTE</th>
-                                    <th>MARCA</th>
-                                    <th>MODELO</th>
-                                    <th>ESTADO</th>
-                                    <th>NÚMERO DE UNIDADES DEL EQUIPO</th>
-                                    <th>ES UN ACTIVO FIJO DE ACUERDO A SU ACTA DE ENTREGA?</th>
-                                    <th>FOTOGRAFÍA FRONTAL DEL EQUIPO</th>
-                                    <th>FOTOGRAFÍA DE LA PLACA DE CARACTERÍSTICAS</th>
-                                    <th>UBICACIÓN DEL EQUIPO (LABORATORIO)</th>
-                                    <th>SECCIÓN/ÁREA</th>
-                                    <th>IDENTIFICADOR/Nº DE AULA</th>
-                                    <th>EQUIPO REQUERIDO</th>
-                                    <th>NÚMERO DE EQUIPOS REQUERIDOS</th>
+                                    <!-- Columnas del Excel (10 columnas oficiales) -->
+                                    <th class="numero-col">N°</th>
+                                    <th class="unidad-col">UNIDAD ACADÉMICA</th>
+                                    <th class="responsable-col">RESPONSABLE</th>
+                                    <th class="ci-col">C.I.</th>
+                                    <th class="cargo-col">CARGO</th>
+                                    <th class="oficina-col">OFICINA</th>
+                                    <th class="codigo-col">CÓDIGO</th>
+                                    <th class="descripcion-col">DESCRIPCIÓN DEL ACTIVO</th>
+                                    <th class="estado-col">ESTADO</th>
+                                    <th class="fecha-col">FECHA DE ASIGNACIÓN</th>
+                                    
+                                    <!-- Columnas académicas adicionales (14 columnas) -->
+                                    <th class="carrera-col">CARRERA</th>
+                                    <th class="semestre-col">SEMESTRE</th>
+                                    <th class="asignatura-col">ASIGNATURA</th>
+                                    <th class="carga-semestral-col">CARGA HORARIA SEM.</th>
+                                    <th class="carga-semanal-col">CARGA HORARIA SEM.</th>
+                                    <th class="criterio-col">CRITERIO DESEMPEÑO</th>
+                                    <th class="unidad-didactica-col">UNIDAD DIDÁCTICA</th>
+                                    <th class="contenido-col">CONTENIDO ANALÍTICO</th>
+                                    <th class="guia-col">GUÍA LABORATORIO</th>
+                                    <th class="practica-col">PRÁCTICA</th>
+                                    <th class="equipo-existente-col">EQUIPO EXISTENTE</th>
+                                    <th class="marca-col">MARCA</th>
+                                    <th class="modelo-col">MODELO</th>
+                                    <th class="laboratorio-col">LABORATORIO</th>
+                                    
                                     <th class="actions-column">ACCIONES</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for equipo in equipos %}
                                 <tr>
+                                    <!-- Columnas del Excel (10 columnas oficiales) -->
+                                    <td>{{ forloop.counter }}</td>
                                     <td>{{ equipo.unidad_academica.get_nombre_display }}</td>
+                                    <td>{{ equipo.responsable.nombre_completo|default:"-" }}</td>
+                                    <td>{{ equipo.ci_responsable|default:"-" }}</td>
+                                    <td>{{ equipo.cargo_responsable|default:"-" }}</td>
+                                    <td>{{ equipo.oficina|default:"-" }}</td>
+                                    <td>{{ equipo.codigo_excel|default:"-" }}</td>
+                                    <td>{{ equipo.descripcion_excel|default:"-" }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ equipo.estado }}">
+                                            {{ equipo.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ equipo.fecha_asignacion|default:"-" }}</td>
+                                    
+                                    <!-- Columnas académicas adicionales (14 columnas) -->
                                     <td>{{ equipo.carrera.get_nombre_display }}</td>
                                     <td>{{ equipo.semestre }}°</td>
                                     <td>{{ equipo.asignatura.get_nombre_display }}</td>
@@ -219,36 +239,8 @@
                                     <td class="equipo-nombre">{{ equipo.equipo_existente }}</td>
                                     <td>{{ equipo.marca|default:"-" }}</td>
                                     <td>{{ equipo.modelo|default:"-" }}</td>
-                                    <td>
-                                        <span class="badge badge-{{ equipo.estado }}">
-                                            {{ equipo.get_estado_display }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">{{ equipo.numero_unidades }}</td>
-                                    <td class="text-center">{{ equipo.get_es_activo_fijo_display|default:"-" }}</td>
-                                    <td class="text-center">
-                                        {% if equipo.fotografia_frontal %}
-                                            <a href="{{ equipo.fotografia_frontal.url }}" target="_blank" class="btn btn-sm btn-info">
-                                                <i class="fas fa-image"></i>
-                                            </a>
-                                        {% else %}
-                                            <span class="text-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        {% if equipo.fotografia_placa %}
-                                            <a href="{{ equipo.fotografia_placa.url }}" target="_blank" class="btn btn-sm btn-info">
-                                                <i class="fas fa-image"></i>
-                                            </a>
-                                        {% else %}
-                                            <span class="text-muted">-</span>
-                                        {% endif %}
-                                    </td>
                                     <td>{{ equipo.laboratorio.get_nombre_display }}</td>
-                                    <td>{{ equipo.laboratorio.seccion_area|default:"-" }}</td>
-                                    <td>{{ equipo.laboratorio.identificador_aula|default:"-" }}</td>
-                                    <td>{{ equipo.equipo_requerido|default:"-" }}</td>
-                                    <td class="text-center">{{ equipo.numero_equipos_requeridos|default:"-" }}</td>
+                                    
                                     <td class="actions-column">
                                         <div class="btn-group-vertical btn-group-sm">
                                             <a href="{% url 'equipos:detalle' equipo.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
