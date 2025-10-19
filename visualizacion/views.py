@@ -151,7 +151,7 @@ def visualizacion_view(request):
         ).prefetch_related(
             'contenido_analitico__competencias',
             'contenido_analitico__objetivos_practica'
-        ).order_by('contenido_analitico__unidad_didactica__asignatura__carrera', 
+        ).order_by('-id', 'contenido_analitico__unidad_didactica__asignatura__carrera', 
                    'contenido_analitico__unidad_didactica__asignatura__semestre', 
                    'orden'))
         items = filterset.qs  # Queryset filtrado por django-filter
@@ -163,7 +163,8 @@ def visualizacion_view(request):
             'items_buenos': items.count(),  # Todas las prácticas son "buenas"
             'items_regulares': 0,
             'items_malos': 0,
-            'categoria_nombre': 'Guías de Laboratorio (Prácticas)'
+            'categoria_nombre': 'Guías de Laboratorio (Prácticas)',
+            'debug_info': f"Total BD: {PracticaLaboratorio.objects.count()}, Vista: {items.count()}"
         }
     
     # Verificación de seguridad para items
@@ -266,7 +267,15 @@ def visualizacion_view(request):
         context['guias'] = items  # Usar items directamente
         context['items'] = items  # También agregar como items para el template
     
-    return render(request, 'visualizacion_r2.html', context)
+    response = render(request, 'visualizacion_r2.html', context)
+    
+    # Evitar caché para la vista de guías
+    if categoria == 'guias':
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+    
+    return response
 
 def obtener_correlaciones(categoria, items, filtros):
     """Obtener correlaciones entre equipos, insumos y guías según la categoría seleccionada"""
