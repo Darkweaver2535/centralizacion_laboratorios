@@ -1,0 +1,542 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Activos Fijos{% endblock %}
+
+{% block page_title %}Activos Fijos{% endblock %}
+
+{% block page_description %}Gestión y control de activos fijos institucionales{% endblock %}
+
+{% block content %}
+<div class="activos-container">
+    
+    <!-- Header con estadísticas -->
+    <div class="activos-header">
+        <div class="header-stats">
+            <div class="stat-item">
+                <span class="stat-number">{{ total_activos }}</span>
+                <span class="stat-label">Total Activos</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">Bs. {{ valor_total|floatformat:0 }}</span>
+                <span class="stat-label">Valor Total</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'activos:agregar_activo' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Nuevo Activo
+            </a>
+            <a href="{% url 'activos:exportar_excel' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-info">
+                <i class="fas fa-download"></i> Exportar Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-panel">
+        <form method="get" class="filters-form">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="codigo_patrimonial">Código Patrimonial</label>
+                    <input type="text" 
+                           id="codigo_patrimonial" 
+                           name="codigo_patrimonial" 
+                           value="{{ codigo_patrimonial }}" 
+                           placeholder="Buscar por código..."
+                           class="form-control">
+                </div>
+
+                <div class="filter-group">
+                    <label for="nombre_activo">Nombre/Descripción</label>
+                    <input type="text" 
+                           id="nombre_activo" 
+                           name="nombre_activo" 
+                           value="{{ nombre_activo }}" 
+                           placeholder="Buscar en nombre, marca, modelo..."
+                           class="form-control">
+                </div>
+
+                <div class="filter-group">
+                    <label for="categoria">Categoría</label>
+                    <select id="categoria" name="categoria" class="form-control">
+                        <option value="">Todas las categorías</option>
+                        {% for value, display in categorias %}
+                            <option value="{{ value }}" {% if categoria == value %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="unidad_academica">Unidad Académica</label>
+                    <select id="unidad_academica" name="unidad_academica" class="form-control">
+                        <option value="">Todas las unidades</option>
+                        {% for unidad in unidades_academicas %}
+                            <option value="{{ unidad.id }}" {% if unidad_academica_id == unidad.id|stringformat:"s" %}selected{% endif %}>
+                                {{ unidad.get_nombre_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="estado_fisico">Estado Físico</label>
+                    <select id="estado_fisico" name="estado_fisico" class="form-control">
+                        <option value="">Todos los estados</option>
+                        {% for value, display in estados_fisicos %}
+                            <option value="{{ value }}" {% if estado_fisico == value %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="estado_operativo">Estado Operativo</label>
+                    <select id="estado_operativo" name="estado_operativo" class="form-control">
+                        <option value="">Todos los estados</option>
+                        {% for value, display in estados_operativos %}
+                            <option value="{{ value }}" {% if estado_operativo == value %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="filters-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <a href="{% url 'activos:lista_activos' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de activos -->
+    <div class="activos-list">
+        {% for activo in activos %}
+        <div class="activo-card">
+            <div class="activo-header">
+                <div class="activo-codigo">
+                    <strong>{{ activo.codigo_patrimonial }}</strong>
+                </div>
+                <div class="activo-estados">
+                    <span class="estado-badge estado-fisico-{{ activo.estado_fisico }}">
+                        {{ activo.get_estado_fisico_display }}
+                    </span>
+                    <span class="estado-badge estado-operativo-{{ activo.estado_operativo }}">
+                        {{ activo.get_estado_operativo_display }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="activo-body">
+                <div class="activo-info">
+                    <h3 class="activo-nombre">{{ activo.get_nombre_display }}</h3>
+                    <p class="activo-categoria">
+                        <i class="fas fa-tag"></i> {{ activo.get_categoria_display }}
+                    </p>
+                    
+                    <div class="activo-details">
+                        <div class="detail-row">
+                            <strong>Unidad:</strong> {{ activo.unidad_academica.get_nombre_display }}
+                        </div>
+                        {% if activo.laboratorio %}
+                        <div class="detail-row">
+                            <strong>Laboratorio:</strong> {{ activo.laboratorio.nombre }}
+                        </div>
+                        {% endif %}
+                        {% if activo.ubicacion_fisica %}
+                        <div class="detail-row">
+                            <strong>Ubicación:</strong> {{ activo.ubicacion_fisica }}
+                        </div>
+                        {% endif %}
+                        {% if activo.responsable %}
+                        <div class="detail-row">
+                            <strong>Responsable:</strong> {{ activo.responsable }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="activo-valor">
+                    <div class="valor-principal">
+                        {{ activo.get_valor_display }}
+                    </div>
+                    <div class="fecha-adquisicion">
+                        <i class="fas fa-calendar"></i> {{ activo.fecha_adquisicion }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="activo-actions">
+                <a href="{% url 'activos:detalle_activo' activo.id %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> Ver
+                </a>
+                <a href="{% url 'activos:editar_activo' activo.id %}" class="btn btn-sm btn-warning">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <button onclick="confirmarEliminacion({{ activo.id }}, '{{ activo.codigo_patrimonial }}')" 
+                        class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-inbox"></i>
+            </div>
+            <h3>No se encontraron activos fijos</h3>
+            <p>No hay activos que coincidan con los criterios de búsqueda</p>
+            <a href="{% url 'activos:agregar_activo' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Agregar Primer Activo
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if activos.has_other_pages %}
+    <div class="pagination-container">
+        <nav aria-label="Paginación de activos">
+            <ul class="pagination">
+                {% if activos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ activos.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                            Anterior
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in activos.paginator.page_range %}
+                    {% if num == activos.number %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if activos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ activos.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                            Siguiente
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div class="modal fade" id="eliminarModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar el activo fijo <strong id="activoNombre"></strong>?</p>
+                <p class="text-danger">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <form id="formEliminar" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmarEliminacion(activoId, codigoPatrimonial) {
+    document.getElementById('activoNombre').textContent = codigoPatrimonial;
+    document.getElementById('formEliminar').action = `/activos/eliminar/${activoId}/`;
+    $('#eliminarModal').modal('show');
+}
+
+// Auto-submit de filtros
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.filters-form');
+    const inputs = form.querySelectorAll('input, select');
+    
+    inputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Para inputs de texto, esperar un poco antes de enviar
+            if (input.type === 'text') {
+                clearTimeout(input.timeout);
+                input.timeout = setTimeout(() => form.submit(), 1000);
+            } else {
+                form.submit();
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.activos-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.activos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.stat-label {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.filters-panel {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.filters-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.activos-list {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.activo-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.activo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.activo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.activo-codigo {
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.activo-estados {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.estado-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.estado-fisico-excelente, .estado-fisico-muy_bueno { background: #27ae60; color: white; }
+.estado-fisico-bueno { background: #2ecc71; color: white; }
+.estado-fisico-regular { background: #f39c12; color: white; }
+.estado-fisico-malo, .estado-fisico-inservible { background: #e74c3c; color: white; }
+
+.estado-operativo-operativo { background: #27ae60; color: white; }
+.estado-operativo-no_operativo { background: #e74c3c; color: white; }
+.estado-operativo-en_mantenimiento { background: #f39c12; color: white; }
+
+.activo-body {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.activo-nombre {
+    font-size: 1.3rem;
+    color: #2c3e50;
+    margin: 0 0 0.5rem 0;
+}
+
+.activo-categoria {
+    color: #7f8c8d;
+    margin-bottom: 1rem;
+}
+
+.activo-details {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.detail-row {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.activo-valor {
+    text-align: right;
+}
+
+.valor-principal {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #27ae60;
+    margin-bottom: 0.5rem;
+}
+
+.fecha-adquisicion {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.activo-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #bdc3c7;
+    margin-bottom: 1rem;
+}
+
+.pagination-container {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 0.25rem;
+}
+
+.page-item {
+    display: flex;
+}
+
+.page-link {
+    padding: 0.5rem 0.75rem;
+    color: #3498db;
+    text-decoration: none;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.page-link:hover {
+    background-color: #f8f9fa;
+}
+
+.page-item.active .page-link {
+    background-color: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .activos-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .header-stats {
+        justify-content: center;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .activo-body {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .activo-valor {
+        text-align: left;
+    }
+}
+</style>
+{% endblock %}

@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'guias',    # Nueva app para guías de laboratorio
     'core',     # Nueva app
     'usuarios', # App de gestión de usuarios
+    'activos',  # App de activos fijos
 ]
 
 MIDDLEWARE = [

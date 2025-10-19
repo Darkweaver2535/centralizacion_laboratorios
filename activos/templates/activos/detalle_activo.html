@@ -1,0 +1,500 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ activo.codigo_patrimonial }} - Detalle Activo{% endblock %}
+
+{% block page_title %}Detalle de Activo Fijo{% endblock %}
+
+{% block page_description %}Información completa del activo {{ activo.codigo_patrimonial }}{% endblock %}
+
+{% block content %}
+<div class="detalle-activo-container">
+    
+    <!-- Header del activo -->
+    <div class="activo-header-detail">
+        <div class="header-info">
+            <h1 class="codigo-patrimonial">{{ activo.codigo_patrimonial }}</h1>
+            <h2 class="nombre-activo">{{ activo.get_nombre_display }}</h2>
+            <div class="estados-container">
+                <span class="estado-badge estado-fisico-{{ activo.estado_fisico }}">
+                    <i class="fas fa-circle"></i> {{ activo.get_estado_fisico_display }}
+                </span>
+                <span class="estado-badge estado-operativo-{{ activo.estado_operativo }}">
+                    <i class="fas fa-power-off"></i> {{ activo.get_estado_operativo_display }}
+                </span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'activos:editar_activo' activo.id %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <button onclick="confirmarEliminacion({{ activo.id }}, '{{ activo.codigo_patrimonial }}')" 
+                    class="btn btn-danger">
+                <i class="fas fa-trash"></i> Eliminar
+            </button>
+            <a href="{% url 'activos:lista_activos' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- Información principal -->
+    <div class="detalle-grid">
+        
+        <!-- Información básica -->
+        <div class="info-card">
+            <h3><i class="fas fa-info-circle"></i> Información Básica</h3>
+            <div class="info-content">
+                <div class="info-row">
+                    <label>Código Patrimonial:</label>
+                    <span>{{ activo.codigo_patrimonial }}</span>
+                </div>
+                <div class="info-row">
+                    <label>Nombre del Activo:</label>
+                    <span>{{ activo.nombre|default:"-" }}</span>
+                </div>
+                <div class="info-row">
+                    <label>Categoría:</label>
+                    <span>{{ activo.get_categoria_display }}</span>
+                </div>
+                <div class="info-row">
+                    <label>Marca:</label>
+                    <span>{{ activo.marca|default:"-" }}</span>
+                </div>
+                <div class="info-row">
+                    <label>Modelo:</label>
+                    <span>{{ activo.modelo|default:"-" }}</span>
+                </div>
+                <div class="info-row">
+                    <label>Número de Serie:</label>
+                    <span>{{ activo.numero_serie|default:"-" }}</span>
+                </div>
+                {% if activo.descripcion %}
+                <div class="info-row description">
+                    <label>Descripción:</label>
+                    <span>{{ activo.descripcion }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Información financiera -->
+        <div class="info-card">
+            <h3><i class="fas fa-dollar-sign"></i> Información Financiera</h3>
+            <div class="info-content">
+                <div class="info-row highlight">
+                    <label>Valor de Adquisición:</label>
+                    <span class="valor-amount">{{ activo.get_valor_display }}</span>
+                </div>
+                <div class="info-row">
+                    <label>Fecha de Adquisición:</label>
+                    <span>{{ activo.fecha_adquisicion }}</span>
+                </div>
+                {% if activo.proveedor %}
+                <div class="info-row">
+                    <label>Proveedor:</label>
+                    <span>{{ activo.proveedor }}</span>
+                </div>
+                {% endif %}
+                {% if activo.numero_factura %}
+                <div class="info-row">
+                    <label>Número de Factura:</label>
+                    <span>{{ activo.numero_factura }}</span>
+                </div>
+                {% endif %}
+                {% if activo.garantia_meses %}
+                <div class="info-row">
+                    <label>Garantía:</label>
+                    <span>{{ activo.garantia_meses }} meses</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Ubicación y asignación -->
+        <div class="info-card">
+            <h3><i class="fas fa-map-marker-alt"></i> Ubicación y Asignación</h3>
+            <div class="info-content">
+                <div class="info-row">
+                    <label>Unidad Académica:</label>
+                    <span>{{ activo.unidad_academica.get_nombre_display }}</span>
+                </div>
+                {% if activo.laboratorio %}
+                <div class="info-row">
+                    <label>Laboratorio:</label>
+                    <span>{{ activo.laboratorio.nombre }}</span>
+                </div>
+                {% endif %}
+                {% if activo.carrera %}
+                <div class="info-row">
+                    <label>Carrera:</label>
+                    <span>{{ activo.carrera.nombre }}</span>
+                </div>
+                {% endif %}
+                {% if activo.ubicacion_fisica %}
+                <div class="info-row">
+                    <label>Ubicación Física:</label>
+                    <span>{{ activo.ubicacion_fisica }}</span>
+                </div>
+                {% endif %}
+                {% if activo.responsable %}
+                <div class="info-row">
+                    <label>Responsable:</label>
+                    <span>{{ activo.responsable }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Estados y condiciones -->
+        <div class="info-card">
+            <h3><i class="fas fa-cogs"></i> Estados y Condiciones</h3>
+            <div class="info-content">
+                <div class="info-row">
+                    <label>Estado Físico:</label>
+                    <span class="estado-inline estado-fisico-{{ activo.estado_fisico }}">
+                        {{ activo.get_estado_fisico_display }}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <label>Estado Operativo:</label>
+                    <span class="estado-inline estado-operativo-{{ activo.estado_operativo }}">
+                        {{ activo.get_estado_operativo_display }}
+                    </span>
+                </div>
+                {% if activo.observaciones %}
+                <div class="info-row description">
+                    <label>Observaciones:</label>
+                    <span>{{ activo.observaciones }}</span>
+                </div>
+                {% endif %}
+                {% if activo.fecha_ultimo_mantenimiento %}
+                <div class="info-row">
+                    <label>Último Mantenimiento:</label>
+                    <span>{{ activo.fecha_ultimo_mantenimiento }}</span>
+                </div>
+                {% endif %}
+                {% if activo.frecuencia_mantenimiento_meses %}
+                <div class="info-row">
+                    <label>Frecuencia de Mantenimiento:</label>
+                    <span>Cada {{ activo.frecuencia_mantenimiento_meses }} meses</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Especificaciones técnicas -->
+        {% if activo.especificaciones_tecnicas %}
+        <div class="info-card full-width">
+            <h3><i class="fas fa-microchip"></i> Especificaciones Técnicas</h3>
+            <div class="info-content">
+                <div class="specs-content">
+                    {{ activo.especificaciones_tecnicas|linebreaks }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Información de auditoría -->
+        <div class="info-card full-width">
+            <h3><i class="fas fa-history"></i> Información de Registro</h3>
+            <div class="info-content">
+                <div class="audit-grid">
+                    <div class="info-row">
+                        <label>Fecha de Creación:</label>
+                        <span>{{ activo.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <label>Última Actualización:</label>
+                        <span>{{ activo.fecha_actualizacion|date:"d/m/Y H:i" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div class="modal fade" id="eliminarModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar el activo fijo <strong id="activoNombre"></strong>?</p>
+                <p class="text-danger">Esta acción no se puede deshacer y eliminará toda la información asociada.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <form id="formEliminar" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar Definitivamente</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmarEliminacion(activoId, codigoPatrimonial) {
+    document.getElementById('activoNombre').textContent = codigoPatrimonial;
+    document.getElementById('formEliminar').action = `/activos/eliminar/${activoId}/`;
+    $('#eliminarModal').modal('show');
+}
+</script>
+
+<style>
+.detalle-activo-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.activo-header-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.header-info h1.codigo-patrimonial {
+    font-size: 2.5rem;
+    margin: 0;
+    font-weight: 300;
+}
+
+.header-info h2.nombre-activo {
+    font-size: 1.5rem;
+    margin: 0.5rem 0 1rem 0;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.estados-container {
+    display: flex;
+    gap: 1rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.detalle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.info-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+}
+
+.info-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.info-card h3 {
+    background: #f8f9fa;
+    margin: 0;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.info-card h3 i {
+    margin-right: 0.5rem;
+    color: #3498db;
+}
+
+.info-content {
+    padding: 1.5rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f1f2f6;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.info-row.description {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.info-row.description label {
+    margin-bottom: 0.5rem;
+}
+
+.info-row.highlight {
+    background: #f8f9fa;
+    margin: -0.5rem -1rem 1rem -1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.info-row label {
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 150px;
+    flex-shrink: 0;
+}
+
+.info-row span {
+    color: #7f8c8d;
+    text-align: right;
+    flex-grow: 1;
+    word-break: break-word;
+}
+
+.valor-amount {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #27ae60 !important;
+}
+
+.estado-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.estado-inline {
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Estados físicos */
+.estado-fisico-excelente, .estado-fisico-muy_bueno { 
+    background: #27ae60; 
+    color: white; 
+}
+.estado-fisico-bueno { 
+    background: #2ecc71; 
+    color: white; 
+}
+.estado-fisico-regular { 
+    background: #f39c12; 
+    color: white; 
+}
+.estado-fisico-malo, .estado-fisico-inservible { 
+    background: #e74c3c; 
+    color: white; 
+}
+
+/* Estados operativos */
+.estado-operativo-operativo { 
+    background: #27ae60; 
+    color: white; 
+}
+.estado-operativo-no_operativo { 
+    background: #e74c3c; 
+    color: white; 
+}
+.estado-operativo-en_mantenimiento { 
+    background: #f39c12; 
+    color: white; 
+}
+
+.specs-content {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.audit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .activo-header-detail {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
+    }
+    
+    .header-actions {
+        justify-content: center;
+    }
+    
+    .detalle-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .info-row label {
+        min-width: auto;
+    }
+    
+    .info-row span {
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    .detalle-activo-container {
+        padding: 1rem;
+    }
+    
+    .header-info h1.codigo-patrimonial {
+        font-size: 2rem;
+    }
+    
+    .header-info h2.nombre-activo {
+        font-size: 1.2rem;
+    }
+    
+    .estados-container {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+</style>
+{% endblock %}

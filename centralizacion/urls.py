@@ -354,6 +354,7 @@ urlpatterns = [
     path('login/', include('login.urls')),
     path('equipos/', include('equipos.urls')),
     path('insumos/', include('insumos.urls')),
+    path('activos/', include('activos.urls')),
     path('guias/', include('guias.urls')),
     path('usuarios/', include('usuarios.urls')),
     path('dashboard/', include('core.urls', namespace='core')),

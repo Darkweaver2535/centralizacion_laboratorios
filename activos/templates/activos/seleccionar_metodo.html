@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Activos Fijos{% endblock %}
+
+{% block page_title %}Gestión de Activos Fijos{% endblock %}
+
+{% block page_description %}Sistema integral de administración de activos fijos institucionales{% endblock %}
+
+{% block content %}
+<div class="method-selector-container">
+    
+    <!-- Título y descripción -->
+    <div class="selector-header">
+        <h2><i class="fas fa-building"></i> Gestión de Activos Fijos</h2>
+        <p class="description">Administre y controle todos los activos fijos de la institución</p>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="stats-overview">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-cubes"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ stats.total_activos|default:0 }}</h3>
+                <p>Total Activos</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ stats.activos_operativos|default:0 }}</h3>
+                <p>Operativos</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Bs. {{ stats.valor_total|floatformat:0|default:0 }}</h3>
+                <p>Valor Total</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opciones principales -->
+    <div class="method-options">
+        
+        <!-- Opción 1: Ver Lista de Activos -->
+        <div class="method-card list-card">
+            <div class="method-icon">
+                <i class="fas fa-list"></i>
+            </div>
+            <div class="method-content">
+                <h3>Lista de Activos</h3>
+                <p>Visualice, busque y filtre todos los activos fijos registrados</p>
+                <div class="method-features">
+                    <ul>
+                        <li><i class="fas fa-check"></i> Vista completa de activos</li>
+                        <li><i class="fas fa-check"></i> Filtros avanzados</li>
+                        <li><i class="fas fa-check"></i> Búsqueda por código patrimonial</li>
+                        <li><i class="fas fa-check"></i> Exportación a Excel</li>
+                    </ul>
+                </div>
+                <div class="method-actions">
+                    <a href="{% url 'activos:lista_activos' %}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> Ver Activos
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opción 2: Agregar Nuevo Activo -->
+        <div class="method-card manual-card">
+            <div class="method-icon">
+                <i class="fas fa-plus"></i>
+            </div>
+            <div class="method-content">
+                <h3>Agregar Activo</h3>
+                <p>Registre un nuevo activo fijo con información completa</p>
+                <div class="method-features">
+                    <ul>
+                        <li><i class="fas fa-check"></i> Registro detallado</li>
+                        <li><i class="fas fa-check"></i> Validación inmediata</li>
+                        <li><i class="fas fa-check"></i> Código patrimonial único</li>
+                        <li><i class="fas fa-check"></i> Control de garantías</li>
+                    </ul>
+                </div>
+                <div class="method-actions">
+                    <a href="{% url 'activos:agregar_activo' %}" class="btn btn-success">
+                        <i class="fas fa-plus-circle"></i> Nuevo Activo
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opción 3: Reportes y Estadísticas -->
+        <div class="method-card reports-card">
+            <div class="method-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <div class="method-content">
+                <h3>Reportes</h3>
+                <p>Genere reportes detallados y estadísticas de activos fijos</p>
+                <div class="method-features">
+                    <ul>
+                        <li><i class="fas fa-check"></i> Reportes por categoría</li>
+                        <li><i class="fas fa-check"></i> Estado de activos</li>
+                        <li><i class="fas fa-check"></i> Análisis de depreciación</li>
+                        <li><i class="fas fa-check"></i> Ubicación y responsables</li>
+                    </ul>
+                </div>
+                <div class="method-actions">
+                    <a href="{% url 'activos:exportar_excel' %}" class="btn btn-info">
+                        <i class="fas fa-download"></i> Exportar Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categorías de activos -->
+    <div class="categories-section">
+        <h4><i class="fas fa-tags"></i> Categorías de Activos Fijos</h4>
+        
+        <div class="categories-grid">
+            {% for categoria in stats.por_categoria %}
+            <div class="category-card">
+                <div class="category-icon">
+                    {% if categoria.categoria == 'equipos_computo' %}
+                        <i class="fas fa-laptop"></i>
+                    {% elif categoria.categoria == 'mobiliario' %}
+                        <i class="fas fa-chair"></i>
+                    {% elif categoria.categoria == 'vehiculos' %}
+                        <i class="fas fa-car"></i>
+                    {% elif categoria.categoria == 'maquinaria' %}
+                        <i class="fas fa-cogs"></i>
+                    {% elif categoria.categoria == 'equipos_laboratorio' %}
+                        <i class="fas fa-flask"></i>
+                    {% elif categoria.categoria == 'equipos_audiovisuales' %}
+                        <i class="fas fa-video"></i>
+                    {% elif categoria.categoria == 'instrumentos' %}
+                        <i class="fas fa-tools"></i>
+                    {% elif categoria.categoria == 'infraestructura' %}
+                        <i class="fas fa-building"></i>
+                    {% elif categoria.categoria == 'bibliotecas' %}
+                        <i class="fas fa-book"></i>
+                    {% else %}
+                        <i class="fas fa-archive"></i>
+                    {% endif %}
+                </div>
+                <div class="category-content">
+                    <h5>{{ categoria.count }}</h5>
+                    <p>{{ categoria.categoria|title|default:"Otros" }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <div class="category-card empty">
+                <div class="category-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <div class="category-content">
+                    <h5>0</h5>
+                    <p>No hay activos registrados</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Información importante -->
+    <div class="info-section">
+        <h4><i class="fas fa-info-circle"></i> Información Importante</h4>
+        
+        <div class="info-grid">
+            <div class="info-card">
+                <h5><i class="fas fa-barcode"></i> Código Patrimonial</h5>
+                <ul>
+                    <li>Cada activo debe tener un código único</li>
+                    <li>Formato recomendado: EMI-AAAA-NNNN</li>
+                    <li>No puede duplicarse en el sistema</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h5><i class="fas fa-shield-alt"></i> Estados de Activos</h5>
+                <ul>
+                    <li><strong>Estado Físico:</strong> Excelente, Muy Bueno, Bueno, Regular, Malo</li>
+                    <li><strong>Estado Operativo:</strong> Operativo, No Operativo, En Mantenimiento</li>
+                    <li>Ambos estados son independientes</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h5><i class="fas fa-users"></i> Responsabilidades</h5>
+                <ul>
+                    <li>Asigne responsables a cada activo</li>
+                    <li>Mantenga actualizada la ubicación</li>
+                    <li>Registre transferencias y movimientos</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h5><i class="fas fa-wrench"></i> Mantenimiento</h5>
+                <ul>
+                    <li>Programe mantenimientos preventivos</li>
+                    <li>Registre reparaciones realizadas</li>
+                    <li>Control de garantías y vencimientos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos específicos para activos fijos */
+.method-selector-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.selector-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.selector-header h2 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.selector-header .description {
+    font-size: 1.1rem;
+    color: #7f8c8d;
+}
+
+.stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.stat-content p {
+    margin: 0.25rem 0 0 0;
+    opacity: 0.9;
+}
+
+.method-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.method-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.method-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.list-card {
+    border-left: 4px solid #3498db;
+}
+
+.manual-card {
+    border-left: 4px solid #27ae60;
+}
+
+.reports-card {
+    border-left: 4px solid #f39c12;
+}
+
+.method-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.list-card .method-icon {
+    color: #3498db;
+}
+
+.manual-card .method-icon {
+    color: #27ae60;
+}
+
+.reports-card .method-icon {
+    color: #f39c12;
+}
+
+.method-content h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.method-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+.method-features li {
+    padding: 0.25rem 0;
+    color: #7f8c8d;
+}
+
+.method-features i {
+    color: #27ae60;
+    margin-right: 0.5rem;
+}
+
+.categories-section,
+.info-section {
+    margin-top: 3rem;
+}
+
+.categories-section h4,
+.info-section h4 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 0.5rem;
+}
+
+.categories-grid,
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.category-card,
+.info-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.category-card.empty {
+    opacity: 0.6;
+}
+
+.category-icon {
+    font-size: 2rem;
+    color: #3498db;
+    margin-bottom: 0.5rem;
+}
+
+.category-content h5,
+.info-card h5 {
+    font-size: 1.5rem;
+    margin: 0.5rem 0;
+    color: #2c3e50;
+}
+
+.category-content p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.info-card {
+    text-align: left;
+}
+
+.info-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0 0;
+}
+
+.info-card li {
+    padding: 0.25rem 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-success {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-info {
+    background: #f39c12;
+    color: white;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %}

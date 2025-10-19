@@ -688,7 +688,7 @@
                             <i class="fas fa-boxes"></i>
                             Insumos
                         </a>
-                        <a href="#" class="submenu-item">
+                        <a href="{% url 'activos:seleccionar_metodo' %}" class="submenu-item {% if request.resolver_match.namespace == 'activos' %}active{% endif %}">
                             <i class="fas fa-archive"></i>
                             Activos Fijos
                         </a>
@@ -731,6 +731,7 @@
                     <ul style="margin-top: 10px; padding-left: 20px; color: #6b7280;">
                         <li>Gestión integral de equipos de laboratorio</li>
                         <li>Control de insumos (herramientas, materiales y reactivos)</li>
+                        <li>Gestión de activos fijos institucionales</li>
                         <li>Visualización y análisis de información por diferentes criterios</li>
                         <li>Gestión centralizada de la información académica</li>
                         <li>Reportes y métricas avanzadas</li>
@@ -742,6 +743,7 @@
                     <ul style="color: #374151; font-size: 14px;">
                         <li><strong>Equipos:</strong> Sistema completo de gestión con información detallada</li>
                         <li><strong>Insumos:</strong> Gestión separada de materiales, herramientas y reactivos</li>
+                        <li><strong>Activos Fijos:</strong> Control patrimonial de activos institucionales</li>
                         <li><strong>Dashboard:</strong> Métricas y estadísticas en tiempo real</li>
                     </ul>
                 </div>
