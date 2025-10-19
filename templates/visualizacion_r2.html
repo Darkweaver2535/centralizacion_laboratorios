@@ -191,15 +191,39 @@
                                     <th>Marca</th>
                                     <th>Modelo</th>
                                     <th>Laboratorio</th>
+                                {% elif categoria == 'insumos' %}
+                                    <!-- Columnas del Excel de Insumos (20 oficiales) -->
+                                    <th>Unidad Académica</th>
+                                    <th>Laboratorio</th>
+                                    <th>Categoría</th>
+                                    <th>Nombre del Elemento</th>
+                                    <th>Descripción/Características</th>
+                                    <th>Marca / Modelo</th>
+                                    <th>Código de Inventario</th>
+                                    <th>Estado</th>
+                                    <th>Ubicación Física</th>
+                                    <th>Cantidad</th>
+                                    <th>Unidad de Medida</th>
+                                    <th>Fecha de Ingreso/Compra</th>
+                                    <th>Uso Principal</th>
+                                    <th>Carrera</th>
+                                    <th>Semestre</th>
+                                    <th>Asignatura</th>
+                                    <th>Unidad Temática</th>
+                                    <th>Condiciones de Almacenamiento</th>
+                                    <th>Observaciones</th>
+                                    <th>Link de Fotografía</th>
+                                    
+                                    <!-- Campos académicos adicionales -->
+                                    <th>Guía de Laboratorio</th>
+                                    <th>Práctica</th>
                                 {% else %}
                                     <th>Nombre</th>
                                     <th>Descripción</th>
                                     <th>Unidad Académica</th>
                                     <th>Carrera</th>
                                     <th>Semestre</th>
-                                    {% if categoria == 'insumos' %}
-                                        <th>Categoría</th>
-                                    {% elif categoria == 'guias' %}
+                                    {% if categoria == 'guias' %}
                                         <th>Tipo</th>
                                     {% endif %}
                                 {% endif %}
@@ -212,8 +236,8 @@
                                 <tr>
                                     <!-- Columnas del Excel (10 oficiales) -->
                                     <td>{{ forloop.counter }}</td>
-                                    <td>{{ equipo.unidad_academica.get_nombre_display|default:"N/A" }}</td>
-                                    <td>{{ equipo.responsable.nombre_completo|default:"-" }}</td>
+                                    <td>{{ equipo.unidad_academica.nombre|default:"N/A" }}</td>
+                                    <td>{{ equipo.responsable_excel|default:"-" }}</td>
                                     <td>{{ equipo.ci_responsable|default:"-" }}</td>
                                     <td>{{ equipo.cargo_responsable|default:"-" }}</td>
                                     <td>{{ equipo.oficina|default:"-" }}</td>
@@ -258,12 +282,54 @@
                             {% elif categoria == 'insumos' and insumos %}
                                 {% for insumo in insumos %}
                                 <tr>
+                                    <!-- Columnas del Excel de Insumos (20 oficiales) -->
+                                    <td>{{ insumo.unidad_academica.nombre|default:"N/A" }}</td>
+                                    <td>{{ insumo.laboratorio.get_nombre_display|default:"N/A" }}</td>
+                                    <td>{{ insumo.get_categoria_display|default:"Sin categoría" }}</td>
                                     <td><strong>{{ insumo.nombre_elemento|default:"Sin nombre" }}</strong></td>
                                     <td>{{ insumo.descripcion_caracteristicas|default:"Sin descripción" }}</td>
-                                    <td>{{ insumo.unidad_academica.nombre|default:"N/A" }}</td>
-                                    <td>{{ insumo.carrera.nombre|default:"N/A" }}</td>
-                                    <td>N/A</td>
-                                    <td>{{ insumo.categoria|default:"Sin categoría" }}</td>
+                                    <td>{{ insumo.marca_modelo|default:"-" }}</td>
+                                    <td>{{ insumo.codigo_inventario|default:"-" }}</td>
+                                    <td>
+                                        {% if insumo.estado == 'bueno' %}
+                                            <span class="badge bg-success">Bueno</span>
+                                        {% elif insumo.estado == 'regular' %}
+                                            <span class="badge bg-warning">Regular</span>
+                                        {% elif insumo.estado == 'malo' %}
+                                            <span class="badge bg-danger">Malo</span>
+                                        {% elif insumo.estado == 'vencido' %}
+                                            <span class="badge bg-danger">Vencido</span>
+                                        {% elif insumo.estado == 'agotado' %}
+                                            <span class="badge bg-secondary">Agotado</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ insumo.get_estado_display|default:"Sin estado" }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ insumo.ubicacion_fisica|default:"-" }}</td>
+                                    <td>{{ insumo.cantidad|default:0 }}</td>
+                                    <td>{{ insumo.get_unidad_medida_display|default:"-" }}</td>
+                                    <td>{{ insumo.fecha_ingreso_compra|default:"-" }}</td>
+                                    <td>{{ insumo.get_uso_principal_display|default:"-" }}</td>
+                                    <td>{{ insumo.carrera.get_nombre_display|default:"N/A" }}</td>
+                                    <td>N/A</td> <!-- Semestre no aplica para insumos generalmente -->
+                                    <td>{{ insumo.asignatura.get_nombre_display|default:"N/A" }}</td>
+                                    <td>{{ insumo.unidad_tematica.nombre|default:"-" }}</td>
+                                    <td>{{ insumo.get_condiciones_almacenamiento_display|default:"-" }}</td>
+                                    <td>{{ insumo.observaciones|truncatechars:50|default:"-" }}</td>
+                                    <td>
+                                        {% if insumo.link_fotografia %}
+                                            <a href="{{ insumo.link_fotografia }}" target="_blank" class="btn btn-sm btn-info">
+                                                <i class="fas fa-image"></i>
+                                            </a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <!-- Campos académicos adicionales -->
+                                    <td>{{ insumo.guia_laboratorio.get_nombre_display|default:"-" }}</td>
+                                    <td>{{ insumo.practica.get_nombre_display|default:"-" }}</td>
+                                    
                                     <td>
                                         <button class="btn-action" onclick="verDetalle('insumos', {{ insumo.id }})">
                                             <i class="fas fa-eye"></i> Ver
