@@ -180,10 +180,195 @@
     .filters-panel {
         background: white;
         border-radius: 12px;
-        padding: 25px;
-        box-shadow: var(--shadow-md);
-        margin-bottom: 30px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-sm);
         border: 1px solid var(--gray-200);
+    }
+    
+    /* Información de filtros y resultados */
+    .filters-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 2rem;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .results-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .results-count {
+        font-size: 1rem;
+        color: var(--text-color);
+    }
+    
+    .active-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .filters-label {
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-right: 0.5rem;
+    }
+    
+    .filter-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: var(--primary-color);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .filter-tag .remove-filter {
+        color: white;
+        text-decoration: none;
+        font-weight: bold;
+        margin-left: 0.25rem;
+        padding: 0 0.25rem;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+    }
+    
+    .filter-tag .remove-filter:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Estilos para resultados filtrados */
+    .filtered-results {
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .asignaturas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .asignatura-item {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        transition: var(--transition);
+    }
+    
+    .asignatura-item:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+    
+    .asignatura-header {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--gray-100);
+    }
+    
+    .asignatura-nombre {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin: 0 0 0.5rem 0;
+    }
+    
+    .asignatura-semestre {
+        background: var(--secondary-color);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .asignatura-info {
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-item {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+    
+    .info-item strong {
+        color: var(--text-color);
+        font-weight: 600;
+    }
+    
+    .asignatura-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        border-radius: 6px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: var(--transition);
+    }
+    
+    /* Paginación */
+    .pagination-container {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .pagination {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        gap: 0.25rem;
+    }
+    
+    .page-item {
+        display: flex;
+    }
+    
+    .page-link {
+        padding: 0.5rem 0.75rem;
+        color: var(--primary-color);
+        text-decoration: none;
+        border: 1px solid var(--gray-300);
+        border-radius: 6px;
+        transition: var(--transition);
+    }
+    
+    .page-link:hover {
+        background-color: var(--gray-100);
+    }
+    
+    .page-item.active .page-link {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
     }
 
     .filter-header {
@@ -794,17 +979,6 @@
         {% if filterset %}
         <form method="get" id="filtros-form">
             <div class="filters-grid">
-                <!-- Búsqueda general -->
-                <div class="form-group">
-                    <label for="{{ filterset.form.search.id_for_label }}" class="form-label">Búsqueda General</label>
-                    {{ filterset.form.search }}
-                </div>
-                
-                <!-- Filtro por nombre específico -->
-                <div class="form-group">
-                    <label for="{{ filterset.form.nombre.id_for_label }}" class="form-label">Nombre de Asignatura</label>
-                    {{ filterset.form.nombre }}
-                </div>
                 
                 <!-- Unidad Académica -->
                 <div class="form-group">
@@ -822,6 +996,18 @@
                 <div class="form-group">
                     <label for="{{ filterset.form.semestre.id_for_label }}" class="form-label">Semestre</label>
                     {{ filterset.form.semestre }}
+                </div>
+                
+                <!-- Búsqueda general -->
+                <div class="form-group">
+                    <label for="{{ filterset.form.search.id_for_label }}" class="form-label">Búsqueda General</label>
+                    {{ filterset.form.search }}
+                </div>
+                
+                <!-- Filtro por nombre específico -->
+                <div class="form-group">
+                    <label for="{{ filterset.form.nombre.id_for_label }}" class="form-label">Nombre de Asignatura</label>
+                    {{ filterset.form.nombre }}
                 </div>
                 
                 <!-- Código de Competencia -->
@@ -878,7 +1064,149 @@
         {% endif %}
     </div>
 
-    <!-- Carreras con Malla Curricular -->
+    <!-- Información de filtros y resultados -->
+    <div class="filters-info">
+        <div class="results-summary">
+            {% if filterset %}
+                <div class="results-count">
+                    <strong>{{ filtered_count }}</strong> asignatura{{ filtered_count|pluralize }} 
+                    {% if filtered_count != total_count %}
+                        de <strong>{{ total_count }}</strong> total{{ total_count|pluralize }}
+                    {% endif %}
+                </div>
+                
+                <!-- Filtros activos -->
+                {% if request.GET %}
+                <div class="active-filters">
+                    <span class="filters-label">Filtros activos:</span>
+                    {% if request.GET.search %}
+                        <span class="filter-tag">
+                            Búsqueda: "{{ request.GET.search }}"
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'search' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
+                        </span>
+                    {% endif %}
+                    {% if request.GET.nombre %}
+                        <span class="filter-tag">
+                            Nombre: "{{ request.GET.nombre }}"
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'nombre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
+                        </span>
+                    {% endif %}
+                    {% if request.GET.unidad_academica %}
+                        <span class="filter-tag">
+                            Unidad: {{ request.GET.unidad_academica }}
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'unidad_academica' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
+                        </span>
+                    {% endif %}
+                    {% if request.GET.carrera %}
+                        <span class="filter-tag">
+                            Carrera: {{ request.GET.carrera }}
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'carrera' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
+                        </span>
+                    {% endif %}
+                    {% if request.GET.semestre %}
+                        <span class="filter-tag">
+                            Semestre: {{ request.GET.semestre }}°
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'semestre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
+                        </span>
+                    {% endif %}
+                    {% if request.GET.codigo_competencia %}
+                        <span class="filter-tag">
+                            Código: "{{ request.GET.codigo_competencia }}"
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'codigo_competencia' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
+                        </span>
+                    {% endif %}
+                    {% if request.GET.sigla_curricular %}
+                        <span class="filter-tag">
+                            Sigla: "{{ request.GET.sigla_curricular }}"
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'sigla_curricular' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
+                        </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Resultados de búsqueda (cuando hay filtros aplicados) -->
+    {% if show_filtered_results and asignaturas %}
+    <div class="filtered-results">
+        <h3 class="section-title">
+            <i class="fas fa-search"></i> Resultados de Búsqueda
+        </h3>
+        
+        <div class="asignaturas-grid">
+            {% for asignatura in asignaturas %}
+            <div class="asignatura-item">
+                <div class="asignatura-header">
+                    <h4 class="asignatura-nombre">{{ asignatura.get_nombre_display }}</h4>
+                    <span class="asignatura-semestre">{{ asignatura.semestre|default:"Sin semestre" }}° Semestre</span>
+                </div>
+                
+                <div class="asignatura-info">
+                    <div class="info-item">
+                        <strong>Carrera:</strong> {{ asignatura.carrera.get_nombre_display }}
+                    </div>
+                    <div class="info-item">
+                        <strong>Unidad:</strong> {{ asignatura.carrera.unidad_academica.get_nombre_display }}
+                    </div>
+                    {% if asignatura.codigo_competencia %}
+                    <div class="info-item">
+                        <strong>Código:</strong> {{ asignatura.codigo_competencia }}
+                    </div>
+                    {% endif %}
+                    {% if asignatura.sigla_curricular %}
+                    <div class="info-item">
+                        <strong>Sigla:</strong> {{ asignatura.sigla_curricular }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="asignatura-actions">
+                    <a href="{% url 'core:detalle_asignatura' asignatura.id %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-eye"></i> Ver Detalles
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Paginación para resultados filtrados -->
+        {% if asignaturas.has_other_pages %}
+        <div class="pagination-container">
+            <nav aria-label="Paginación de resultados">
+                <ul class="pagination">
+                    {% if asignaturas.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ asignaturas.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in asignaturas.paginator.page_range %}
+                        {% if num == asignaturas.number %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if asignaturas.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ asignaturas.next_page_number }}">Siguiente</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Carreras con Malla Curricular (vista por defecto) -->
+    {% if not show_filtered_results %}
     <div id="carreras-container">
         {% for carrera_data in carreras_con_malla %}
         <div class="carrera-card" data-unidad="{{ carrera_data.carrera.unidad_academica.id }}" data-carrera="{{ carrera_data.carrera.id }}">
@@ -978,8 +1306,9 @@
         </div>
         {% endfor %}
     </div>
+    {% endif %} <!-- Cierre de if not show_filtered_results -->
 
-    {% if not carreras_con_malla %}
+    {% if not carreras_con_malla and not show_filtered_results %}
     <div class="empty-state">
         <div class="empty-state-icon">
             <i class="fas fa-book-open"></i>
@@ -1173,12 +1502,59 @@ function limpiarFiltros() {
     }
 }
 
+// Filtros en cascada para malla curricular
+function actualizarCarrerasPorUnidad() {
+    const unidadSelect = document.getElementById('id_unidad_academica');
+    const carreraSelect = document.getElementById('id_carrera');
+    
+    if (!unidadSelect || !carreraSelect) return;
+    
+    const unidadId = unidadSelect.value;
+    
+    if (!unidadId) {
+        // Si no hay unidad seleccionada, mostrar todas las carreras
+        location.reload(); // Recargar para mostrar opciones completas
+        return;
+    }
+    
+    // Limpiar el selector de carreras
+    carreraSelect.innerHTML = '<option value="">Cargando carreras...</option>';
+    
+    // Hacer llamada AJAX para obtener carreras por unidad
+    fetch(`{% url 'core:carreras_por_unidad' %}?unidad_id=${unidadId}`)
+        .then(response => response.json())
+        .then(data => {
+            carreraSelect.innerHTML = '<option value="">Todas las carreras</option>';
+            
+            if (data.carreras && data.carreras.length > 0) {
+                data.carreras.forEach(carrera => {
+                    carreraSelect.innerHTML += `<option value="${carrera.id}">${carrera.display}</option>`;
+                });
+            } else {
+                carreraSelect.innerHTML += '<option value="" disabled>No hay carreras disponibles</option>';
+            }
+            
+            // Aplicar filtros automáticamente
+            document.getElementById('filtros-form').submit();
+        })
+        .catch(error => {
+            console.error('Error cargando carreras:', error);
+            carreraSelect.innerHTML = '<option value="">Error cargando carreras</option>';
+        });
+}
+
+function actualizarSemestresPorCarrera() {
+    // Esta función puede expandirse para mostrar solo semestres disponibles
+    // Por ahora, simplemente aplicamos el filtro
+    document.getElementById('filtros-form').submit();
+}
+
 // Auto-submit para filtros django-filter
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('filtros-form');
     if (form) {
-        // Auto-submit cuando cambian los selectores
-        const selects = form.querySelectorAll('select');
+        // Auto-submit cuando cambian los selectores (excepto unidad y carrera que tienen sus propias funciones)
+        const selects = form.querySelectorAll('select:not(#id_unidad_academica):not(#id_carrera)');
         selects.forEach(select => {
             select.addEventListener('change', function() {
                 form.submit();

@@ -381,6 +381,10 @@ def malla_curricular_view(request):
         'carrera_seleccionada': request.GET.get('carrera', ''),
         'semestre_seleccionado': request.GET.get('semestre', ''),
         'search_term': request.GET.get('search', ''),
+        
+        # Información de filtros para mostrar
+        'has_filters': bool(request.GET and any(request.GET.values())),
+        'show_filtered_results': bool(filterset and any(request.GET.values())),
     }
     
     return render(request, 'core/malla_curricular.html', context)

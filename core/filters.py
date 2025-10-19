@@ -25,14 +25,22 @@ class AsignaturaFilter(django_filters.FilterSet):
     unidad_academica = django_filters.ModelChoiceFilter(
         queryset=UnidadAcademica.objects.all(),
         empty_label="Todas las unidades académicas",
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        widget=forms.Select(attrs={
+            'class': 'form-control', 
+            'id': 'id_unidad_academica',
+            'onchange': 'actualizarCarrerasPorUnidad()'
+        }),
         method='filter_unidad_academica'
     )
     
     carrera = django_filters.ModelChoiceFilter(
         queryset=Carrera.objects.all(),
         empty_label="Todas las carreras",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'id_carrera',
+            'onchange': 'actualizarSemestresPorCarrera()'
+        })
     )
     
     semestre = django_filters.ChoiceFilter(
