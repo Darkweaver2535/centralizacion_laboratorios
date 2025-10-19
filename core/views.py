@@ -138,33 +138,23 @@ def get_asignaturas_por_carrera_ajax(request):
     for asignatura in asignaturas:
         display_name = asignatura.get_nombre_display()
         
-        # FILTRO DE SEGURIDAD ESTRICTO: Omitir asignaturas con nombres problemáticos
+        # FILTRO DE SEGURIDAD: Omitir asignaturas con nombres problemáticos
         es_numerica = asignatura.nombre.isdigit()
         es_muy_corta = len(asignatura.nombre.strip()) <= 3
         tiene_solo_numeros = asignatura.nombre.replace(' ', '').isdigit()
         
         if es_numerica or (es_muy_corta and tiene_solo_numeros):
-            print(f"⚠️ FILTRO ESTRICTO: Omitiendo asignatura problemática '{asignatura.nombre}' (ID: {asignatura.id})")
             continue  # Omitir esta asignatura problemática
         
         # FILTRO ADICIONAL: Omitir asignaturas duplicadas con nombres confusos
         nombres_similares = ['168', '169', '170', '171', '172', '173', '174', '175']
         if asignatura.nombre in nombres_similares:
-            print(f"⚠️ FILTRO NOMBRES CONFUSOS: Omitiendo '{asignatura.nombre}' (ID: {asignatura.id})")
             continue
         
-        # FORMATO MEJORADO: Mostrar ID + nombre completo para máxima claridad
-        display_text = f"[ID:{asignatura.id}] {display_name}"
+        # FORMATO LIMPIO: Solo mostrar nombres descriptivos profesionales
+        display_text = display_name
         if asignatura.sigla_curricular:
             display_text += f" ({asignatura.sigla_curricular})"
-        
-        # Agregar información adicional si es útil
-        info_adicional = []
-        if asignatura.contenido_analitico_count > 0:
-            info_adicional.append(f"{asignatura.contenido_analitico_count} prácticas existentes")
-        
-        if info_adicional:
-            display_text += f" - {', '.join(info_adicional)}"
         
         asignaturas_data.append({
             'id': asignatura.id, 
