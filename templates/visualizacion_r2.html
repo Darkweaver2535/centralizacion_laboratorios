@@ -217,17 +217,25 @@
                                     <!-- Campos académicos adicionales -->
                                     <th>Guía de Laboratorio</th>
                                     <th>Práctica</th>
+                                {% elif categoria == 'guias' %}
+                                    <!-- Vista especializada para Guías de Laboratorio -->
+                                    <th>Título de la Práctica</th>
+                                    <th>Carrera</th>
+                                    <th>Asignatura</th>
+                                    <th>Semestre</th>
+                                    <th>Competencias</th>
+                                    <th>Objetivo de la Práctica</th>
+                                    <th>Tipo</th>
+                                    <th>Duración (hrs)</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
                                 {% else %}
                                     <th>Nombre</th>
                                     <th>Descripción</th>
                                     <th>Unidad Académica</th>
                                     <th>Carrera</th>
                                     <th>Semestre</th>
-                                    {% if categoria == 'guias' %}
-                                        <th>Tipo</th>
-                                    {% endif %}
                                 {% endif %}
-                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -337,18 +345,54 @@
                                     </td>
                                 </tr>
                                 {% endfor %}
-                            {% elif categoria == 'guias' and guias %}
-                                {% for guia in guias %}
-                                <tr>
-                                    <td><strong>{{ guia.titulo|default:"Sin título" }}</strong></td>
-                                    <td>{{ guia.contenido_analitico|truncatechars:100|default:"Sin descripción" }}</td>
-                                    <td>{{ guia.carrera.unidad_academica.nombre|default:"N/A" }}</td>
-                                    <td>{{ guia.carrera.nombre|default:"N/A" }}</td>
-                                    <td>{% if guia.semestre %}{{ guia.semestre }}° Semestre{% else %}N/A{% endif %}</td>
-                                    <td>{{ guia.get_tipo_practica_display|default:"Guía de práctica" }}</td>
+                            {% elif categoria == 'guias' and items %}
+                                {% for practica in items %}
+                                <tr class="guia-row">
+                                    <td><strong>{{ practica.nombre|default:"Sin título" }}</strong></td>
+                                    <td>{{ practica.contenido_analitico.unidad_didactica.asignatura.carrera|default:"N/A" }}</td>
+                                    <td>{{ practica.contenido_analitico.unidad_didactica.asignatura.nombre|default:"N/A" }}</td>
+                                    <td>{% if practica.contenido_analitico.unidad_didactica.asignatura.semestre %}{{ practica.contenido_analitico.unidad_didactica.asignatura.semestre }}°{% else %}N/A{% endif %}</td>
                                     <td>
-                                        <button class="btn-action" onclick="verDetalle('guias', {{ guia.id }})">
-                                            <i class="fas fa-eye"></i> Ver
+                                        <div class="competencias-preview">
+                                            {% if practica.contenido_analitico.competencias.all %}
+                                                {% for competencia in practica.contenido_analitico.competencias.all|slice:":1" %}
+                                                    {{ competencia.descripcion|truncatechars:80 }}
+                                                {% endfor %}
+                                                {% if practica.contenido_analitico.competencias.count > 1 %}
+                                                    <small class="text-muted">(+{{ practica.contenido_analitico.competencias.count|add:"-1" }} más)</small>
+                                                {% endif %}
+                                            {% else %}
+                                                Sin competencias definidas
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="objetivo-preview">
+                                            {% if practica.contenido_analitico.objetivos_practica.all %}
+                                                {% for objetivo in practica.contenido_analitico.objetivos_practica.all|slice:":1" %}
+                                                    {{ objetivo.descripcion|truncatechars:100 }}
+                                                {% endfor %}
+                                                {% if practica.contenido_analitico.objetivos_practica.count > 1 %}
+                                                    <small class="text-muted">(+{{ practica.contenido_analitico.objetivos_practica.count|add:"-1" }} más)</small>
+                                                {% endif %}
+                                            {% else %}
+                                                Sin objetivos definidos
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">{{ practica.get_tipo_practica_display|default:"Grupal" }}</span>
+                                    </td>
+                                    <td class="text-center">{{ practica.duracion_horas|default:"2.0" }} hrs</td>
+                                    <td>
+                                        <span class="badge badge-success">Activa</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-success btn-sm" onclick="generarGuiaPDF({{ practica.id }}, '{{ practica.nombre|escapejs }}')">
+                                            <i class="fas fa-file-pdf"></i> Generar Guía PDF
+                                        </button>
+                                        <button class="btn btn-info btn-sm mt-1" onclick="verDetallesCompletos({{ practica.id }})">
+                                            <i class="fas fa-eye"></i> Ver Detalles
                                         </button>
                                     </td>
                                 </tr>
@@ -375,11 +419,12 @@
                                         <i class="fas fa-chevron-left"></i>
                                     </a>
                                 </li>
-                            {% elif categoria == 'guias' and guias.has_previous %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ guias.previous_page_number }}">
+                            {% elif categoria == 'guias' %}
+                                <!-- Sin paginación para guías por ahora -->
+                                <li class="page-item disabled">
+                                    <span class="page-link">
                                         <i class="fas fa-chevron-left"></i>
-                                    </a>
+                                    </span>
                                 </li>
                             {% endif %}
                             
@@ -389,8 +434,8 @@
                                         {{ equipos.number }} de {{ equipos.paginator.num_pages }}
                                     {% elif categoria == 'insumos' and insumos %}
                                         {{ insumos.number }} de {{ insumos.paginator.num_pages }}
-                                    {% elif categoria == 'guias' and guias %}
-                                        {{ guias.number }} de {{ guias.paginator.num_pages }}
+                                    {% elif categoria == 'guias' %}
+                                        1 de 1
                                     {% else %}
                                         1 de 1
                                     {% endif %}
@@ -409,11 +454,12 @@
                                         <i class="fas fa-chevron-right"></i>
                                     </a>
                                 </li>
-                            {% elif categoria == 'guias' and guias.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ guias.next_page_number }}">
+                            {% elif categoria == 'guias' %}
+                                <!-- Sin paginación para guías por ahora -->
+                                <li class="page-item disabled">
+                                    <span class="page-link">
                                         <i class="fas fa-chevron-right"></i>
-                                    </a>
+                                    </span>
                                 </li>
                             {% endif %}
                         </ul>
@@ -1842,6 +1888,144 @@ function mostrarError(mensaje) {
             </button>
         </div>
     `;
+}
+
+// === FUNCIONES PARA GUÍAS DE LABORATORIO ===
+
+// Función para generar PDF de la guía completa (simplificada, sin jQuery)
+function generarGuiaPDF(practicaId, tituloPractica) {
+    console.log(`🔄 Generando PDF para práctica ID: ${practicaId}, Título: ${tituloPractica}`);
+    
+    // Mostrar notificación de carga simple
+    const toast = document.createElement('div');
+    toast.id = 'pdfLoadingToast';
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #007bff;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+    `;
+    toast.innerHTML = `
+        <i class="fas fa-spinner fa-spin"></i> 
+        Generando PDF: "${tituloPractica}"...
+    `;
+    document.body.appendChild(toast);
+    
+    // Realizar petición directa para generar PDF
+    fetch(`/guias/practica/${practicaId}/generar-pdf/`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        credentials: 'same-origin',  // Incluir cookies de sesión
+    })
+    .then(response => {
+        console.log('📄 Respuesta recibida:', response.status, response.statusText);
+        
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
+        }
+    })
+    .then(blob => {
+        console.log('✅ PDF blob recibido, tamaño:', blob.size, 'bytes');
+        
+        // Remover toast de carga
+        const loadingToast = document.getElementById('pdfLoadingToast');
+        if (loadingToast) {
+            document.body.removeChild(loadingToast);
+        }
+        
+        // Crear URL del blob y descargar automáticamente
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `Guia_${tituloPractica.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        // Mostrar notificación de éxito
+        mostrarNotificacionSimple('✅ PDF descargado exitosamente', 'success', 3000);
+    })
+    .catch(error => {
+        console.error('❌ Error generando PDF:', error);
+        
+        // Remover toast de carga
+        const loadingToast = document.getElementById('pdfLoadingToast');
+        if (loadingToast) {
+            document.body.removeChild(loadingToast);
+        }
+        
+        // Mostrar notificación de error
+        mostrarNotificacionSimple(`❌ Error: ${error.message}`, 'error', 5000);
+    });
+}
+
+// Función auxiliar para mostrar notificaciones simples
+function mostrarNotificacionSimple(mensaje, tipo, duracion = 4000) {
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 8px;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        background: ${tipo === 'success' ? '#28a745' : '#dc3545'};
+        max-width: 300px;
+    `;
+    notif.innerHTML = mensaje;
+    document.body.appendChild(notif);
+    
+    // Remover después del tiempo especificado
+    setTimeout(() => {
+        if (document.body.contains(notif)) {
+            notif.style.opacity = '0';
+            notif.style.transition = 'opacity 0.3s';
+            setTimeout(() => {
+                if (document.body.contains(notif)) {
+                    document.body.removeChild(notif);
+                }
+            }, 300);
+        }
+    }, duracion);
+}
+
+// Función para ver detalles completos de la guía (ahora para prácticas)
+function verDetallesCompletos(practicaId) {
+    // Redirigir a la vista de detalle de la práctica
+    window.location.href = `/guias/practica/${practicaId}/detalle/`;
+}
+
+// Función auxiliar para obtener el token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 
 // Inicializar cuando la página carga

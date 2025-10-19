@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.paginator import Paginator
 from equipos.models import Equipo
 from insumos.models import Insumo
-from core.models import UnidadAcademica, Carrera, Laboratorio, GuiaLaboratorio, Asignatura, UnidadTematica, UnidadDidactica, ContenidoAnalitico
+from core.models import UnidadAcademica, Carrera, Laboratorio, GuiaLaboratorio, Asignatura, UnidadTematica, UnidadDidactica, ContenidoAnalitico, PracticaLaboratorio
 from guias.models import GuiaGenerada
 import json
 import openpyxl
@@ -65,32 +65,33 @@ def aplicar_filtros_insumos(insumos, params):
         )
     return insumos
 
-def aplicar_filtros_guias(guias, params):
-    """Aplicar filtros jerárquicos a guías de laboratorio (GuiaGenerada)"""
+def aplicar_filtros_guias(practicas, params):
+    """Aplicar filtros jerárquicos a prácticas de laboratorio (PracticaLaboratorio)"""
     if params.get('unidad_academica'):
-        guias = guias.filter(carrera__unidad_academica_id=params.get('unidad_academica'))
+        practicas = practicas.filter(contenido_analitico__unidad_didactica__asignatura__carrera__icontains=params.get('unidad_academica'))
     if params.get('carrera'):
-        guias = guias.filter(carrera_id=params.get('carrera'))
+        practicas = practicas.filter(contenido_analitico__unidad_didactica__asignatura__carrera__icontains=params.get('carrera'))
     if params.get('semestre'):
-        guias = guias.filter(semestre=params.get('semestre'))
+        practicas = practicas.filter(contenido_analitico__unidad_didactica__asignatura__semestre=params.get('semestre'))
     if params.get('asignatura'):
-        guias = guias.filter(asignatura_id=params.get('asignatura'))
+        practicas = practicas.filter(contenido_analitico__unidad_didactica__asignatura__nombre__icontains=params.get('asignatura'))
     if params.get('unidad_didactica'):
-        guias = guias.filter(unidad_didactica__icontains=params.get('unidad_didactica'))
+        practicas = practicas.filter(contenido_analitico__unidad_didactica__nombre__icontains=params.get('unidad_didactica'))
     if params.get('busqueda'):
-        guias = guias.filter(
-            Q(titulo__icontains=params.get('busqueda')) |
-            Q(contenido_analitico__icontains=params.get('busqueda')) |
-            Q(unidad_didactica__icontains=params.get('busqueda'))
+        practicas = practicas.filter(
+            Q(nombre__icontains=params.get('busqueda')) |
+            Q(contenido_analitico__descripcion__icontains=params.get('busqueda')) |
+            Q(contenido_analitico__unidad_didactica__nombre__icontains=params.get('busqueda')) |
+            Q(contenido_analitico__unidad_didactica__asignatura__nombre__icontains=params.get('busqueda'))
         )
-    return guias
+    return practicas
 
 @login_required
 def visualizacion_view(request):
     """Vista R2 unificada para visualización de Equipos, Insumos y Guías con django-filter integrado"""
     
     # Importar filtros de django-filter
-    from .filters import EquipoFilter, InsumoFilter, GuiaFilter
+    from .filters import EquipoFilter, InsumoFilter, GuiaFilter, PracticaLaboratorioFilter
     from guias.models import GuiaGenerada
     
     # Obtener categoría seleccionada y validarla
@@ -144,20 +145,25 @@ def visualizacion_view(request):
         }
         
     elif categoria == 'guias':
-        # Usar GuiaFilter en lugar de lógica manual
-        filterset = GuiaFilter(request.GET, queryset=GuiaGenerada.objects.select_related(
-            'carrera__unidad_academica', 'asignatura'
-        ))
+        # Usar PracticaLaboratorioFilter para filtrado automático
+        filterset = PracticaLaboratorioFilter(request.GET, queryset=PracticaLaboratorio.objects.select_related(
+            'contenido_analitico__unidad_didactica__asignatura'
+        ).prefetch_related(
+            'contenido_analitico__competencias',
+            'contenido_analitico__objetivos_practica'
+        ).order_by('contenido_analitico__unidad_didactica__asignatura__carrera', 
+                   'contenido_analitico__unidad_didactica__asignatura__semestre', 
+                   'orden'))
         items = filterset.qs  # Queryset filtrado por django-filter
         
-        # Estadísticas para guías
+        # Estadísticas para guías (prácticas)
         stats = {
             'total_items': items.count(),
             'total_laboratorios': Laboratorio.objects.count(),
-            'items_buenos': items.count(),  # Todas las guías son "buenas"
+            'items_buenos': items.count(),  # Todas las prácticas son "buenas"
             'items_regulares': 0,
             'items_malos': 0,
-            'categoria_nombre': 'Guías de Laboratorio'
+            'categoria_nombre': 'Guías de Laboratorio (Prácticas)'
         }
     
     # Verificación de seguridad para items
@@ -219,7 +225,7 @@ def visualizacion_view(request):
         'stats': {
             'total_equipos': Equipo.objects.count(),
             'total_insumos': Insumo.objects.count(),
-            'total_guias': GuiaGenerada.objects.count(),  # Usar GuiaGenerada
+            'total_guias': PracticaLaboratorio.objects.count(),  # Usar PracticaLaboratorio
             'equipos_buenos': Equipo.objects.filter(estado='bueno').count(),
             'equipos_regulares': Equipo.objects.filter(estado='regular').count(),
             'equipos_malos': Equipo.objects.filter(estado='malo').count(),
@@ -256,7 +262,9 @@ def visualizacion_view(request):
     elif categoria == 'insumos':
         context['insumos'] = items_page
     elif categoria == 'guias':
-        context['guias'] = items_page
+        # Para guías, pasar directamente los items sin paginación por ahora
+        context['guias'] = items  # Usar items directamente
+        context['items'] = items  # También agregar como items para el template
     
     return render(request, 'visualizacion_r2.html', context)
 

@@ -906,3 +906,437 @@ def crear_tablas_materiales_pdf(story):
     ]))
     story.append(materiales_table)
     story.append(Spacer(1, 15))
+
+
+# === NUEVAS VISTAS PARA FUNCIONALIDAD AVANZADA DE GUÍAS ===
+
+@login_required
+def generar_guia_pdf_completa(request, guia_id):
+    """Genera PDF completo con todos los datos de la guía de laboratorio"""
+    
+    if not REPORTLAB_AVAILABLE:
+        return JsonResponse({'error': 'ReportLab no está disponible'}, status=500)
+    
+    guia = get_object_or_404(GuiaGenerada, id=guia_id)
+    
+    # Crear el PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=20,
+        alignment=1,  # Centrado
+        textColor=colors.darkblue
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=12,
+        spaceAfter=12,
+        textColor=colors.darkgreen
+    )
+    
+    normal_style = styles['Normal']
+    
+    story = []
+    
+    # === TÍTULO PRINCIPAL ===
+    story.append(Paragraph("GUÍA DE LABORATORIO", title_style))
+    story.append(Paragraph(f"<b>{guia.titulo}</b>", title_style))
+    story.append(Spacer(1, 20))
+    
+    # === INFORMACIÓN INSTITUCIONAL ===
+    story.append(Paragraph("DATOS INSTITUCIONALES", heading_style))
+    
+    # Información básica en tabla
+    datos_institucionales = [
+        ['Unidad Académica:', guia.carrera.unidad_academica.get_nombre_display()],
+        ['Carrera:', guia.carrera.get_nombre_display()],
+        ['Asignatura:', guia.asignatura.get_nombre_display()],
+        ['Semestre:', f"{guia.semestre}° Semestre"],
+        ['Tipo de Práctica:', guia.get_tipo_practica_display()],
+        ['Duración:', f"{guia.duracion_horas} horas"],
+        ['Número de Práctica:', str(guia.numero_practica)],
+    ]
+    
+    datos_table = Table(datos_institucionales, colWidths=[2*inch, 4*inch])
+    datos_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+    ]))
+    story.append(datos_table)
+    story.append(Spacer(1, 20))
+    
+    # === DATOS DE LA ASIGNATURA ===
+    story.append(Paragraph("DATOS DE LA ASIGNATURA", heading_style))
+    
+    # Información curricular
+    if hasattr(guia, 'codigo_competencia') and guia.codigo_competencia:
+        story.append(Paragraph(f"<b>Código de Competencia:</b> {guia.codigo_competencia}", normal_style))
+    if hasattr(guia, 'sigla_curricular') and guia.sigla_curricular:
+        story.append(Paragraph(f"<b>Sigla Curricular:</b> {guia.sigla_curricular}", normal_style))
+    if hasattr(guia, 'carga_horaria_semestral') and guia.carga_horaria_semestral:
+        story.append(Paragraph(f"<b>Carga Horaria Semestral:</b> {guia.carga_horaria_semestral} horas", normal_style))
+    if hasattr(guia, 'carga_horaria_semanal') and guia.carga_horaria_semanal:
+        story.append(Paragraph(f"<b>Carga Horaria Semanal:</b> {guia.carga_horaria_semanal} horas", normal_style))
+    
+    story.append(Spacer(1, 15))
+    
+    # === UNIDAD DIDÁCTICA ===
+    story.append(Paragraph("UNIDAD DIDÁCTICA", heading_style))
+    story.append(Paragraph(guia.unidad_didactica or "No especificada", normal_style))
+    story.append(Spacer(1, 15))
+    
+    # === CONTENIDO ANALÍTICO ===
+    story.append(Paragraph("CONTENIDO ANALÍTICO", heading_style))
+    story.append(Paragraph(guia.contenido_analitico or "No especificado", normal_style))
+    story.append(Spacer(1, 15))
+    
+    # === BIBLIOGRAFÍA ===
+    if guia.referencia_bibliografica:
+        story.append(Paragraph("BIBLIOGRAFÍA", heading_style))
+        story.append(Paragraph(guia.referencia_bibliografica, normal_style))
+        story.append(Spacer(1, 15))
+    
+    # === PRÁCTICA DE LABORATORIO ===
+    story.append(Paragraph("PRÁCTICA DE LABORATORIO", heading_style))
+    
+    # === COMPETENCIAS ===
+    story.append(Paragraph("COMPETENCIAS", ParagraphStyle('SubHeading', parent=heading_style, fontSize=11)))
+    story.append(Paragraph(guia.competencias or "No especificadas", normal_style))
+    story.append(Spacer(1, 10))
+    
+    # === OBJETIVO ===
+    story.append(Paragraph("OBJETIVO DE LA PRÁCTICA", ParagraphStyle('SubHeading', parent=heading_style, fontSize=11)))
+    story.append(Paragraph("<b>Objetivo General:</b>", normal_style))
+    story.append(Paragraph(guia.objetivo_general or "No especificado", normal_style))
+    
+    if guia.objetivos_especificos:
+        story.append(Paragraph("<b>Objetivos Específicos:</b>", normal_style))
+        story.append(Paragraph(guia.objetivos_especificos, normal_style))
+    story.append(Spacer(1, 10))
+    
+    # === FUNDAMENTO TEÓRICO ===
+    if hasattr(guia, 'fundamento_teorico') and guia.fundamento_teorico:
+        story.append(Paragraph("FUNDAMENTO TEÓRICO", ParagraphStyle('SubHeading', parent=heading_style, fontSize=11)))
+        story.append(Paragraph(guia.fundamento_teorico, normal_style))
+        story.append(Spacer(1, 10))
+    
+    # === PROCEDIMIENTOS ===
+    story.append(Paragraph("PROCEDIMIENTOS", ParagraphStyle('SubHeading', parent=heading_style, fontSize=11)))
+    
+    if guia.preparacion_previa:
+        story.append(Paragraph("<b>Preparación Previa:</b>", normal_style))
+        story.append(Paragraph(guia.preparacion_previa, normal_style))
+        story.append(Spacer(1, 10))
+    
+    story.append(Paragraph("<b>Procedimiento de la Práctica:</b>", normal_style))
+    story.append(Paragraph(guia.procedimientos or "No especificado", normal_style))
+    story.append(Spacer(1, 15))
+    
+    # === EQUIPOS ===
+    story.append(Paragraph("EQUIPOS", ParagraphStyle('SubHeading', parent=heading_style, fontSize=11)))
+    
+    if guia.equipos_requeridos.exists():
+        equipos_data = [['Equipo', 'Cantidad', 'Estado']]
+        for equipo in guia.equipos_requeridos.all()[:10]:  # Limitar a 10 equipos
+            equipos_data.append([
+                equipo.equipo_existente or 'Sin nombre',
+                str(equipo.numero_unidades) if hasattr(equipo, 'numero_unidades') else '1',
+                equipo.get_estado_display() if equipo.estado else 'N/A'
+            ])
+        
+        equipos_table = Table(equipos_data, colWidths=[3*inch, 1*inch, 1.5*inch])
+        equipos_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+        ]))
+        story.append(equipos_table)
+    else:
+        story.append(Paragraph("No se han especificado equipos para esta práctica.", normal_style))
+    
+    story.append(Spacer(1, 15))
+    
+    # === MATERIALES ===
+    story.append(Paragraph("MATERIALES", ParagraphStyle('SubHeading', parent=heading_style, fontSize=11)))
+    
+    if guia.insumos_requeridos.exists():
+        materiales_data = [['Material', 'Cantidad', 'Unidad']]
+        for insumo in guia.insumos_requeridos.all()[:10]:  # Limitar a 10 materiales
+            materiales_data.append([
+                insumo.nombre_elemento or 'Sin nombre',
+                str(insumo.cantidad),
+                insumo.get_unidad_medida_display() if insumo.unidad_medida else 'unidades'
+            ])
+        
+        materiales_table = Table(materiales_data, colWidths=[3*inch, 1*inch, 1.5*inch])
+        materiales_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
+        ]))
+        story.append(materiales_table)
+    else:
+        story.append(Paragraph("No se han especificado materiales para esta práctica.", normal_style))
+    
+    story.append(Spacer(1, 15))
+    
+    # === HERRAMIENTAS ===
+    story.append(Paragraph("HERRAMIENTAS", ParagraphStyle('SubHeading', parent=heading_style, fontSize=11)))
+    
+    # Filtrar herramientas de los insumos
+    herramientas = guia.insumos_requeridos.filter(categoria='herramientas')
+    if herramientas.exists():
+        herramientas_data = [['Herramienta', 'Cantidad', 'Estado']]
+        for herramienta in herramientas[:10]:
+            herramientas_data.append([
+                herramienta.nombre_elemento or 'Sin nombre',
+                str(herramienta.cantidad),
+                herramienta.get_estado_display() if herramienta.estado else 'N/A'
+            ])
+        
+        herramientas_table = Table(herramientas_data, colWidths=[3*inch, 1*inch, 1.5*inch])
+        herramientas_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightyellow),
+        ]))
+        story.append(herramientas_table)
+    else:
+        story.append(Paragraph("No se han especificado herramientas para esta práctica.", normal_style))
+    
+    story.append(Spacer(1, 20))
+    
+    # === CÁLCULOS Y RESULTADOS ===
+    story.append(Paragraph("CÁLCULOS Y RESULTADOS", ParagraphStyle('SubHeading', parent=heading_style, fontSize=11)))
+    
+    # Espacio para completar
+    calculo_data = [
+        ['Descripción del Cálculo', 'Fórmula', 'Resultado'],
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+    ]
+    
+    calculo_table = Table(calculo_data, colWidths=[2*inch, 2*inch, 1.5*inch])
+    calculo_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightcoral),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+    ]))
+    story.append(calculo_table)
+    story.append(Spacer(1, 20))
+    
+    # === CUESTIONARIO ===
+    story.append(Paragraph("CUESTIONARIO", ParagraphStyle('SubHeading', parent=heading_style, fontSize=11)))
+    story.append(Paragraph(guia.cuestionario or "No se ha definido cuestionario para esta práctica.", normal_style))
+    
+    # Generar PDF
+    doc.build(story)
+    
+    # Preparar respuesta
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    filename = f"Guia_Laboratorio_{guia.titulo.replace(' ', '_')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response
+
+
+@login_required 
+def detalle_guia_completa(request, guia_id):
+    """Vista de detalle completa de la guía con todos los campos"""
+    
+    guia = get_object_or_404(GuiaGenerada, id=guia_id)
+    
+    context = {
+        'guia': guia,
+        'equipos': guia.equipos_requeridos.all()[:20],  # Limitar para rendimiento
+        'materiales': guia.insumos_requeridos.filter(categoria__in=['materiales', 'reactivos'])[:20],
+        'herramientas': guia.insumos_requeridos.filter(categoria='herramientas')[:20],
+        'puede_editar': request.user == guia.usuario_creador or request.user.is_staff,
+    }
+    
+    return render(request, 'guias/detalle_completa.html', context)
+
+
+# ===== NUEVAS VISTAS PARA PRÁCTICAS DE LABORATORIO =====
+
+@login_required
+def generar_practica_pdf(request, practica_id):
+    """Generar PDF de una práctica de laboratorio (guía basada en práctica real)"""
+    
+    if not REPORTLAB_AVAILABLE:
+        return JsonResponse({'error': 'ReportLab no está disponible'}, status=500)
+    
+    from core.models import PracticaLaboratorio
+    
+    # Obtener la práctica
+    practica = get_object_or_404(PracticaLaboratorio, id=practica_id)
+    asignatura = practica.contenido_analitico.unidad_didactica.asignatura
+    unidad = practica.contenido_analitico.unidad_didactica
+    contenido = practica.contenido_analitico
+    
+    # Crear respuesta HTTP con PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Guia_{practica.nombre.replace(" ", "_")}.pdf"'
+    
+    # Crear documento PDF
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Estilos personalizados
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=30,
+        textColor=colors.darkblue,
+        alignment=1  # Centrado
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=12,
+        textColor=colors.darkgreen
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=6
+    )
+    
+    # ===== CONTENIDO DEL PDF =====
+    
+    # Título principal
+    story.append(Paragraph(f"GUÍA DE LABORATORIO", title_style))
+    story.append(Paragraph(f"{practica.nombre.upper()}", title_style))
+    story.append(Spacer(1, 20))
+    
+    # Información académica
+    story.append(Paragraph("INFORMACIÓN ACADÉMICA", subtitle_style))
+    
+    data_academica = [
+        ['Carrera:', asignatura.carrera],
+        ['Asignatura:', asignatura.nombre],
+        ['Semestre:', f"{asignatura.semestre}°"],
+        ['Unidad Didáctica:', unidad.nombre],
+        ['Duración:', f"{practica.duracion_horas} horas"],
+        ['Tipo de Práctica:', practica.get_tipo_practica_display()],
+        ['Número de Estudiantes:', str(practica.numero_estudiantes)],
+    ]
+    
+    tabla_academica = Table(data_academica, colWidths=[2*inch, 4*inch])
+    tabla_academica.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('BACKGROUND', (1, 0), (1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    story.append(tabla_academica)
+    story.append(Spacer(1, 20))
+    
+    # Competencias
+    competencias = contenido.competencias.all()
+    if competencias.exists():
+        story.append(Paragraph("COMPETENCIAS", subtitle_style))
+        for i, competencia in enumerate(competencias, 1):
+            story.append(Paragraph(f"{i}. {competencia.descripcion}", normal_style))
+        story.append(Spacer(1, 15))
+    
+    # Objetivos de la práctica
+    objetivos = contenido.objetivos_practica.all()
+    if objetivos.exists():
+        story.append(Paragraph("OBJETIVOS DE LA PRÁCTICA", subtitle_style))
+        for i, objetivo in enumerate(objetivos, 1):
+            story.append(Paragraph(f"{i}. {objetivo.descripcion}", normal_style))
+        story.append(Spacer(1, 15))
+    
+    # Descripción del contenido analítico
+    story.append(Paragraph("DESCRIPCIÓN", subtitle_style))
+    story.append(Paragraph(contenido.descripcion, normal_style))
+    story.append(Spacer(1, 20))
+    
+    # Información adicional
+    story.append(Paragraph("INFORMACIÓN ADICIONAL", subtitle_style))
+    
+    info_adicional = [
+        ['Fecha de generación:', timezone.now().strftime('%d/%m/%Y %H:%M')],
+        ['Generado por:', request.user.get_full_name() or request.user.username],
+        ['Sistema:', 'Centralización de Laboratorios - UMSA'],
+    ]
+    
+    tabla_info = Table(info_adicional, colWidths=[2*inch, 4*inch])
+    tabla_info.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightblue),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    story.append(tabla_info)
+    
+    # Construir PDF
+    doc.build(story)
+    
+    return response
+
+
+@login_required
+def detalle_practica_completa(request, practica_id):
+    """Vista de detalle completa de una práctica de laboratorio"""
+    
+    from core.models import PracticaLaboratorio
+    
+    practica = get_object_or_404(PracticaLaboratorio, id=practica_id)
+    asignatura = practica.contenido_analitico.unidad_didactica.asignatura
+    unidad = practica.contenido_analitico.unidad_didactica
+    contenido = practica.contenido_analitico
+    
+    context = {
+        'practica': practica,
+        'asignatura': asignatura,
+        'unidad': unidad,
+        'contenido': contenido,
+        'competencias': contenido.competencias.all(),
+        'objetivos': contenido.objetivos_practica.all(),
+        'puede_editar': request.user.is_staff,  # Solo staff puede editar prácticas del currículo
+    }
+    
+    return render(request, 'guias/detalle_practica_completa.html', context)
