@@ -316,97 +316,7 @@
         padding: 2rem;
     }
 
-    /* Criterios de desempeño */
-    .criterio-item {
-        background: var(--gray-50);
-        border-left: 4px solid var(--success-color);
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        border-radius: 8px;
-        transition: var(--transition);
-        border: 1px solid var(--gray-200);
-    }
 
-    .criterio-item:hover {
-        background: white;
-        box-shadow: var(--shadow-md);
-        transform: translateX(4px);
-    }
-
-    .criterio-nombre {
-        font-weight: 700;
-        color: var(--gray-900);
-        margin-bottom: 0.75rem;
-        font-size: 1.125rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .criterio-nombre::before {
-        content: "";
-        width: 8px;
-        height: 8px;
-        background: var(--success-color);
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-
-    .criterio-descripcion {
-        color: var(--gray-700);
-        line-height: 1.6;
-        font-size: 1rem;
-        margin-left: 1rem;
-    }
-
-    /* Unidades didácticas */
-    .unidad-didactica-item {
-        background: white;
-        border: 1px solid var(--gray-200);
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        overflow: hidden;
-        box-shadow: var(--shadow-md);
-        transition: var(--transition);
-    }
-
-    .unidad-didactica-item:hover {
-        box-shadow: var(--shadow-lg);
-        transform: translateY(-2px);
-    }
-
-    .unidad-didactica-header {
-        background: linear-gradient(135deg, var(--info-color) 0%, var(--primary-color) 100%);
-        color: white;
-        padding: 1.25rem 1.5rem;
-        font-weight: 700;
-        font-size: 1.125rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .unidad-didactica-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -10%;
-        width: 80px;
-        height: 80px;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-        border-radius: 50%;
-    }
-
-    .unidad-didactica-header i {
-        position: relative;
-        z-index: 2;
-    }
-
-    .unidad-didactica-body {
-        padding: 1.5rem;
-    }
 
     /* Contenidos analíticos */
     .contenido-item {
@@ -580,8 +490,7 @@
             padding: 1rem;
         }
         
-        .criterio-item,
-        .unidad-didactica-body {
+        .criterio-item {
             padding: 1rem;
         }
     }
@@ -653,14 +562,6 @@
         <div class="stat-mini">
             <div class="stat-mini-number">{{ asignatura_stats.total_componentes }}</div>
             <div class="stat-mini-label">Componentes Totales</div>
-        </div>
-        <div class="stat-mini">
-            <div class="stat-mini-number">{{ asignatura_stats.criterios_count }}</div>
-            <div class="stat-mini-label">Criterios de Desempeño</div>
-        </div>
-        <div class="stat-mini">
-            <div class="stat-mini-number">{{ asignatura_stats.unidades_didacticas_count }}</div>
-            <div class="stat-mini-label">Unidades Didácticas</div>
         </div>
     </div>
 
@@ -744,92 +645,9 @@
                     <i class="fas fa-flask"></i>
                     <h5>No hay combinaciones creadas</h5>
                     <p>Las combinaciones se crean desde la vista de <strong>Agregar Datos</strong> y representan las configuraciones específicas para generar guías de laboratorio.</p>
-                    <a href="{% url 'agregar_datos_malla' %}" class="btn btn-primary">
+                    <a href="{% url 'core:agregar_datos_malla' %}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Crear Nueva Combinación
                     </a>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Criterios de Desempeño -->
-    <div class="section-card">
-        <div class="section-header">
-            <i class="fas fa-target"></i> Criterios de Desempeño
-        </div>
-        <div class="section-body">
-            {% if criterios %}
-                {% for criterio in criterios %}
-                <div class="criterio-item">
-                    <div class="criterio-nombre">{{ criterio.nombre }}</div>
-                    {% if criterio.descripcion %}
-                    <div class="criterio-descripcion">{{ criterio.descripcion|linebreaks }}</div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="empty-state">
-                    <i class="fas fa-bullseye"></i>
-                    <h5>No hay criterios de desempeño registrados</h5>
-                    <p>Los criterios de desempeño se pueden agregar desde el panel de administración para definir los objetivos de aprendizaje de esta asignatura.</p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Unidades Didácticas con Contenidos Analíticos -->
-    <div class="section-card">
-        <div class="section-header">
-            <i class="fas fa-list-ul"></i> Unidades Didácticas y Contenidos Analíticos
-        </div>
-        <div class="section-body">
-            {% if unidades_didacticas %}
-                {% for unidad in unidades_didacticas %}
-                <div class="unidad-didactica-item">
-                    <div class="unidad-didactica-header">
-                        <i class="fas fa-folder"></i> {{ unidad.nombre }}
-                    </div>
-                    <div class="unidad-didactica-body">
-                        {% if unidad.descripcion %}
-                            <div class="mb-3">
-                                <strong style="color: var(--gray-800); font-weight: 700;">
-                                    <i class="fas fa-info-circle" style="color: var(--info-color);"></i> Descripción:
-                                </strong> 
-                                <div style="margin-top: 0.5rem; color: var(--gray-700); line-height: 1.6;">
-                                    {{ unidad.descripcion|linebreaks }}
-                                </div>
-                            </div>
-                        {% endif %}
-                        
-                        <div class="contenidos-section">
-                            <h6><i class="fas fa-file-alt"></i> Contenidos Analíticos:</h6>
-                            {% with contenidos=contenidos_por_unidad|default_if_none:"" %}
-                                {% if contenidos %}
-                                    {% for contenido in contenidos %}
-                                        {% if contenido.unidad_didactica.id == unidad.id %}
-                                        <div class="contenido-item">
-                                            <div class="contenido-nombre">{{ contenido.nombre }}</div>
-                                            {% if contenido.descripcion %}
-                                            <div class="contenido-descripcion">{{ contenido.descripcion }}</div>
-                                            {% endif %}
-                                        </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="text-muted">
-                                        <i class="fas fa-info-circle"></i> No hay contenidos analíticos registrados para esta unidad didáctica.
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="empty-state">
-                    <i class="fas fa-folder-open"></i>
-                    <h5>No hay unidades didácticas registradas</h5>
-                    <p>Las unidades didácticas organizan los contenidos de la asignatura y se pueden agregar desde el panel de administración.</p>
                 </div>
             {% endif %}
         </div>

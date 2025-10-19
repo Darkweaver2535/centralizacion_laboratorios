@@ -406,9 +406,31 @@ def detalle_asignatura_view(request, asignatura_id):
     combinaciones = []
     
     # Cada contenido analítico es una "combinación" creada por el usuario
+    # FILTRAR SOLO contenidos que tengan datos reales (no esqueletos vacíos)
     contenidos_analiticos = ContenidoAnalitico.objects.filter(
         unidad_didactica__asignatura=asignatura
     ).select_related('unidad_didactica').order_by('-created_at')  # Más recientes primero
+    
+    # Filtrar solo contenidos que tengan al menos algunos componentes reales
+    contenidos_con_datos = []
+    for contenido in contenidos_analiticos:
+        tiene_datos = (
+            Competencias.objects.filter(contenido_analitico=contenido).exists() or
+            ObjetivoPractica.objects.filter(contenido_analitico=contenido).exists() or
+            Procedimientos.objects.filter(contenido_analitico=contenido).exists() or
+            MaterialesHerramientasEquipos.objects.filter(contenido_analitico=contenido).exists() or
+            FundamentoTeorico.objects.filter(contenido_analitico=contenido).exists() or
+            CalculosResultados.objects.filter(contenido_analitico=contenido).exists() or
+            Cuestionario.objects.filter(contenido_analitico=contenido).exists() or
+            Bibliografia.objects.filter(contenido_analitico=contenido).exists() or
+            Titulo.objects.filter(contenido_analitico=contenido).exists()
+        )
+        
+        if tiene_datos:
+            contenidos_con_datos.append(contenido)
+    
+    # Usar solo los contenidos que tienen datos reales
+    contenidos_analiticos = contenidos_con_datos
     
     for indice, contenido in enumerate(contenidos_analiticos, 1):  # Enumerar desde 1
         # Para cada combinación, obtener TODOS sus componentes
@@ -469,10 +491,6 @@ def detalle_asignatura_view(request, asignatura_id):
         
         combinaciones.append(combinacion)
     
-    # Criterios de desempeño y unidades didácticas para contexto
-    criterios = CriterioDesempeno.objects.filter(asignatura=asignatura)
-    unidades_didacticas = UnidadDidactica.objects.filter(asignatura=asignatura)
-    
     # Estadísticas globales de todas las combinaciones
     total_combinaciones = len(combinaciones)
     total_componentes = sum(
@@ -486,20 +504,12 @@ def detalle_asignatura_view(request, asignatura_id):
     asignatura_stats = {
         'total_combinaciones': total_combinaciones,
         'total_componentes': total_componentes,
-        'criterios_count': criterios.count(),
-        'unidades_didacticas_count': unidades_didacticas.count(),
     }
     
     context = {
         'asignatura': asignatura,
         'combinaciones': combinaciones,  # Esta es la clave: las combinaciones específicas
-        'criterios': criterios,
-        'unidades_didacticas': unidades_didacticas,
         'asignatura_stats': asignatura_stats,
-        
-        # Mantener compatibilidad con template existente (por si acaso)
-        'contenidos_completos': {ud.id: {'contenidos': combinaciones} for ud in unidades_didacticas},
-        'contenidos_por_unidad': {ud.id: combinaciones for ud in unidades_didacticas},
     }
     
     return render(request, 'core/detalle_asignatura.html', context)
@@ -673,18 +683,6 @@ def agregar_datos_malla_view(request):
     
     if request.method == 'POST':
         try:
-            # 🚨 DEBUG TEMPORAL: Logging completo de datos recibidos
-            print("\n" + "="*80)
-            print("🚨 DEBUGGING FORMULARIO - DATOS RECIBIDOS:")
-            print("="*80)
-            print(f"📊 Método: {request.method}")
-            print(f"👤 Usuario: {request.user}")
-            print(f"🌐 IP: {request.META.get('REMOTE_ADDR', 'unknown')}")
-            print("\n📋 DATOS POST COMPLETOS:")
-            for key, value in request.POST.items():
-                print(f"   {key}: '{value}'")
-            print("\n" + "="*80)
-            
             with transaction.atomic():
                 # 1. Datos básicos de la asignatura
                 unidad_academica_id = request.POST.get('unidad_academica')
@@ -707,7 +705,6 @@ def agregar_datos_malla_view(request):
                 # Validar que la asignatura existe
                 try:
                     asignatura = Asignatura.objects.get(id=asignatura_id)
-                    print(f"📚 Asignatura encontrada: {asignatura.nombre} (ID: {asignatura.id})")
                 except Asignatura.DoesNotExist:
                     messages.error(request, f"🚨 ERROR: Asignatura con ID {asignatura_id} no encontrada.")
                     return redirect('core:agregar_datos_malla')
@@ -740,37 +737,18 @@ def agregar_datos_malla_view(request):
                 asignatura.save()
                 created = False
                 
-                # VALIDACIÓN CRÍTICA: Verificar información de la asignatura
-                print(f"\n🎯 CREANDO PRÁCTICA EN:")
-                print(f"   📚 Asignatura: {asignatura.nombre} (ID: {asignatura.id})")
-                print(f"   🎓 Carrera: {carrera.nombre}")
-                print(f"   📊 Semestre: {asignatura.semestre}")
-                print(f"   🏫 Unidad: {unidad_academica.nombre}")
-                
                 # Verificar si hay asignaturas similares que podrían confundir al usuario
                 asignaturas_similares = Asignatura.objects.filter(
                     carrera=carrera,
                     semestre=asignatura.semestre
                 ).exclude(id=asignatura.id)
                 
-                if asignaturas_similares.exists():
-                    print(f"   ⚠️ ATENCIÓN: Hay {asignaturas_similares.count()} asignaturas similares:")
-                    for similar in asignaturas_similares:
-                        print(f"      - {similar.nombre} (ID: {similar.id})")
-                
-                # Agregar mensaje informativo para el usuario
-                messages.info(request, 
-                    f"📝 Creando práctica en: {asignatura.nombre} (ID: {asignatura.id}) - "
-                    f"Carrera: {carrera.nombre} - Semestre: {asignatura.semestre}")
-                
                 # 4. Obtener criterio de desempeño por ID (el formulario envía IDs)
                 criterio_id = request.POST.get('criterio_desempeno', '').strip()
                 if criterio_id:
                     try:
                         criterio = CriterioDesempeno.objects.get(id=criterio_id)
-                        print(f"🎯 Criterio encontrado: {criterio.nombre} (ID: {criterio.id})")
                     except CriterioDesempeno.DoesNotExist:
-                        print(f"⚠️ Criterio ID {criterio_id} no encontrado, creando nuevo...")
                         criterio = CriterioDesempeno.objects.create(
                             asignatura=asignatura,
                             nombre=f'Criterio {criterio_id}',
@@ -782,7 +760,6 @@ def agregar_datos_malla_view(request):
                 if unidad_didactica_id:
                     try:
                         unidad_didactica = UnidadDidactica.objects.get(id=unidad_didactica_id)
-                        print(f"📖 Unidad didáctica encontrada: {unidad_didactica.nombre} (ID: {unidad_didactica.id})")
                     except UnidadDidactica.DoesNotExist:
                         messages.error(request, f"🚨 ERROR: Unidad didáctica con ID {unidad_didactica_id} no encontrada.")
                         return redirect('core:agregar_datos_malla')
@@ -791,8 +768,6 @@ def agregar_datos_malla_view(request):
                     # Obtener el título de la práctica (será el nombre del nuevo contenido analítico)
                     titulo_practica = request.POST.get('titulo_0_0', '').strip()
                     
-                    print(f"\n🚀 NUEVA LÓGICA: Título recibido: '{titulo_practica}'")
-                    
                     if titulo_practica:
                         # Crear un nuevo ContenidoAnalitico con el título como nombre
                         contenido = ContenidoAnalitico.objects.create(
@@ -800,16 +775,6 @@ def agregar_datos_malla_view(request):
                             descripcion=f"Práctica de laboratorio: {titulo_practica}",
                             unidad_didactica=unidad_didactica
                         )
-                        
-                        print(f"\n🧪 CREANDO NUEVA PRÁCTICA INDEPENDIENTE:")
-                        print(f"   📝 Nombre: {contenido.nombre}")
-                        print(f"   🎯 En asignatura: {asignatura.nombre} (ID: {asignatura.id})")
-                        print(f"   📚 Unidad didáctica: {unidad_didactica.nombre}")
-                        print(f"   🔗 Nuevo ID: {contenido.id}")
-                        
-                        
-                        print(f"   ✅ ÉXITO: ContenidoAnalítico creado con ID: {contenido.id}")
-                        print(f"   🔗 Accessible en: /dashboard/malla-curricular/asignatura/{asignatura.id}/")
                         
                         # REGISTRO DE AUDITORÍA: Guardar información completa de la creación
                         try:
@@ -844,11 +809,9 @@ def agregar_datos_malla_view(request):
                                 confirmacion_usuario=True  # Asumimos que pasó la validación JS
                             )
                             
-                            print(f"   📋 Auditoría registrada: ID {auditoria.id}")
-                            
                         except Exception as e:
-                            print(f"   ⚠️ Error en auditoría: {e}")
                             # No interrumpir el proceso principal si falla la auditoría
+                            pass
                         
                         # 7. Procesar datos adicionales para la nueva práctica (usando i=0)
                         i = 0  # Solo procesamos una práctica
