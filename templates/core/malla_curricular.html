@@ -982,44 +982,42 @@
                 
                 <!-- Unidad Académica -->
                 <div class="form-group">
-                    <label for="{{ filterset.form.unidad_academica.id_for_label }}" class="form-label">Unidad Académica</label>
+                    <label for="{{ filterset.form.unidad_academica.id_for_label }}" class="form-label">
+                        <i class="fas fa-university"></i> Unidad Académica
+                    </label>
                     {{ filterset.form.unidad_academica }}
                 </div>
                 
                 <!-- Carrera -->
                 <div class="form-group">
-                    <label for="{{ filterset.form.carrera.id_for_label }}" class="form-label">Carrera</label>
+                    <label for="{{ filterset.form.carrera.id_for_label }}" class="form-label">
+                        <i class="fas fa-graduation-cap"></i> Carrera
+                    </label>
                     {{ filterset.form.carrera }}
                 </div>
                 
                 <!-- Semestre -->
                 <div class="form-group">
-                    <label for="{{ filterset.form.semestre.id_for_label }}" class="form-label">Semestre</label>
+                    <label for="{{ filterset.form.semestre.id_for_label }}" class="form-label">
+                        <i class="fas fa-calendar-alt"></i> Semestre
+                    </label>
                     {{ filterset.form.semestre }}
                 </div>
                 
-                <!-- Búsqueda general -->
+                <!-- Asignatura -->
                 <div class="form-group">
-                    <label for="{{ filterset.form.search.id_for_label }}" class="form-label">Búsqueda General</label>
-                    {{ filterset.form.search }}
-                </div>
-                
-                <!-- Filtro por nombre específico -->
-                <div class="form-group">
-                    <label for="{{ filterset.form.nombre.id_for_label }}" class="form-label">Nombre de Asignatura</label>
+                    <label for="{{ filterset.form.nombre.id_for_label }}" class="form-label">
+                        <i class="fas fa-book"></i> Asignatura
+                    </label>
                     {{ filterset.form.nombre }}
                 </div>
                 
-                <!-- Código de Competencia -->
+                <!-- Búsqueda General -->
                 <div class="form-group">
-                    <label for="{{ filterset.form.codigo_competencia.id_for_label }}" class="form-label">Código de Competencia</label>
-                    {{ filterset.form.codigo_competencia }}
-                </div>
-                
-                <!-- Sigla Curricular -->
-                <div class="form-group">
-                    <label for="{{ filterset.form.sigla_curricular.id_for_label }}" class="form-label">Sigla Curricular</label>
-                    {{ filterset.form.sigla_curricular }}
+                    <label for="{{ filterset.form.search.id_for_label }}" class="form-label">
+                        <i class="fas fa-search"></i> Búsqueda General
+                    </label>
+                    {{ filterset.form.search }}
                 </div>
                 
                 <!-- Botón de aplicar filtros -->
@@ -1502,40 +1500,40 @@ function limpiarFiltros() {
     }
 }
 
-// Filtros en cascada para malla curricular
+// FILTROS EN CASCADA MEJORADOS PARA MALLA CURRICULAR
+
 function actualizarCarrerasPorUnidad() {
     const unidadSelect = document.getElementById('id_unidad_academica');
     const carreraSelect = document.getElementById('id_carrera');
+    const semestreSelect = document.getElementById('id_semestre');
+    const asignaturaSelect = document.getElementById('id_nombre');
     
     if (!unidadSelect || !carreraSelect) return;
     
     const unidadId = unidadSelect.value;
     
+    // Limpiar selectores dependientes
+    limpiarSelectoresDependientes(['carrera', 'semestre', 'asignatura', 'criterio', 'unidad_didactica', 'contenido']);
+    
     if (!unidadId) {
-        // Si no hay unidad seleccionada, mostrar todas las carreras
-        location.reload(); // Recargar para mostrar opciones completas
+        carreraSelect.innerHTML = '<option value="">Seleccione una Carrera</option>';
         return;
     }
     
-    // Limpiar el selector de carreras
     carreraSelect.innerHTML = '<option value="">Cargando carreras...</option>';
     
-    // Hacer llamada AJAX para obtener carreras por unidad
-    fetch(`{% url 'core:carreras_por_unidad' %}?unidad_id=${unidadId}`)
+    fetch(`/dashboard/ajax/carreras-por-unidad-filtro/?unidad_id=${unidadId}`)
         .then(response => response.json())
         .then(data => {
-            carreraSelect.innerHTML = '<option value="">Todas las carreras</option>';
+            carreraSelect.innerHTML = '<option value="">Seleccione una Carrera</option>';
             
-            if (data.carreras && data.carreras.length > 0) {
+            if (data.success && data.carreras.length > 0) {
                 data.carreras.forEach(carrera => {
-                    carreraSelect.innerHTML += `<option value="${carrera.id}">${carrera.display}</option>`;
+                    carreraSelect.innerHTML += `<option value="${carrera.id}">${carrera.nombre}</option>`;
                 });
             } else {
-                carreraSelect.innerHTML += '<option value="" disabled>No hay carreras disponibles</option>';
+                carreraSelect.innerHTML = '<option value="" disabled>No hay carreras disponibles</option>';
             }
-            
-            // Aplicar filtros automáticamente
-            document.getElementById('filtros-form').submit();
         })
         .catch(error => {
             console.error('Error cargando carreras:', error);
@@ -1544,34 +1542,127 @@ function actualizarCarrerasPorUnidad() {
 }
 
 function actualizarSemestresPorCarrera() {
-    // Esta función puede expandirse para mostrar solo semestres disponibles
-    // Por ahora, simplemente aplicamos el filtro
-    document.getElementById('filtros-form').submit();
+    const carreraSelect = document.getElementById('id_carrera');
+    const semestreSelect = document.getElementById('id_semestre');
+    
+    if (!carreraSelect || !semestreSelect) return;
+    
+    const carreraId = carreraSelect.value;
+    
+    // Limpiar selectores dependientes
+    limpiarSelectoresDependientes(['semestre', 'asignatura', 'criterio', 'unidad_didactica', 'contenido']);
+    
+    if (!carreraId) {
+        semestreSelect.innerHTML = '<option value="">Seleccione un Semestre</option>';
+        return;
+    }
+    
+    semestreSelect.innerHTML = '<option value="">Cargando semestres...</option>';
+    
+    fetch(`/dashboard/ajax/semestres-por-carrera-filtro/?carrera_id=${carreraId}`)
+        .then(response => response.json())
+        .then(data => {
+            semestreSelect.innerHTML = '<option value="">Seleccione un Semestre</option>';
+            
+            if (data.success && data.semestres.length > 0) {
+                data.semestres.forEach(semestre => {
+                    semestreSelect.innerHTML += `<option value="${semestre.id}">${semestre.nombre}</option>`;
+                });
+            } else {
+                semestreSelect.innerHTML = '<option value="" disabled>No hay semestres disponibles</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando semestres:', error);
+            semestreSelect.innerHTML = '<option value="">Error cargando semestres</option>';
+        });
 }
 
-// Auto-submit para filtros django-filter
+function actualizarAsignaturasPorFiltros() {
+    const unidadSelect = document.getElementById('id_unidad_academica');
+    const carreraSelect = document.getElementById('id_carrera');
+    const semestreSelect = document.getElementById('id_semestre');
+    const asignaturaSelect = document.getElementById('id_nombre');
+    
+    if (!asignaturaSelect) return;
+    
+    const unidadId = unidadSelect?.value;
+    const carreraId = carreraSelect?.value;
+    const semestre = semestreSelect?.value;
+    
+    // Limpiar selectores dependientes
+    limpiarSelectoresDependientes(['asignatura', 'criterio', 'unidad_didactica', 'contenido']);
+    
+    if (!carreraId || !semestre) {
+        asignaturaSelect.innerHTML = '<option value="">Seleccione una Asignatura</option>';
+        return;
+    }
+    
+    asignaturaSelect.innerHTML = '<option value="">Cargando asignaturas...</option>';
+    
+    const params = new URLSearchParams();
+    if (unidadId) params.append('unidad_id', unidadId);
+    if (carreraId) params.append('carrera_id', carreraId);
+    if (semestre) params.append('semestre', semestre);
+    
+    fetch(`/dashboard/ajax/asignaturas-por-filtros/?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            asignaturaSelect.innerHTML = '<option value="">Seleccione una Asignatura</option>';
+            
+            if (data.success && data.asignaturas.length > 0) {
+                data.asignaturas.forEach(asignatura => {
+                    asignaturaSelect.innerHTML += `<option value="${asignatura.id}">${asignatura.nombre}</option>`;
+                });
+            } else {
+                asignaturaSelect.innerHTML = '<option value="" disabled>No hay asignaturas disponibles</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando asignaturas:', error);
+            asignaturaSelect.innerHTML = '<option value="">Error cargando asignaturas</option>';
+        });
+}
+
+
+
+
+
+
+
+function limpiarSelectoresDependientes(tipos) {
+    const selectores = {
+        'carrera': 'id_carrera',
+        'semestre': 'id_semestre', 
+        'asignatura': 'id_nombre'
+    };
+    
+    const mensajes = {
+        'carrera': 'Seleccione una Carrera',
+        'semestre': 'Seleccione un Semestre',
+        'asignatura': 'Seleccione una Asignatura'
+    };
+    
+    tipos.forEach(tipo => {
+        const elemento = document.getElementById(selectores[tipo]);
+        if (elemento) {
+            elemento.innerHTML = `<option value="">${mensajes[tipo]}</option>`;
+        }
+    });
+}
+
+// Inicialización cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit del formulario cuando se cambian los filtros (excepto los que tienen onchange propio)
     const form = document.getElementById('filtros-form');
     if (form) {
-        // Auto-submit cuando cambian los selectores (excepto unidad y carrera que tienen sus propias funciones)
-        const selects = form.querySelectorAll('select:not(#id_unidad_academica):not(#id_carrera)');
-        selects.forEach(select => {
+        // Aplicar auto-submit a selectores que no manejan cascada
+        const autoSubmitSelects = form.querySelectorAll('select#id_criterio_desempeno, select#id_unidad_didactica, select#id_contenido_analitico');
+        autoSubmitSelects.forEach(select => {
             select.addEventListener('change', function() {
                 form.submit();
             });
         });
-        
-        // Auto-submit para búsqueda después de una pausa
-        const searchInput = form.querySelector('input[name="search"]');
-        if (searchInput) {
-            let searchTimeout;
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    form.submit();
-                }, 1000); // 1 segundo de pausa
-            });
-        }
     }
 });
 </script>

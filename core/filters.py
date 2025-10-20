@@ -4,27 +4,11 @@ from .models import Asignatura, Carrera, UnidadAcademica, CriterioDesempeno, Uni
 
 
 class AsignaturaFilter(django_filters.FilterSet):
-    """Filtros para el modelo Asignatura en malla curricular"""
-    
-    search = django_filters.CharFilter(
-        method='filter_search',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Buscar asignaturas...'
-        })
-    )
-    
-    nombre = django_filters.CharFilter(
-        lookup_expr='icontains',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Buscar por nombre de asignatura...'
-        })
-    )
+    """Filtros mejorados para el modelo Asignatura con filtros en cascada"""
     
     unidad_academica = django_filters.ModelChoiceFilter(
         queryset=UnidadAcademica.objects.all(),
-        empty_label="Todas las unidades académicas",
+        empty_label="Seleccione una Unidad Académica",
         widget=forms.Select(attrs={
             'class': 'form-control', 
             'id': 'id_unidad_academica',
@@ -34,8 +18,8 @@ class AsignaturaFilter(django_filters.FilterSet):
     )
     
     carrera = django_filters.ModelChoiceFilter(
-        queryset=Carrera.objects.all(),
-        empty_label="Todas las carreras",
+        queryset=Carrera.objects.none(),  # Se carga dinámicamente
+        empty_label="Seleccione una Carrera",
         widget=forms.Select(attrs={
             'class': 'form-control',
             'id': 'id_carrera',
@@ -44,37 +28,87 @@ class AsignaturaFilter(django_filters.FilterSet):
     )
     
     semestre = django_filters.ChoiceFilter(
-        choices=[
-            ('', 'Todos los semestres'),
-            (1, '1° Semestre'),
-            (2, '2° Semestre'),
-            (3, '3° Semestre'),
-            (4, '4° Semestre'),
-            (5, '5° Semestre'),
-            (6, '6° Semestre'),
-            (7, '7° Semestre'),
-            (8, '8° Semestre'),
-            (9, '9° Semestre'),
-            (10, '10° Semestre'),
-        ],
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
-    
-    codigo_competencia = django_filters.CharFilter(
-        lookup_expr='icontains',
-        widget=forms.TextInput(attrs={
+        choices=[('', 'Seleccione un Semestre')],  # Se carga dinámicamente
+        widget=forms.Select(attrs={
             'class': 'form-control',
-            'placeholder': 'Buscar por código de competencia...'
+            'id': 'id_semestre',
+            'onchange': 'actualizarAsignaturasPorFiltros()'
         })
     )
     
-    sigla_curricular = django_filters.CharFilter(
-        lookup_expr='icontains',
+    nombre = django_filters.ChoiceFilter(
+        choices=[('', 'Seleccione una Asignatura')],  # Se carga dinámicamente
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'id_nombre'
+        }),
+        field_name='id'  # Filtrar por ID de la asignatura
+    )
+    
+    search = django_filters.CharFilter(
+        method='filter_search',
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Buscar por sigla curricular...'
+            'placeholder': 'Buscar por nombre, código, sigla, carrera...',
+            'id': 'id_search'
         })
     )
+
+    def __init__(self, data=None, *args, **kwargs):
+        super().__init__(data, *args, **kwargs)
+        
+        # Configurar queryset inicial para asignaturas basado en el queryset padre
+        initial_queryset = kwargs.get('queryset', Asignatura.objects.all())
+        
+        # Si hay datos, configurar los querysets según los valores seleccionados
+        if data:
+            unidad_id = data.get('unidad_academica')
+            carrera_id = data.get('carrera') 
+            semestre = data.get('semestre')
+            asignatura_id = data.get('nombre')
+            
+            if unidad_id:
+                self.filters['carrera'].queryset = Carrera.objects.filter(unidad_academica_id=unidad_id)
+                
+                if carrera_id:
+                    # Actualizar opciones de semestre
+                    semestres_disponibles = initial_queryset.filter(
+                        carrera_id=carrera_id
+                    ).values_list('semestre', flat=True).distinct().order_by('semestre')
+                    
+                    choices = [('', 'Seleccione un Semestre')]
+                    for sem in semestres_disponibles:
+                        choices.append((sem, f'{sem}° Semestre'))
+                    self.filters['semestre'].extra['choices'] = choices
+                    
+                    if semestre:
+                        # Actualizar asignaturas por carrera y semestre usando el queryset inicial
+                        asignaturas_filtradas = initial_queryset.filter(
+                            carrera_id=carrera_id,
+                            semestre=semestre
+                        ).order_by('nombre')
+                        
+                        # Actualizar las opciones del selector de asignaturas
+                        choices = [('', 'Seleccione una Asignatura')]
+                        for asig in asignaturas_filtradas:
+                            choices.append((asig.id, asig.nombre))
+                        self.filters['nombre'].extra['choices'] = choices
+                    else:
+                        # Si no hay semestre, limpiar opciones de asignaturas
+                        self.filters['nombre'].extra['choices'] = [('', 'Seleccione una Asignatura')]
+                else:
+                    # Si no hay carrera, limpiar opciones dependientes  
+                    self.filters['nombre'].extra['choices'] = [('', 'Seleccione una Asignatura')]
+            else:
+                # Si no hay unidad, limpiar todos los querysets dependientes
+                self.filters['carrera'].queryset = Carrera.objects.none()
+                self.filters['nombre'].extra['choices'] = [('', 'Seleccione una Asignatura')]
+
+    def filter_unidad_academica(self, queryset, name, value):
+        """Filtrar por unidad académica a través de carrera"""
+        if value:
+            return queryset.filter(carrera__unidad_academica=value)
+        return queryset
 
     def filter_search(self, queryset, name, value):
         """Búsqueda general en múltiples campos"""
@@ -89,15 +123,9 @@ class AsignaturaFilter(django_filters.FilterSet):
             )
         return queryset
 
-    def filter_unidad_academica(self, queryset, name, value):
-        """Filtrar por unidad académica a través de carrera"""
-        if value:
-            return queryset.filter(carrera__unidad_academica=value)
-        return queryset
-
     class Meta:
         model = Asignatura
-        fields = ['search', 'nombre', 'unidad_academica', 'carrera', 'semestre', 'codigo_competencia', 'sigla_curricular']
+        fields = ['unidad_academica', 'carrera', 'semestre', 'nombre', 'search']
 
 
 class CriterioDesempenoFilter(django_filters.FilterSet):

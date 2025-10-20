@@ -1361,3 +1361,134 @@ def agregar_insumo_rapido_ajax(request):
         return JsonResponse({'success': False, 'error': 'Datos incompletos'})
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+# VISTAS AJAX PARA FILTROS EN CASCADA DE MALLA CURRICULAR
+
+@login_required
+def carreras_por_unidad_ajax(request):
+    """Obtener carreras por unidad académica"""
+    unidad_id = request.GET.get('unidad_id')
+    
+    if unidad_id:
+        carreras = Carrera.objects.filter(unidad_academica_id=unidad_id).values('id', 'nombre')
+        return JsonResponse({
+            'success': True,
+            'carreras': list(carreras)
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Unidad académica no especificada'})
+
+
+@login_required 
+def semestres_por_carrera_ajax(request):
+    """Obtener semestres disponibles por carrera"""
+    carrera_id = request.GET.get('carrera_id')
+    
+    if carrera_id:
+        # Obtener semestres únicos de las asignaturas de esta carrera
+        semestres = Asignatura.objects.filter(
+            carrera_id=carrera_id
+        ).values_list('semestre', flat=True).distinct().order_by('semestre')
+        
+        semestres_data = []
+        for semestre in semestres:
+            if semestre:  # Evitar valores None
+                semestres_data.append({
+                    'id': semestre,
+                    'nombre': f'{semestre}° Semestre'
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'semestres': semestres_data
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Carrera no especificada'})
+
+
+@login_required
+def asignaturas_por_filtros_ajax(request):
+    """Obtener asignaturas filtradas por unidad, carrera y semestre"""
+    unidad_id = request.GET.get('unidad_id')
+    carrera_id = request.GET.get('carrera_id') 
+    semestre = request.GET.get('semestre')
+    
+    queryset = Asignatura.objects.all()
+    
+    if unidad_id:
+        queryset = queryset.filter(carrera__unidad_academica_id=unidad_id)
+    if carrera_id:
+        queryset = queryset.filter(carrera_id=carrera_id)
+    if semestre:
+        queryset = queryset.filter(semestre=semestre)
+    
+    # Filtrar asignaturas válidas (sin nombres numéricos)
+    asignaturas_data = []
+    for asignatura in queryset.order_by('nombre'):
+        if not asignatura.nombre.isdigit():
+            asignaturas_data.append({
+                'id': asignatura.id,
+                'nombre': asignatura.nombre
+            })
+    
+    return JsonResponse({
+        'success': True,
+        'asignaturas': asignaturas_data
+    })
+
+
+@login_required
+def criterios_por_asignatura_ajax(request):
+    """Obtener criterios de desempeño por asignatura"""
+    asignatura_id = request.GET.get('asignatura_id')
+    
+    if asignatura_id:
+        criterios = CriterioDesempeno.objects.filter(
+            asignatura_id=asignatura_id
+        ).values('id', 'descripcion').order_by('descripcion')
+        
+        return JsonResponse({
+            'success': True,
+            'criterios': list(criterios)
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Asignatura no especificada'})
+
+
+@login_required
+def unidades_didacticas_por_asignatura_ajax(request):
+    """Obtener unidades didácticas por asignatura"""
+    asignatura_id = request.GET.get('asignatura_id')
+    
+    if asignatura_id:
+        unidades = UnidadDidactica.objects.filter(
+            asignatura_id=asignatura_id
+        ).values('id', 'nombre').order_by('nombre')
+        
+        return JsonResponse({
+            'success': True,
+            'unidades': list(unidades)
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Asignatura no especificada'})
+
+
+@login_required
+def contenidos_por_asignatura_ajax(request):
+    """Obtener contenidos analíticos por asignatura"""
+    asignatura_id = request.GET.get('asignatura_id')
+    
+    if asignatura_id:
+        contenidos = ContenidoAnalitico.objects.filter(
+            unidad_didactica__asignatura_id=asignatura_id
+        ).select_related('unidad_didactica').values(
+            'id', 'nombre', 'unidad_didactica__nombre'
+        ).order_by('unidad_didactica__nombre', 'nombre')
+        
+        return JsonResponse({
+            'success': True,
+            'contenidos': list(contenidos)
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Asignatura no especificada'})

@@ -32,6 +32,14 @@ urlpatterns = [
     path('ajax/agregar-equipo-rapido/', views.agregar_equipo_rapido_ajax, name='agregar_equipo_rapido'),
     path('ajax/agregar-insumo-rapido/', views.agregar_insumo_rapido_ajax, name='agregar_insumo_rapido'),
     
+    # AJAX para filtros en cascada de malla curricular
+    path('ajax/carreras-por-unidad-filtro/', views.carreras_por_unidad_ajax, name='carreras_por_unidad_filtro'),
+    path('ajax/semestres-por-carrera-filtro/', views.semestres_por_carrera_ajax, name='semestres_por_carrera_filtro'),
+    path('ajax/asignaturas-por-filtros/', views.asignaturas_por_filtros_ajax, name='asignaturas_por_filtros'),
+    path('ajax/criterios-por-asignatura/', views.criterios_por_asignatura_ajax, name='criterios_por_asignatura'),
+    path('ajax/unidades-didacticas-por-asignatura/', views.unidades_didacticas_por_asignatura_ajax, name='unidades_didacticas_por_asignatura'),
+    path('ajax/contenidos-por-asignatura/', views.contenidos_por_asignatura_ajax, name='contenidos_por_asignatura'),
+    
     # Sistema de importación R1
     path('seleccionar-metodo/<str:tipo>/', seleccionar_metodo_carga, name='seleccionar_metodo'),
     path('importar-excel/<str:tipo>/', importar_excel_view, name='importar_excel'),
