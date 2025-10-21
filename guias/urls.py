@@ -19,10 +19,6 @@ urlpatterns = [
     path('practica/<int:practica_id>/generar-pdf/', views.generar_practica_pdf, name='generar_practica_pdf'),
     path('practica/<int:practica_id>/detalle/', views.detalle_practica_completa, name='detalle_practica_completa'),
     
-    # URLs para generación con plantilla Word oficial
-    path('<int:guia_id>/generar-word/', views.generar_guia_word_plantilla, name='generar_word_plantilla'),
-    path('<int:guia_id>/generar-pdf-plantilla/', views.generar_guia_pdf_plantilla, name='generar_pdf_plantilla'),
-    
     # API para dropdowns dinámicos
     path('api/asignaturas/', views.api_asignaturas, name='api_asignaturas'),
 ]
