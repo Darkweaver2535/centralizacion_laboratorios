@@ -1,0 +1,87 @@
+SOLUCIÓN DEFINITIVA: CREAR PLANTILLA EMI MANUALMENTE
+======================================================
+
+PROBLEMA: El documento original tiene estructura XML muy compleja que se fragmenta.
+
+SOLUCIÓN: Recrear el documento manualmente con el formato EMI exacto.
+
+PASOS A SEGUIR:
+
+1. ABRIR EL DOCUMENTO ORIGINAL
+   - Abrir: /Users/alvaroencinas/Desktop/centralizacion_laboratorios/pruebas/FORMATO GUÍA DE LABORATORIO.docx
+   - En Microsoft Word
+
+2. CREAR NUEVO DOCUMENTO
+   - File → New Document
+   - Copiar EXACTAMENTE el formato visual del documento original
+   - PERO escribir las variables Jinja2 MANUALMENTE (no copiar y pegar)
+
+3. ESTRUCTURA A RECREAR:
+   
+   ENCABEZADO:
+   +---------------------------------------------------------+
+   | [LOGO]    | ESCUELA MILITAR DE INGENIERÍA            | {{codigo_de_documento}}     |
+   |           | "MCAL. ANTONIO JOSÉ DE SUCRE"            | Versión: {{version_de_documento}} |
+   |           | BOLIVIA                                   | Fecha: {{fecha_de_documento}}     |
+   +---------------------------------------------------------+
+   |           | UNIDAD ACADÉMICA: {{unidad_academica}}   | Página: {{pagina}}         |
+   |           | CARRERA: {{carrera}}                     |                            |
+   |           | ASIGNATURA: {{nombre_de_la_asignatura}} |                            |
+   +---------------------------------------------------------+
+   |           | GUÍA DE LABORATORIO                      |                            |
+   +---------------------------------------------------------+
+
+4. VARIABLES A INSERTAR (ESCRIBIR MANUALMENTE):
+
+   INFORMACIÓN BÁSICA:
+   - {{titulo}}
+   - {{docente}}
+   - {{auxiliar}}
+   - {{fecha}}
+   - {{duracion}}
+   - {{grupo}}
+   - {{semestre}}
+
+   CONTENIDO ACADÉMICO:
+   - {{competencias}}
+   - {{fundamentacion_teorica}}
+   - {{objetivo_general}}
+   - {{objetivos_especificos}}
+   - {{procedimiento}}
+   - {{parte_experimental}}
+   - {{criterios_de_desempeno}}
+   - {{conclusiones}}
+   - {{referencias_bibliograficas}}
+
+   RECURSOS (EN TABLAS):
+   Equipos: {{equipo1}} {{cantidad_equipo1}} ... {{equipo5}} {{cantidad_equipo5}}
+   Materiales: {{material1}} {{cantidad_material1}} ... {{material5}} {{cantidad_material5}}
+   Reactivos: {{reactivo1}} {{cantidad_reactivo1}} ... {{reactivo5}} {{cantidad_reactivo5}}
+   Herramientas: {{herramienta1}} {{cantidad_herramienta1}} ... {{herramienta5}} {{cantidad_herramienta5}}
+
+5. REGLAS CRÍTICAS:
+   ✅ ESCRIBIR variables manualmente: {{nombre_variable}}
+   ❌ NO copiar y pegar variables del documento original
+   ✅ Sin espacios dentro: {{variable_name}}
+   ❌ Con espacios: {{ variable name }}
+   ✅ Exactamente 2 llaves: {{variable}}
+   ❌ Más llaves: {{{variable}}}
+
+6. PROCESO PASO A PASO:
+   a) Copiar formato visual (colores, fuentes, tablas)
+   b) Reemplazar TODO el texto variable con tags Jinja2
+   c) Escribir cada {{variable}} de cero (no copiar)
+   d) Verificar que no hay espacios extras
+   e) Guardar como: plantilla_emi_manual.docx
+
+7. UBICACIÓN FINAL:
+   /Users/alvaroencinas/Desktop/centralizacion_laboratorios/templates/core/plantilla_emi_manual.docx
+
+8. ALTERNATIVA RÁPIDA - USAR PLANTILLA LIMPIA CON LOGO EMI:
+   - Usar: plantilla_guia_laboratorio_limpia.docx
+   - Agregar logos y colores oficiales de EMI
+   - Cambiar fuentes a las oficiales
+   - Ajustar márgenes según estándares EMI
+
+TIEMPO ESTIMADO: 30-45 minutos de trabajo manual
+RESULTADO: Plantilla 100% compatible con python-docx-template

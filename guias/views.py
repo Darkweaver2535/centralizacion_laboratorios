@@ -1187,135 +1187,43 @@ def detalle_guia_completa(request, guia_id):
 
 @login_required
 def generar_practica_pdf(request, practica_id):
-    """Generar PDF de una práctica de laboratorio (guía basada en práctica real)"""
-    
-    if not REPORTLAB_AVAILABLE:
-        return JsonResponse({'error': 'ReportLab no está disponible'}, status=500)
+    """Generar documento Word de una práctica de laboratorio usando plantilla EMI oficial"""
     
     from core.models import PracticaLaboratorio
+    from .plantilla_utils import crear_guia_temporal_desde_practica, generar_guia_word_desde_plantilla
     
     # Obtener la práctica
     practica = get_object_or_404(PracticaLaboratorio, id=practica_id)
-    asignatura = practica.contenido_analitico.unidad_didactica.asignatura
-    unidad = practica.contenido_analitico.unidad_didactica
-    contenido = practica.contenido_analitico
     
-    # Crear respuesta HTTP con PDF
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="Guia_{practica.nombre.replace(" ", "_")}.pdf"'
-    
-    # Crear documento PDF
-    doc = SimpleDocTemplate(response, pagesize=letter)
-    story = []
-    styles = getSampleStyleSheet()
-    
-    # Estilos personalizados
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=18,
-        spaceAfter=30,
-        textColor=colors.darkblue,
-        alignment=1  # Centrado
-    )
-    
-    subtitle_style = ParagraphStyle(
-        'CustomSubtitle',
-        parent=styles['Heading2'],
-        fontSize=14,
-        spaceAfter=12,
-        textColor=colors.darkgreen
-    )
-    
-    normal_style = ParagraphStyle(
-        'CustomNormal',
-        parent=styles['Normal'],
-        fontSize=11,
-        spaceAfter=6
-    )
-    
-    # ===== CONTENIDO DEL PDF =====
-    
-    # Título principal
-    story.append(Paragraph(f"GUÍA DE LABORATORIO", title_style))
-    story.append(Paragraph(f"{practica.nombre.upper()}", title_style))
-    story.append(Spacer(1, 20))
-    
-    # Información académica
-    story.append(Paragraph("INFORMACIÓN ACADÉMICA", subtitle_style))
-    
-    data_academica = [
-        ['Carrera:', asignatura.carrera],
-        ['Asignatura:', asignatura.nombre],
-        ['Semestre:', f"{asignatura.semestre}°"],
-        ['Unidad Didáctica:', unidad.nombre],
-        ['Duración:', f"{practica.duracion_horas} horas"],
-        ['Tipo de Práctica:', practica.get_tipo_practica_display()],
-        ['Número de Estudiantes:', str(practica.numero_estudiantes)],
-    ]
-    
-    tabla_academica = Table(data_academica, colWidths=[2*inch, 4*inch])
-    tabla_academica.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('BACKGROUND', (1, 0), (1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
-    
-    story.append(tabla_academica)
-    story.append(Spacer(1, 20))
-    
-    # Competencias
-    competencias = contenido.competencias.all()
-    if competencias.exists():
-        story.append(Paragraph("COMPETENCIAS", subtitle_style))
-        for i, competencia in enumerate(competencias, 1):
-            story.append(Paragraph(f"{i}. {competencia.descripcion}", normal_style))
-        story.append(Spacer(1, 15))
-    
-    # Objetivos de la práctica
-    objetivos = contenido.objetivos_practica.all()
-    if objetivos.exists():
-        story.append(Paragraph("OBJETIVOS DE LA PRÁCTICA", subtitle_style))
-        for i, objetivo in enumerate(objetivos, 1):
-            story.append(Paragraph(f"{i}. {objetivo.descripcion}", normal_style))
-        story.append(Spacer(1, 15))
-    
-    # Descripción del contenido analítico
-    story.append(Paragraph("DESCRIPCIÓN", subtitle_style))
-    story.append(Paragraph(contenido.descripcion, normal_style))
-    story.append(Spacer(1, 20))
-    
-    # Información adicional
-    story.append(Paragraph("INFORMACIÓN ADICIONAL", subtitle_style))
-    
-    info_adicional = [
-        ['Fecha de generación:', timezone.now().strftime('%d/%m/%Y %H:%M')],
-        ['Generado por:', request.user.get_full_name() or request.user.username],
-        ['Sistema:', 'Centralización de Laboratorios - UMSA'],
-    ]
-    
-    tabla_info = Table(info_adicional, colWidths=[2*inch, 4*inch])
-    tabla_info.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.lightblue),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
-    
-    story.append(tabla_info)
-    
-    # Construir PDF
-    doc.build(story)
-    
-    return response
+    try:
+        # Crear GuiaGenerada temporal desde la práctica (pasar usuario actual)
+        guia_temporal = crear_guia_temporal_desde_practica(practica, request.user)
+        
+        # Generar documento Word directamente
+        buffer = generar_guia_word_desde_plantilla(guia_temporal)
+        
+        if buffer:
+            # Siempre devolver como Word
+            content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            
+            # Crear respuesta HTTP
+            response = HttpResponse(
+                buffer.getvalue(),
+                content_type=content_type
+            )
+            
+            filename = f"Guia_{practica.nombre.replace(' ', '_').replace('/', '_')}_EMI.docx"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            return response
+        else:
+            return JsonResponse({'error': 'No se pudo generar el documento Word'}, status=500)
+            
+    except Exception as e:
+        print(f"❌ Error generando documento Word para práctica {practica_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': f'Error generando documento: {str(e)}'}, status=500)
 
 
 @login_required
@@ -1340,3 +1248,67 @@ def detalle_practica_completa(request, practica_id):
     }
     
     return render(request, 'guias/detalle_practica_completa.html', context)
+
+
+@login_required
+def generar_guia_word_plantilla(request, guia_id):
+    """Vista para generar documento Word usando la plantilla oficial"""
+    from .plantilla_utils import generar_response_docx
+    
+    guia = get_object_or_404(GuiaGenerada, id=guia_id)
+    
+    # Verificar permisos (opcional)
+    if not (request.user == guia.usuario_creador or request.user.is_staff):
+        messages.error(request, 'No tienes permisos para descargar esta guía.')
+        return redirect('guias:lista')
+    
+    try:
+        response = generar_response_docx(guia)
+        if response:
+            return response
+        else:
+            messages.error(request, 'No se pudo generar el documento Word.')
+            return redirect('guias:detalle', guia_id=guia_id)
+    except Exception as e:
+        messages.error(request, f'Error generando documento: {str(e)}')
+        return redirect('guias:detalle', guia_id=guia_id)
+
+
+@login_required  
+def generar_guia_pdf_plantilla(request, guia_id):
+    """Vista para generar PDF usando la plantilla Word (convirtiendo Word a PDF)"""
+    from .plantilla_utils import generar_guia_con_plantilla
+    
+    guia = get_object_or_404(GuiaGenerada, id=guia_id)
+    
+    # Verificar permisos (opcional)
+    if not (request.user == guia.usuario_creador or request.user.is_staff):
+        messages.error(request, 'No tienes permisos para descargar esta guía.')
+        return redirect('guias:lista')
+    
+    try:
+        # Generar documento Word primero
+        buffer_word = generar_guia_con_plantilla(guia)
+        
+        if not buffer_word:
+            messages.error(request, 'No se pudo generar el documento.')
+            return redirect('guias:detalle', guia_id=guia_id)
+        
+        # Por ahora, devolvemos el Word (en el futuro se puede convertir a PDF)
+        # Para conversión a PDF se necesitaría docx2pdf o LibreOffice
+        filename = f"Guia_Laboratorio_{guia.asignatura.nombre}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+        
+        response = HttpResponse(
+            buffer_word.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Mensaje informativo
+        messages.info(request, f'Documento generado usando plantilla oficial EMI: {filename}')
+        
+        return response
+        
+    except Exception as e:
+        messages.error(request, f'Error generando documento: {str(e)}')
+        return redirect('guias:detalle', guia_id=guia_id)

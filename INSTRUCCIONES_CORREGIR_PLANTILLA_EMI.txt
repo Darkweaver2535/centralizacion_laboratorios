@@ -1,0 +1,104 @@
+GUÍA PARA CORREGIR EL FORMATO OFICIAL DE LA EMPRESA EMI
+===========================================================
+
+PROBLEMA: Los tags de Jinja2 se fragmentan en Word causando errores de sintaxis.
+
+SOLUCIÓN PASO A PASO:
+
+1. ABRIR EL DOCUMENTO OFICIAL
+   - Abrir: /Users/alvaroencinas/Desktop/centralizacion_laboratorios/pruebas/FORMATO GUÍA DE LABORATORIO.docx
+   - En Microsoft Word
+
+2. BUSCAR Y REEMPLAZAR TODOS LOS TAGS PROBLEMÁTICOS
+   - Presionar Ctrl+H (Cmd+H en Mac) para abrir Buscar y Reemplazar
+
+3. REEMPLAZAR TAGS MALFORMADOS:
+
+   BUSCAR: {{ cantidad_ reactivo1 }}}
+   REEMPLAZAR POR: {{cantidad_reactivo1}}
+   
+   BUSCAR: {{ parte _indice }}
+   REEMPLAZAR POR: {{parte_indice}}
+   
+   BUSCAR: {{ pagina }}
+   REEMPLAZAR POR: {{pagina}}
+
+4. REGLAS IMPORTANTES PARA LOS TAGS:
+   ✅ CORRECTO: {{variable_name}}
+   ❌ INCORRECTO: {{ variable_name }}  (espacios)
+   ❌ INCORRECTO: {{{ variable_name }}} (braces extra)
+   ❌ INCORRECTO: {{ variable_ name }}  (espacio en medio)
+
+5. MÉTODO ALTERNATIVO - REESCRIBIR VARIABLES:
+   - Seleccionar TODO el tag problemático
+   - Borrarlo completamente
+   - Escribir de nuevo: {{variable_name}}
+   - NO copiar y pegar, escribir manualmente
+
+6. VARIABLES QUE DEBEN ESTAR EN EL DOCUMENTO:
+
+   INFORMACIÓN GENERAL:
+   - {{codigo_de_documento}}
+   - {{version_de_documento}}  
+   - {{fecha_de_documento}}
+   - {{pagina}}
+   - {{unidad_academica}}
+   - {{carrera}}
+   - {{nombre_de_la_asignatura}}
+   - {{titulo}}
+   - {{docente}}
+   - {{auxiliar}}
+   - {{fecha}}
+   - {{duracion}}
+   - {{grupo}}
+   - {{semestre}}
+
+   CONTENIDO:
+   - {{competencias}}
+   - {{fundamentacion_teorica}}
+   - {{objetivo_general}}
+   - {{objetivos_especificos}}
+   - {{procedimiento}}
+   - {{parte_experimental}}
+   - {{criterios_de_desempeno}}
+   - {{conclusiones}}
+   - {{referencias_bibliograficas}}
+
+   RECURSOS (1 al 5):
+   - {{equipo1}} {{cantidad_equipo1}}
+   - {{equipo2}} {{cantidad_equipo2}}
+   - ... hasta {{equipo5}}
+   
+   - {{material1}} {{cantidad_material1}}
+   - {{material2}} {{cantidad_material2}}
+   - ... hasta {{material5}}
+   
+   - {{reactivo1}} {{cantidad_reactivo1}}
+   - {{reactivo2}} {{cantidad_reactivo2}}
+   - ... hasta {{reactivo5}}
+   
+   - {{herramienta1}} {{cantidad_herramienta1}}
+   - {{herramienta2}} {{cantidad_herramienta2}}
+   - ... hasta {{herramienta5}}
+
+7. VERIFICAR SINTAXIS:
+   - Cada tag debe tener exactamente 2 llaves de apertura: {{
+   - Cada tag debe tener exactamente 2 llaves de cierre: }}
+   - NO debe haber espacios dentro del nombre de variable
+   - NO debe haber espacios después de {{ o antes de }}
+
+8. GUARDAR EL DOCUMENTO CORREGIDO:
+   - Guardar como: FORMATO_GUIA_LABORATORIO_CORREGIDO.docx
+   - En la carpeta: /Users/alvaroencinas/Desktop/centralizacion_laboratorios/templates/core/
+
+9. PROBAR LA PLANTILLA CORREGIDA:
+   - Usar el script de Python para verificar que funciona
+
+EJEMPLO DE CORRECCIÓN:
+ANTES: {{ cantidad_ reactivo1 }}}
+DESPUÉS: {{cantidad_reactivo1}}
+
+ANTES: {{ nombre_de_la _asignatura }}  
+DESPUÉS: {{nombre_de_la_asignatura}}
+
+¡IMPORTANTE! Escribir los tags manualmente, no copiar y pegar para evitar caracteres ocultos.
