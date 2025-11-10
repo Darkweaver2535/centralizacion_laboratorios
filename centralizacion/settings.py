@@ -263,3 +263,21 @@ CKEDITOR_5_CONFIGS = {
 
 CKEDITOR_5_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 LOGOUT_REDIRECT_URL = '/login/'
+
+# ========================================
+# CONFIGURACIÓN DE UPLOAD DE ARCHIVOS Y DATOS
+# ========================================
+
+# Aumentar el límite de tamaño de datos POST para soportar imágenes en base64 de CKEditor
+# Por defecto Django permite 2.5MB, lo aumentamos a 50MB para imágenes grandes
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB en bytes
+
+# Aumentar el límite de campos en el formulario (por si hay muchos campos dinámicos)
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000  # Aumentado de 1000 (default) a 10000
+
+# Aumentar el límite de archivos que se pueden subir simultáneamente
+DATA_UPLOAD_MAX_NUMBER_FILES = 100  # Ya está en 100 por defecto, pero lo dejamos explícito
+
+# Tamaño máximo para archivos en memoria antes de escribir a disco
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
+
