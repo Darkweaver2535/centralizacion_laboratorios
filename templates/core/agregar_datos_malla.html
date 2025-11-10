@@ -3,9 +3,6 @@
 
 {% block title %}Agregar Datos Completos - Malla Curricular{% endblock %}
 
-{% block extra_head %}
-{% endblock %}
-
 {% block extra_css %}
 <style>
     /* ============================================================
@@ -587,25 +584,102 @@
         }
     }
 
-    /* CKEditor Styles */
+    /* CKEditor 4 Styles - Diseño Moderno */
     #agregar-datos-malla-page .ckeditor-field {
         min-height: 200px !important;
-    }
-    
-    #agregar-datos-malla-page .django-ckeditor-widget {
         width: 100% !important;
     }
     
+    /* Contenedor principal de CKEditor */
     #agregar-datos-malla-page .cke_chrome {
         border: 2px solid #e1e5e9 !important;
-        border-radius: 8px !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
     }
     
+    /* Barra de herramientas */
     #agregar-datos-malla-page .cke_top {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border-bottom: 1px solid #ddd !important;
-        border-radius: 8px 8px 0 0 !important;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+        border-bottom: 2px solid #e1e5e9 !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 8px !important;
+    }
+    
+    /* Área de contenido editable */
+    #agregar-datos-malla-page .cke_contents {
+        min-height: 150px !important;
+        background: #ffffff !important;
+    }
+    
+    #agregar-datos-malla-page .cke_wysiwyg_frame,
+    #agregar-datos-malla-page .cke_wysiwyg_div {
+        min-height: 150px !important;
+        padding: 16px !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+    }
+    
+    /* Barra inferior */
+    #agregar-datos-malla-page .cke_bottom {
+        background: #f8fafc !important;
+        border-top: 1px solid #e1e5e9 !important;
+        border-radius: 0 0 12px 12px !important;
+    }
+    
+    /* Botones de la toolbar */
+    #agregar-datos-malla-page .cke_button {
+        border-radius: 6px !important;
+        margin: 2px !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    #agregar-datos-malla-page .cke_button:hover {
+        background: rgba(59, 130, 246, 0.1) !important;
+        border-color: #3b82f6 !important;
+    }
+    
+    #agregar-datos-malla-page .cke_button_on {
+        background: #3b82f6 !important;
+        border-color: #2563eb !important;
+    }
+    
+    #agregar-datos-malla-page .cke_button_on .cke_button_icon {
+        filter: brightness(0) invert(1) !important;
+    }
+    
+    /* Combo boxes y dropdowns */
+    #agregar-datos-malla-page .cke_combo_button {
+        border-radius: 6px !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    #agregar-datos-malla-page .cke_combo_button:hover {
+        background: rgba(59, 130, 246, 0.1) !important;
+    }
+    
+    /* Panel de dropdowns */
+    #agregar-datos-malla-page .cke_panel {
+        border-radius: 8px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        border: 2px solid #e1e5e9 !important;
+    }
+    
+    /* Responsive para CKEditor */
+    @media (max-width: 768px) {
+        #agregar-datos-malla-page .cke_toolbar {
+            flex-wrap: wrap !important;
+        }
+        
+        #agregar-datos-malla-page .cke_contents {
+            min-height: 120px !important;
+        }
+    }
+    
+    /* Widget de CKEditor */
+    #agregar-datos-malla-page .django-ckeditor-widget {
+        width: 100% !important;
     }
     
     #agregar-datos-malla-page .cke_toolbox {
@@ -1565,6 +1639,38 @@
 </div>
 
 <script>
+    // ============================================================
+    // CARGAR CKEDITOR 4 DINÁMICAMENTE SI NO ESTÁ DISPONIBLE
+    // ============================================================
+    (function() {
+        // Verificar si CKEditor ya está cargado
+        if (typeof CKEDITOR === 'undefined') {
+            console.log('📦 Cargando CKEditor 4 desde CDN...');
+            
+            // Crear y cargar el script de CKEditor (versión gratuita más reciente)
+            const script = document.createElement('script');
+            script.src = 'https://cdn.ckeditor.com/4.22.1/full-all/ckeditor.js';
+            script.async = false; // Cargar de forma síncrona
+            script.onload = function() {
+                console.log('✅ CKEditor 4.22.1 cargado exitosamente');
+                // Disparar evento personalizado cuando CKEditor esté listo
+                window.dispatchEvent(new Event('ckeditor-loaded'));
+            };
+            script.onerror = function() {
+                console.error('❌ Error al cargar CKEditor desde CDN');
+            };
+            
+            // Agregar el script al head
+            document.head.appendChild(script);
+        } else {
+            console.log('✅ CKEditor ya está cargado');
+            // Disparar evento inmediatamente si ya está cargado
+            setTimeout(() => {
+                window.dispatchEvent(new Event('ckeditor-loaded'));
+            }, 100);
+        }
+    })();
+    
     let contadorContenidos = 1; // Contador para contenidos analíticos
     let contadorGruposDatos = {}; // Para rastrear grupos de datos adicionales por contenido
 
@@ -2004,7 +2110,7 @@
                     <div class="form-group">
                         <label class="form-label">Fundamento Teórico</label>
                         <textarea name="fundamento_teorico_${contenidoIndex}_${grupoIndex}" 
-                                 class="form-input" 
+                                 class="form-input ckeditor-field" 
                                  placeholder="Fundamento teórico de la práctica" 
                                  rows="4"></textarea>
                     </div>
@@ -2013,7 +2119,7 @@
                     <div class="form-group">
                         <label class="form-label">Procedimientos</label>
                         <textarea name="procedimientos_${contenidoIndex}_${grupoIndex}" 
-                                 class="form-input" 
+                                 class="form-input ckeditor-field" 
                                  placeholder="Pasos del procedimiento" 
                                  rows="4"></textarea>
                     </div>
@@ -2120,7 +2226,7 @@
                     <div class="form-group">
                         <label class="form-label">Cálculos y Resultados</label>
                         <textarea name="calculos_resultados_${contenidoIndex}_${grupoIndex}" 
-                                 class="form-input" 
+                                 class="form-input ckeditor-field" 
                                  placeholder="Cálculos esperados y resultados" 
                                  rows="4"></textarea>
                     </div>
@@ -2129,7 +2235,7 @@
                     <div class="form-group">
                         <label class="form-label">Cuestionario</label>
                         <textarea name="cuestionario_${contenidoIndex}_${grupoIndex}" 
-                                 class="form-input" 
+                                 class="form-input ckeditor-field" 
                                  placeholder="Preguntas del cuestionario" 
                                  rows="4"></textarea>
                     </div>
@@ -3104,7 +3210,168 @@
             setTimeout(() => {
                 cargarTodosLosRecursos();
             }, 100);
+            
+            // Inicializar CKEditor para los nuevos campos
+            setTimeout(() => {
+                const nuevoContainer = document.querySelector(`[data-contenido-index="${contenidoIndex}"]`);
+                if (nuevoContainer) {
+                    initializeCKEditor(nuevoContainer);
+                } else {
+                    // Fallback: reinicializar todos los campos no inicializados
+                    initializeCKEditor();
+                }
+            }, 200);
         };
+        
+        // ============================================================
+        // INICIALIZACIÓN DE CKEDITOR 4 PARA CAMPOS DE TEXTO ENRIQUECIDO
+        // ============================================================
+        
+        // Configuración específica de CKEditor 4 para campos de laboratorio
+        const ckeditorConfig = {
+            toolbar: [
+                { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript'] },
+                { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'] },
+                { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar', 'Smiley'] },
+                { name: 'links', items: ['Link', 'Unlink'] },
+                '/',
+                { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
+                { name: 'colors', items: ['TextColor', 'BGColor'] },
+                { name: 'tools', items: ['Maximize', 'ShowBlocks'] },
+                { name: 'editing', items: ['Undo', 'Redo'] }
+            ],
+            height: 250,
+            removePlugins: 'elementspath', // Removemos elementspath para ahorrar espacio
+            resize_enabled: true,
+            
+            // ============================================================
+            // CONFIGURACIÓN PARA MANEJO DE IMÁGENES CON BASE64
+            // ============================================================
+            
+            // Habilitar plugin de upload de imágenes (sin image2 para evitar conflictos)
+            extraPlugins: 'uploadimage,autogrow',
+            
+            // Auto-ajustar altura del editor
+            autoGrow_minHeight: 200,
+            autoGrow_maxHeight: 600,
+            
+            // Configuración para convertir imágenes pegadas a base64
+            // Esto permite pegar imágenes desde el portapapeles sin servidor
+            uploadUrl: '/placeholder-upload-url', // URL de placeholder
+            
+            // Función personalizada para manejar imágenes como base64
+            // Esto se ejecuta cuando se pega una imagen
+            on: {
+                paste: function(evt) {
+                    // Si se pega una imagen, convertirla a base64
+                    const editor = evt.editor;
+                    const data = evt.data;
+                    
+                    if (data.dataTransfer && data.dataTransfer.getFilesCount && data.dataTransfer.getFilesCount() > 0) {
+                        evt.cancel(); // Cancelar el pegado por defecto
+                        
+                        const filesCount = data.dataTransfer.getFilesCount();
+                        
+                        for (let i = 0; i < filesCount; i++) {
+                            const file = data.dataTransfer.getFile(i);
+                            
+                            // Solo procesar archivos de imagen
+                            if (file && file.type.match(/^image\//)) {
+                                const reader = new FileReader();
+                                
+                                reader.onload = function(e) {
+                                    // Crear elemento de imagen con data URL (base64)
+                                    const imgHtml = '<img src="' + e.target.result + '" alt="Imagen pegada" style="max-width: 100%;" />';
+                                    editor.insertHtml(imgHtml);
+                                };
+                                
+                                reader.readAsDataURL(file);
+                            }
+                        }
+                    }
+                }
+            },
+            
+            // Configuración de formato
+            format_tags: 'p;h1;h2;h3;h4;h5;h6;pre',
+            
+            // Permitir todo el contenido HTML (incluyendo imágenes en base64)
+            allowedContent: true,
+            extraAllowedContent: '*(*);*{*}',
+            
+            // Configuración de tabla mejorada
+            table_toolbar: 'tableProperties,tableDelete,|,tableRow,tableColumn,tableCell',
+            
+            // Configuración del diálogo de imagen
+            image_previewText: ' ', // Sin texto de preview
+            
+            // Permitir arrastrar y soltar imágenes
+            disallowedContent: '', // No deshabilitar ningún contenido
+            
+            // Configuración de lenguaje (español)
+            language: 'es',
+            
+            // Configuración de contenido
+            enterMode: 2, // <br> en lugar de <p>
+            shiftEnterMode: 1 // <p> cuando se presiona Shift+Enter
+        };
+        
+        // Función para inicializar CKEditor en elementos específicos
+        function initializeCKEditor(container = document) {
+            // Verificar que CKEDITOR esté disponible
+            if (typeof CKEDITOR === 'undefined') {
+                console.warn('⏳ Esperando a que CKEditor se cargue...');
+                return;
+            }
+            
+            const ckeditorFields = container.querySelectorAll('.ckeditor-field');
+            console.log(`🔧 Inicializando CKEditor para ${ckeditorFields.length} campos`);
+            
+            ckeditorFields.forEach((field, index) => {
+                // Solo inicializar si aún no está inicializado
+                if (!field.dataset.ckeditorInitialized) {
+                    try {
+                        // Reemplazar el textarea con CKEditor
+                        const editor = CKEDITOR.replace(field, ckeditorConfig);
+                        
+                        editor.on('instanceReady', function() {
+                            console.log(`✅ CKEditor inicializado para campo ${field.name || 'sin-nombre'}`);
+                            field.dataset.ckeditorInitialized = 'true';
+                        });
+                        
+                        // Guardar la instancia del editor en el elemento
+                        field.ckeditorInstance = editor;
+                        
+                    } catch (error) {
+                        console.error('❌ Error al inicializar CKEditor:', error);
+                    }
+                }
+            });
+        }
+        
+        // Función para reinicializar CKEditor en elementos dinámicos
+        window.reinitializeCKEditor = function(container) {
+            setTimeout(() => {
+                initializeCKEditor(container);
+            }, 300);
+        };
+        
+        // Esperar al evento personalizado cuando CKEditor esté cargado
+        window.addEventListener('ckeditor-loaded', function() {
+            console.log('🎉 CKEditor listo - Inicializando campos...');
+            
+            // Inicializar todos los campos existentes
+            setTimeout(() => {
+                initializeCKEditor();
+            }, 200);
+        });
+        
+        // Reinicializar cuando se agreguen nuevos grupos dinámicamente
+        document.addEventListener('DOMNodeInserted', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('grupo-adicional')) {
+                reinitializeCKEditor(e.target);
+            }
+        });
     });
 </script>
 

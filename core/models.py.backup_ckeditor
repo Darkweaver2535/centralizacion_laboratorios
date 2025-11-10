@@ -540,7 +540,7 @@ class CalculosResultados(models.Model):
     contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='calculos_resultados')
     titulo = models.CharField(max_length=200, verbose_name="Título del cálculo/resultado")
     formula = models.TextField(blank=True, verbose_name="Fórmula utilizada")
-    procedimiento_calculo = CKEditor5Field('Procedimiento de cálculo', config_name='extends')
+    procedimiento_calculo = models.TextField(verbose_name="Procedimiento de cálculo")
     resultado_esperado = models.TextField(blank=True, verbose_name="Resultado esperado")
     unidades = models.CharField(max_length=50, blank=True, verbose_name="Unidades de medida")
     margen_error = models.CharField(max_length=50, blank=True, verbose_name="Margen de error aceptable")
@@ -561,7 +561,7 @@ class Cuestionario(models.Model):
     """Cuestionarios y preguntas de evaluación"""
     contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='cuestionarios')
     numero_pregunta = models.PositiveIntegerField(verbose_name="Número de pregunta")
-    pregunta = CKEditor5Field('Texto de la pregunta', config_name='extends')
+    pregunta = models.TextField(verbose_name="Texto de la pregunta")
     tipo_pregunta = models.CharField(max_length=50, choices=[
         ('abierta', 'Pregunta Abierta'),
         ('cerrada', 'Pregunta Cerrada'),
@@ -570,7 +570,7 @@ class Cuestionario(models.Model):
         ('calculo', 'Cálculo'),
         ('analisis', 'Análisis')
     ], default='abierta')
-    respuesta_esperada = CKEditor5Field('Respuesta esperada o criterios', config_name='default', blank=True)
+    respuesta_esperada = models.TextField(blank=True, verbose_name="Respuesta esperada o criterios")
     puntuacion = models.DecimalField(max_digits=5, decimal_places=2, default=1.0, verbose_name="Puntuación")
     orden = models.PositiveIntegerField(default=1, verbose_name="Orden de la pregunta")
     created_at = models.DateTimeField(auto_now_add=True)

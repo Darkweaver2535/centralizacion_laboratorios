@@ -16,6 +16,7 @@ try:
     from docx.shared import Inches, Pt, RGBColor  # Agregar RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.enum.table import WD_TABLE_ALIGNMENT
+    from htmldocx import HtmlToDocx  # Para convertir HTML de CKEditor a Word
     from reportlab.lib.pagesizes import letter
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -29,9 +30,48 @@ except ImportError:
 
 from io import BytesIO
 
-from core.models import Carrera, Asignatura
+from core.models import Carrera, Asignatura, ContenidoAnalitico, FundamentoTeorico, Procedimientos, CalculosResultados, Cuestionario
 from .models import GuiaGenerada
 from .forms import GuiaLaboratorioForm, GuiaFilterForm
+
+
+# ============================================================
+# FUNCIÓN HELPER PARA CONVERTIR HTML DE CKEDITOR A WORD
+# ============================================================
+
+def agregar_html_a_documento(doc, html_content, parser=None):
+    """
+    Convierte contenido HTML de CKEditor a formato Word y lo agrega al documento.
+    
+    Args:
+        doc: Documento de python-docx
+        html_content: String con HTML generado por CKEditor
+        parser: Instancia de HtmlToDocx (opcional, se crea si no se proporciona)
+    
+    Returns:
+        El documento actualizado
+    """
+    if not html_content or not html_content.strip():
+        return doc
+    
+    try:
+        # Crear parser si no se proporciona
+        if parser is None:
+            parser = HtmlToDocx()
+        
+        # Agregar el HTML al documento
+        # htmldocx maneja automáticamente: negritas, cursivas, tablas, imágenes en base64, listas, etc.
+        parser.add_html_to_document(html_content, doc)
+        
+    except Exception as e:
+        # Si falla la conversión HTML, agregar como texto plano
+        print(f"⚠️ Error convirtiendo HTML a Word: {e}")
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html_content, 'html.parser')
+        texto_plano = soup.get_text()
+        doc.add_paragraph(texto_plano)
+    
+    return doc
 
 
 @login_required
@@ -491,17 +531,162 @@ def generar_documento_word(guia):
         herramientas_table.cell(0, 1).paragraphs[0].runs[0].font.bold = True
         herramientas_table.cell(0, 1).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
         
-        # Secciones finales
-        doc.add_paragraph()
-        procedimiento_final = doc.add_heading('6. PROCEDIMIENTO', 2)
-        doc.add_paragraph()
-        doc.add_paragraph()
-        doc.add_paragraph()
+        # ========== SECCIONES CON CONTENIDO HTML DE CKEDITOR ==========
         
-        cuestionario_final = doc.add_heading('7. CUESTIONARIO', 2) 
+        # Crear parser HTML una sola vez para reutilizar
+        html_parser = HtmlToDocx()
+        
+        # 6. PROCEDIMIENTO con contenido HTML
         doc.add_paragraph()
-        doc.add_paragraph()
-        doc.add_paragraph()
+        procedimiento_heading = doc.add_heading('6. PROCEDIMIENTO', 2)
+        
+        # Obtener todos los procedimientos relacionados al contenido analítico de la guía
+        if hasattr(guia, 'contenido_analitico_obj'):
+            contenido_obj = guia.contenido_analitico_obj
+        else:
+            # Intentar obtener el contenido analítico por ID si existe
+            try:
+                contenido_obj = ContenidoAnalitico.objects.get(
+                    asignatura=guia.asignatura,
+                    nombre=guia.contenido_analitico
+                )
+            except (ContenidoAnalitico.DoesNotExist, ContenidoAnalitico.MultipleObjectsReturned):
+                contenido_obj = None
+        
+        if contenido_obj:
+            # Obtener y agregar FUNDAMENTOS TEÓRICOS
+            fundamentos = FundamentoTeorico.objects.filter(contenido_analitico=contenido_obj).order_by('orden')
+            if fundamentos.exists():
+                doc.add_heading('Fundamentos Teóricos', 3)
+                for fundamento in fundamentos:
+                    # Título del fundamento
+                    doc.add_heading(fundamento.titulo, 4)
+                    # Contenido HTML del fundamento
+                    if fundamento.contenido:
+                        agregar_html_a_documento(doc, fundamento.contenido, html_parser)
+                    # Referencias si existen
+                    if fundamento.referencias:
+                        doc.add_paragraph('Referencias:', style='Heading 5')
+                        agregar_html_a_documento(doc, fundamento.referencias, html_parser)
+                doc.add_paragraph()  # Espaciado
+            
+            # Obtener y agregar PROCEDIMIENTOS
+            procedimientos = Procedimientos.objects.filter(contenido_analitico=contenido_obj).order_by('orden', 'numero_paso')
+            if procedimientos.exists():
+                for proc in procedimientos:
+                    # Paso numerado
+                    paso_titulo = doc.add_paragraph()
+                    paso_run = paso_titulo.add_run(f"Paso {proc.numero_paso}: {proc.titulo_paso}")
+                    paso_run.bold = True
+                    paso_run.font.size = Pt(12)
+                    
+                    # Descripción HTML del procedimiento
+                    if proc.descripcion:
+                        agregar_html_a_documento(doc, proc.descripcion, html_parser)
+                    
+                    # Tiempo estimado si existe
+                    if proc.tiempo_estimado:
+                        tiempo_para = doc.add_paragraph()
+                        tiempo_run = tiempo_para.add_run(f"⏱ Tiempo estimado: {proc.tiempo_estimado}")
+                        tiempo_run.italic = True
+                    
+                    # Precauciones si existen
+                    if proc.precauciones:
+                        doc.add_paragraph('⚠️ Precauciones:', style='Heading 5')
+                        agregar_html_a_documento(doc, proc.precauciones, html_parser)
+                    
+                    # Observaciones si existen
+                    if proc.observaciones:
+                        doc.add_paragraph('📝 Observaciones:', style='Heading 5')
+                        agregar_html_a_documento(doc, proc.observaciones, html_parser)
+                    
+                    doc.add_paragraph()  # Espaciado entre pasos
+            else:
+                doc.add_paragraph("No se han definido procedimientos específicos para esta práctica.")
+            
+            # Obtener y agregar CÁLCULOS Y RESULTADOS
+            calculos = CalculosResultados.objects.filter(contenido_analitico=contenido_obj).order_by('orden')
+            if calculos.exists():
+                doc.add_page_break()
+                crear_encabezado_pagina(doc, "GUÍA DE LABORATORIO")
+                doc.add_heading('CÁLCULOS Y RESULTADOS', 2)
+                
+                for calculo in calculos:
+                    # Título del cálculo
+                    doc.add_heading(calculo.titulo, 3)
+                    
+                    # Fórmula si existe
+                    if calculo.formula:
+                        formula_para = doc.add_paragraph()
+                        formula_run = formula_para.add_run(f"📐 Fórmula: {calculo.formula}")
+                        formula_run.font.name = 'Courier New'
+                    
+                    # Procedimiento de cálculo (HTML)
+                    if calculo.procedimiento_calculo:
+                        doc.add_paragraph('Procedimiento:', style='Heading 4')
+                        agregar_html_a_documento(doc, calculo.procedimiento_calculo, html_parser)
+                    
+                    # Resultado esperado
+                    if calculo.resultado_esperado:
+                        resultado_para = doc.add_paragraph()
+                        resultado_run = resultado_para.add_run(f"✓ Resultado esperado: {calculo.resultado_esperado}")
+                        resultado_run.bold = True
+                    
+                    # Unidades
+                    if calculo.unidades:
+                        unidades_para = doc.add_paragraph(f"Unidades: {calculo.unidades}")
+                    
+                    # Margen de error
+                    if calculo.margen_error:
+                        margen_para = doc.add_paragraph(f"±Margen de error: {calculo.margen_error}")
+                        margen_para.runs[0].italic = True
+                    
+                    doc.add_paragraph()  # Espaciado
+        else:
+            # Si no hay contenido analítico, dejar espacio en blanco
+            doc.add_paragraph()
+            doc.add_paragraph()
+        
+        # 7. CUESTIONARIO con contenido HTML
+        doc.add_page_break()
+        crear_encabezado_pagina(doc, "GUÍA DE LABORATORIO")
+        cuestionario_heading = doc.add_heading('7. CUESTIONARIO', 2)
+        
+        if contenido_obj:
+            # Obtener y agregar CUESTIONARIO
+            preguntas = Cuestionario.objects.filter(contenido_analitico=contenido_obj).order_by('orden', 'numero_pregunta')
+            if preguntas.exists():
+                for pregunta in preguntas:
+                    # Número y pregunta
+                    pregunta_para = doc.add_paragraph()
+                    numero_run = pregunta_para.add_run(f"{pregunta.numero_pregunta}. ")
+                    numero_run.bold = True
+                    
+                    # Pregunta HTML
+                    if pregunta.pregunta:
+                        agregar_html_a_documento(doc, pregunta.pregunta, html_parser)
+                    
+                    # Tipo de pregunta
+                    tipo_para = doc.add_paragraph(f"[{pregunta.get_tipo_pregunta_display()}]")
+                    tipo_para.runs[0].italic = True
+                    tipo_para.runs[0].font.size = Pt(9)
+                    
+                    # Respuesta esperada (si existe - para el docente)
+                    if pregunta.respuesta_esperada:
+                        doc.add_paragraph('💡 Respuesta esperada (guía docente):', style='Heading 5')
+                        agregar_html_a_documento(doc, pregunta.respuesta_esperada, html_parser)
+                    
+                    # Puntuación
+                    if pregunta.puntuacion:
+                        puntos_para = doc.add_paragraph(f"Puntuación: {pregunta.puntuacion} pts")
+                        puntos_para.runs[0].font.size = Pt(9)
+                    
+                    doc.add_paragraph()  # Espaciado entre preguntas
+            else:
+                doc.add_paragraph("No se han definido preguntas de cuestionario para esta práctica.")
+        else:
+            doc.add_paragraph()
+            doc.add_paragraph()
         
         # Firma al final
         doc.add_paragraph()
