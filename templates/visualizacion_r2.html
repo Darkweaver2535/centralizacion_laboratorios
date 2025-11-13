@@ -1916,7 +1916,7 @@ function generarGuiaWord(practicaId, tituloPractica) {
     document.body.appendChild(toast);
     
     // Realizar petición directa para generar Word
-    fetch(`/guias/practica/${practicaId}/generar-pdf/`, {
+    fetch(`/guias/practica/${practicaId}/generar-word/`, {
         method: 'GET',
         headers: {
             'X-CSRFToken': getCookie('csrftoken'),
@@ -1930,7 +1930,12 @@ function generarGuiaWord(practicaId, tituloPractica) {
             // Asumir que siempre será DOCX
             return response.blob().then(blob => ({ blob, extension: 'docx' }));
         } else {
-            throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
+            // Intentar leer el error como JSON
+            return response.json().then(errorData => {
+                throw new Error(errorData.error || `Error del servidor: ${response.status}`);
+            }).catch(() => {
+                throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
+            });
         }
     })
     .then(({ blob, extension }) => {

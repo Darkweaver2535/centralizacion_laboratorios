@@ -39,6 +39,60 @@ from .forms import GuiaLaboratorioForm, GuiaFilterForm
 # FUNCIÓN HELPER PARA CONVERTIR HTML DE CKEDITOR A WORD
 # ============================================================
 
+def limpiar_html_para_word(html_content):
+    """
+    Limpia el HTML de CKEditor para evitar problemas al convertir a Word.
+    Elimina scripts, estilos problemáticos y normaliza el contenido.
+    """
+    if not html_content or not html_content.strip():
+        return ""
+    
+    from bs4 import BeautifulSoup
+    import re
+    
+    try:
+        # Parsear el HTML
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Eliminar scripts y estilos que pueden causar problemas
+        for tag in soup.find_all(['script', 'style']):
+            tag.decompose()
+        
+        # Limpiar atributos problemáticos de imágenes
+        for img in soup.find_all('img'):
+            # Mantener solo src, alt, width, height
+            attrs_to_keep = {}
+            if img.get('src'):
+                attrs_to_keep['src'] = img['src']
+            if img.get('alt'):
+                attrs_to_keep['alt'] = img['alt']
+            if img.get('width'):
+                attrs_to_keep['width'] = img['width']
+            if img.get('height'):
+                attrs_to_keep['height'] = img['height']
+            
+            img.attrs = attrs_to_keep
+            
+            # Limitar tamaño de imágenes base64 muy grandes
+            if img.get('src', '').startswith('data:image'):
+                # Si la imagen base64 es muy grande (>5MB), agregar comentario
+                if len(img['src']) > 5000000:
+                    img.replace_with(soup.new_string('[Imagen muy grande - omitida]'))
+        
+        # Convertir de vuelta a string HTML limpio
+        clean_html = str(soup)
+        
+        # Eliminar entidades HTML problemáticas
+        clean_html = clean_html.replace('&nbsp;', ' ')
+        
+        return clean_html
+        
+    except Exception as e:
+        print(f"⚠️ Error limpiando HTML: {e}")
+        # Si falla la limpieza, devolver el HTML original
+        return html_content
+
+
 def agregar_html_a_documento(doc, html_content, parser=None):
     """
     Convierte contenido HTML de CKEditor a formato Word y lo agrega al documento.
@@ -55,21 +109,32 @@ def agregar_html_a_documento(doc, html_content, parser=None):
         return doc
     
     try:
+        # Limpiar el HTML antes de convertir
+        html_limpio = limpiar_html_para_word(html_content)
+        
+        if not html_limpio or not html_limpio.strip():
+            return doc
+        
         # Crear parser si no se proporciona
         if parser is None:
             parser = HtmlToDocx()
         
         # Agregar el HTML al documento
         # htmldocx maneja automáticamente: negritas, cursivas, tablas, imágenes en base64, listas, etc.
-        parser.add_html_to_document(html_content, doc)
+        parser.add_html_to_document(html_limpio, doc)
         
     except Exception as e:
         # Si falla la conversión HTML, agregar como texto plano
         print(f"⚠️ Error convirtiendo HTML a Word: {e}")
         from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html_content, 'html.parser')
-        texto_plano = soup.get_text()
-        doc.add_paragraph(texto_plano)
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            texto_plano = soup.get_text(separator='\n')
+            if texto_plano.strip():
+                doc.add_paragraph(texto_plano)
+        except:
+            # Último recurso: agregar el HTML como está
+            doc.add_paragraph(str(html_content)[:500] + '...')
     
     return doc
 
@@ -168,16 +233,20 @@ def nueva_guia(request):
                 
                 # Guardar archivos
                 if word_file:
+                    from django.core.files.base import ContentFile
+                    # Convertir BytesIO a ContentFile para Django
                     guia.archivo_word.save(
                         f'guia_{guia.id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.docx',
-                        word_file,
+                        ContentFile(word_file.getvalue()),
                         save=True
                     )
                 
                 if pdf_file:
+                    from django.core.files.base import ContentFile
+                    # Convertir BytesIO a ContentFile para Django
                     guia.archivo_pdf.save(
                         f'guia_{guia.id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf',
-                        pdf_file,
+                        ContentFile(pdf_file.getvalue()),
                         save=True
                     )
                 
@@ -240,12 +309,36 @@ def descargar_word(request, guia_id):
         raise Http404("El archivo Word no está disponible")
     
     try:
+        # Limpiar el título para el nombre del archivo (quitar caracteres especiales)
+        import re
+        titulo_limpio = re.sub(r'[^\w\s-]', '', guia.titulo)
+        titulo_limpio = re.sub(r'[-\s]+', '_', titulo_limpio)
+        filename = f"Guia_{titulo_limpio[:30]}.docx"
+        
+        # Leer el archivo
         with open(guia.archivo_word.path, 'rb') as f:
-            response = HttpResponse(f.read(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-            response['Content-Disposition'] = f'attachment; filename="guia_{guia.id}_{guia.titulo[:30]}.docx"'
-            return response
+            file_content = f.read()
+        
+        # Crear respuesta con headers correctos
+        response = HttpResponse(
+            file_content,
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        
+        # Agregar headers de descarga
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Length'] = len(file_content)
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        
+        return response
+        
     except FileNotFoundError:
         raise Http404("El archivo no se encontró en el servidor")
+    except Exception as e:
+        print(f"❌ Error al descargar archivo Word: {e}")
+        raise Http404(f"Error al procesar el archivo: {str(e)}")
 
 
 @login_required
@@ -533,8 +626,13 @@ def generar_documento_word(guia):
         
         # ========== SECCIONES CON CONTENIDO HTML DE CKEDITOR ==========
         
-        # Crear parser HTML una sola vez para reutilizar
-        html_parser = HtmlToDocx()
+        try:
+            # Crear parser HTML una sola vez para reutilizar
+            html_parser = HtmlToDocx()
+            print("✅ Parser HTML creado exitosamente")
+        except Exception as parser_error:
+            print(f"⚠️ Error creando parser HTML, usando método alternativo: {parser_error}")
+            html_parser = None
         
         # 6. PROCEDIMIENTO con contenido HTML
         doc.add_paragraph()
@@ -544,13 +642,21 @@ def generar_documento_word(guia):
         if hasattr(guia, 'contenido_analitico_obj'):
             contenido_obj = guia.contenido_analitico_obj
         else:
-            # Intentar obtener el contenido analítico por ID si existe
+            # Intentar obtener el contenido analítico por nombre
             try:
-                contenido_obj = ContenidoAnalitico.objects.get(
-                    asignatura=guia.asignatura,
+                # Buscar por nombre del contenido analítico
+                contenido_obj = ContenidoAnalitico.objects.filter(
                     nombre=guia.contenido_analitico
-                )
-            except (ContenidoAnalitico.DoesNotExist, ContenidoAnalitico.MultipleObjectsReturned):
+                ).first()
+                
+                # Si no se encuentra por nombre, intentar por descripción
+                if not contenido_obj:
+                    contenido_obj = ContenidoAnalitico.objects.filter(
+                        descripcion__icontains=guia.contenido_analitico
+                    ).first()
+                    
+            except Exception as search_error:
+                print(f"⚠️ Error buscando contenido analítico: {search_error}")
                 contenido_obj = None
         
         if contenido_obj:
@@ -700,15 +806,32 @@ def generar_documento_word(guia):
         firma_cargo = doc.add_paragraph(f'DOCENTE DE LABORATORIO DE LA ASIGNATURA ({guia.asignatura.nombre.upper()})')
         firma_cargo.alignment = WD_ALIGN_PARAGRAPH.CENTER
         
-        # Guardar en memoria
-        buffer = BytesIO()
-        doc.save(buffer)
-        buffer.seek(0)
-        
-        return buffer
+        # ========== GUARDAR DOCUMENTO CON VALIDACIÓN ==========
+        try:
+            # Guardar en memoria
+            buffer = BytesIO()
+            doc.save(buffer)
+            buffer.seek(0)
+            
+            # Validar que el buffer tiene contenido
+            buffer_size = buffer.getbuffer().nbytes
+            if buffer_size == 0:
+                print("❌ Error: El documento generado está vacío")
+                return None
+            
+            print(f"✅ Documento Word generado exitosamente: {buffer_size} bytes")
+            return buffer
+            
+        except Exception as save_error:
+            print(f"❌ Error al guardar documento Word: {save_error}")
+            import traceback
+            traceback.print_exc()
+            return None
         
     except Exception as e:
-        print(f"Error generando documento Word: {e}")
+        print(f"❌ Error general generando documento Word: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -1369,6 +1492,332 @@ def detalle_guia_completa(request, guia_id):
 
 
 # ===== NUEVAS VISTAS PARA PRÁCTICAS DE LABORATORIO =====
+
+@login_required
+def generar_practica_word(request, practica_id):
+    """Generar Word de una práctica usando plantilla con marcadores {{ variable }}"""
+    
+    if not DOCX_AVAILABLE:
+        return JsonResponse({'error': 'python-docx no está disponible'}, status=500)
+    
+    from core.models import PracticaLaboratorio, FundamentoTeorico, Procedimientos, CalculosResultados, Cuestionario
+    import os
+    
+    try:
+        # Obtener la práctica
+        practica = get_object_or_404(PracticaLaboratorio, id=practica_id)
+        asignatura = practica.contenido_analitico.unidad_didactica.asignatura
+        unidad = practica.contenido_analitico.unidad_didactica
+        contenido = practica.contenido_analitico
+        
+        print(f"📄 Generando Word para práctica: {practica.nombre}")
+        
+        # Cargar plantilla
+        plantilla_path = os.path.join(settings.BASE_DIR, 'pruebas', 'FORMATO GUÍA DE LABORATORIO.docx')
+        
+        if not os.path.exists(plantilla_path):
+            return JsonResponse({'error': f'Plantilla no encontrada en {plantilla_path}'}, status=500)
+        
+        print(f"✅ Cargando plantilla: {plantilla_path}")
+        doc = Document(plantilla_path)
+        
+        # === DATOS PARA REEMPLAZAR ===
+        # NOTA: Los marcadores deben coincidir EXACTAMENTE con los de la plantilla
+        replacements = {
+            '{{ nombre_de_la_asignatura }}': asignatura.nombre if asignatura else 'N/A',
+            '{{ parte_indice }}': f"PL {practica.orden if practica.orden else 1}",
+            '{{ pagina }}': '1',
+            '{{ titulo }}': practica.nombre,
+            '{{ asignatura }}': asignatura.nombre if asignatura else 'N/A',
+            '{{ carrera }}': asignatura.carrera.nombre if (asignatura and asignatura.carrera) else 'N/A',
+            '{{ semestre }}': str(asignatura.semestre) if (asignatura and asignatura.semestre) else 'N/A',
+            '{{ nombre_practica }}': practica.nombre,
+            '{{ duracion }}': f"{practica.duracion_horas} horas" if practica.duracion_horas else 'N/A',
+            '{{ numero_estudiantes }}': str(practica.numero_estudiantes) if practica.numero_estudiantes else 'Según capacidad',
+        }
+        
+        # Función mejorada para reemplazar texto en párrafos
+        def reemplazar_en_parrafo(paragraph, replacements):
+            """Reemplaza marcadores en un párrafo, manejando runs fragmentados"""
+            texto_completo = paragraph.text
+            
+            # Verificar si hay algún marcador
+            for key in replacements.keys():
+                if key in texto_completo:
+                    # Obtener el texto con reemplazos
+                    nuevo_texto = texto_completo
+                    for k, v in replacements.items():
+                        nuevo_texto = nuevo_texto.replace(k, v)
+                    
+                    # Limpiar runs existentes
+                    for run in paragraph.runs:
+                        run.text = ''
+                    
+                    # Agregar el nuevo texto en el primer run
+                    if paragraph.runs:
+                        paragraph.runs[0].text = nuevo_texto
+                    else:
+                        paragraph.add_run(nuevo_texto)
+                    
+                    break  # Ya reemplazamos, no seguir iterando
+        
+        # Reemplazar en párrafos
+        for paragraph in doc.paragraphs:
+            reemplazar_en_parrafo(paragraph, replacements)
+        
+        # Reemplazar en tablas
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for paragraph in cell.paragraphs:
+                        reemplazar_en_parrafo(paragraph, replacements)
+        
+        # === RELLENAR SECCIONES ESPECÍFICAS ===
+        
+        # Inicializar parser HTML
+        html_parser = None
+        try:
+            html_parser = HtmlToDocx()
+            print("✅ Parser HTML creado")
+        except Exception as e:
+            print(f"⚠️ Error creando parser HTML: {e}")
+        
+        # Función auxiliar para agregar contenido HTML
+        def agregar_html_a_celda(cell, html_content, limpiar=False):
+            """Agrega contenido HTML a una celda de tabla"""
+            if not html_content:
+                return
+            
+            # Limpiar HTML
+            html_limpio = limpiar_html_para_word(html_content)
+            
+            # Limpiar párrafos existentes si se solicita
+            if limpiar:
+                for p in cell.paragraphs:
+                    p.clear()
+            
+            if html_parser and html_limpio:
+                try:
+                    # Agregar el HTML directamente a la celda
+                    html_parser.add_html_to_cell(html_limpio, cell)
+                    print(f"✅ HTML agregado a celda")
+                except Exception as e:
+                    print(f"⚠️ Error agregando HTML: {e}")
+                    # Fallback: agregar como texto plano
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(html_limpio, 'html.parser')
+                    p = cell.add_paragraph()
+                    p.add_run(soup.get_text())
+            else:
+                # Sin parser HTML, extraer texto
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(html_content, 'html.parser')
+                p = cell.add_paragraph()
+                p.add_run(soup.get_text())
+        
+        # TABLA 2: COMPETENCIAS
+        if len(doc.tables) > 2:
+            competencias_cell = doc.tables[2].rows[1].cells[0]
+            competencias = contenido.competencias.all() if hasattr(contenido, 'competencias') else []
+            if competencias:
+                texto_competencias = '\n'.join([f"• {comp.descripcion}" for comp in competencias])
+                competencias_cell.text = texto_competencias
+        
+        # TABLA 3: CRITERIOS DE DESEMPEÑO (puede venir de objetivos)
+        if len(doc.tables) > 3:
+            criterios_cell = doc.tables[3].rows[1].cells[0]
+            objetivos = contenido.objetivos_practica.all() if hasattr(contenido, 'objetivos_practica') else []
+            if objetivos:
+                texto_objetivos = '\n'.join([f"{i+1}. {obj.descripcion}" for i, obj in enumerate(objetivos)])
+                criterios_cell.text = texto_objetivos
+        
+        # TABLA 4: OBJETIVOS
+        if len(doc.tables) > 4:
+            objetivos_cell = doc.tables[4].rows[1].cells[0]
+            if objetivos:
+                texto_objetivos = '\n'.join([f"• {obj.descripcion}" for obj in objetivos])
+                objetivos_cell.text = texto_objetivos
+        
+        # TABLA 5: FUNDAMENTOS TEÓRICOS
+        if len(doc.tables) > 5:
+            fundamentos_cell = doc.tables[5].rows[1].cells[0]
+            fundamentos = FundamentoTeorico.objects.filter(contenido_analitico=contenido).order_by('orden')
+            if fundamentos.exists():
+                # Limpiar celda primero
+                for p in fundamentos_cell.paragraphs:
+                    p.clear()
+                
+                for fund in fundamentos:
+                    # Agregar título
+                    p_titulo = fundamentos_cell.add_paragraph()
+                    run_titulo = p_titulo.add_run(fund.titulo)
+                    run_titulo.bold = True
+                    run_titulo.font.size = Pt(12)
+                    
+                    # Agregar contenido HTML sin limpiar
+                    if fund.contenido:
+                        agregar_html_a_celda(fundamentos_cell, fund.contenido, limpiar=False)
+                    
+                    # Agregar referencias si existen
+                    if fund.referencias:
+                        p_ref = fundamentos_cell.add_paragraph()
+                        run_ref = p_ref.add_run('Referencias:')
+                        run_ref.bold = True
+                        agregar_html_a_celda(fundamentos_cell, fund.referencias, limpiar=False)
+        
+        # TABLA 6: MATERIALES, HERRAMIENTAS Y EQUIPOS
+        if len(doc.tables) > 6:
+            materiales_table = doc.tables[6]
+            materiales_equipos = contenido.materiales_herramientas_equipos.all() if hasattr(contenido, 'materiales_herramientas_equipos') else []
+            
+            # Limpiar filas existentes (excepto encabezado)
+            for _ in range(len(materiales_table.rows) - 1):
+                materiales_table._element.remove(materiales_table.rows[-1]._element)
+            
+            # Agregar datos
+            if materiales_equipos:
+                for item in materiales_equipos:
+                    row = materiales_table.add_row()
+                    row.cells[0].text = item.nombre
+                    row.cells[1].text = item.cantidad or '1'
+        
+        # TABLA 7: PROCEDIMIENTO
+        if len(doc.tables) > 7:
+            procedimiento_cell = doc.tables[7].rows[1].cells[0]
+            procedimientos = Procedimientos.objects.filter(contenido_analitico=contenido).order_by('orden', 'numero_paso')
+            
+            if procedimientos.exists():
+                # Limpiar celda
+                for p in procedimiento_cell.paragraphs:
+                    p.clear()
+                
+                for proc in procedimientos:
+                    # Título del paso
+                    p_paso = procedimiento_cell.add_paragraph()
+                    run_paso = p_paso.add_run(f"Paso {proc.numero_paso}: {proc.titulo_paso}")
+                    run_paso.bold = True
+                    run_paso.font.size = Pt(11)
+                    
+                    # Descripción con HTML
+                    if proc.descripcion:
+                        agregar_html_a_celda(procedimiento_cell, proc.descripcion, limpiar=False)
+                    
+                    # Tiempo estimado
+                    if proc.tiempo_estimado:
+                        p_tiempo = procedimiento_cell.add_paragraph()
+                        run_tiempo = p_tiempo.add_run(f"⏱ Tiempo estimado: {proc.tiempo_estimado}")
+                        run_tiempo.italic = True
+                    
+                    # Precauciones
+                    if proc.precauciones:
+                        p_prec = procedimiento_cell.add_paragraph()
+                        run_prec = p_prec.add_run('⚠️ Precauciones:')
+                        run_prec.bold = True
+                        agregar_html_a_celda(procedimiento_cell, proc.precauciones, limpiar=False)
+        
+        # TABLA 8: CÁLCULOS Y RESULTADOS
+        if len(doc.tables) > 8:
+            calculos_cell = doc.tables[8].rows[1].cells[0]
+            calculos = CalculosResultados.objects.filter(contenido_analitico=contenido).order_by('orden')
+            
+            if calculos.exists():
+                # Limpiar celda
+                for p in calculos_cell.paragraphs:
+                    p.clear()
+                
+                for calc in calculos:
+                    # Título
+                    p_titulo = calculos_cell.add_paragraph()
+                    run_titulo = p_titulo.add_run(calc.titulo)
+                    run_titulo.bold = True
+                    run_titulo.font.size = Pt(11)
+                    
+                    # Fórmula
+                    if calc.formula:
+                        p_formula = calculos_cell.add_paragraph()
+                        run_formula = p_formula.add_run(f"📐 Fórmula: {calc.formula}")
+                        run_formula.font.name = 'Courier New'
+                    
+                    # Procedimiento de cálculo con HTML
+                    if calc.procedimiento_calculo:
+                        agregar_html_a_celda(calculos_cell, calc.procedimiento_calculo, limpiar=False)
+                    
+                    # Resultado esperado
+                    if calc.resultado_esperado:
+                        p_resultado = calculos_cell.add_paragraph()
+                        run_resultado = p_resultado.add_run(f"✓ Resultado esperado: {calc.resultado_esperado}")
+                        run_resultado.bold = True
+        
+        # TABLA 9: CUESTIONARIO
+        if len(doc.tables) > 9:
+            cuestionario_cell = doc.tables[9].rows[1].cells[0]
+            cuestionarios = Cuestionario.objects.filter(contenido_analitico=contenido).order_by('orden', 'numero_pregunta')
+            
+            if cuestionarios.exists():
+                # Limpiar celda
+                for p in cuestionario_cell.paragraphs:
+                    p.clear()
+                
+                for preg in cuestionarios:
+                    # Número de pregunta
+                    p_num = cuestionario_cell.add_paragraph()
+                    run_num = p_num.add_run(f"{preg.numero_pregunta}. ")
+                    run_num.bold = True
+                    
+                    # Pregunta con HTML
+                    if preg.pregunta:
+                        agregar_html_a_celda(cuestionario_cell, preg.pregunta, limpiar=False)
+                    
+                    # Tipo de pregunta
+                    p_tipo = cuestionario_cell.add_paragraph()
+                    run_tipo = p_tipo.add_run(f"[{preg.get_tipo_pregunta_display()}]")
+                    run_tipo.italic = True
+                    run_tipo.font.size = Pt(9)
+                    
+                    # Respuesta esperada (para guía docente)
+                    if preg.respuesta_esperada:
+                        p_resp = cuestionario_cell.add_paragraph()
+                        run_resp = p_resp.add_run('💡 Respuesta esperada (guía docente):')
+                        run_resp.bold = True
+                        run_resp.font.size = Pt(9)
+                        agregar_html_a_celda(cuestionario_cell, preg.respuesta_esperada)
+        
+        # === GUARDAR DOCUMENTO ===
+        buffer = BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        
+        # Validar tamaño
+        buffer_size = buffer.getbuffer().nbytes
+        if buffer_size == 0:
+            print("❌ Documento vacío")
+            return JsonResponse({'error': 'El documento está vacío'}, status=500)
+        
+        print(f"✅ Documento generado: {buffer_size} bytes")
+        
+        # Crear respuesta HTTP
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        
+        # Nombre de archivo
+        import re
+        titulo_limpio = re.sub(r'[^\w\s-]', '', practica.nombre)
+        titulo_limpio = re.sub(r'[-\s]+', '_', titulo_limpio)
+        filename = f"Guia_Lab_{titulo_limpio[:40]}.docx"
+        
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Length'] = buffer_size
+        
+        return response
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 @login_required
 def generar_practica_pdf(request, practica_id):
