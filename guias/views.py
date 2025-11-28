@@ -43,6 +43,7 @@ def limpiar_html_para_word(html_content):
     """
     Limpia el HTML de CKEditor para evitar problemas al convertir a Word.
     Elimina scripts, estilos problemáticos y normaliza el contenido.
+    Mantiene imágenes base64 para que funcionen en Word.
     """
     if not html_content or not html_content.strip():
         return ""
@@ -58,32 +59,42 @@ def limpiar_html_para_word(html_content):
         for tag in soup.find_all(['script', 'style']):
             tag.decompose()
         
-        # Limpiar atributos problemáticos de imágenes
+        # Procesar imágenes para asegurar compatibilidad con Word
         for img in soup.find_all('img'):
-            # Mantener solo src, alt, width, height
+            # Mantener atributos esenciales
             attrs_to_keep = {}
+            
             if img.get('src'):
-                attrs_to_keep['src'] = img['src']
+                src = img['src']
+                attrs_to_keep['src'] = src
+                
+                # Para imágenes base64, asegurar que estén correctamente formateadas
+                if src.startswith('data:image'):
+                    img_size_mb = len(src) / (1024 * 1024)
+                    print(f"   📊 Imagen base64 detectada: {img_size_mb:.2f} MB")
+                    
+                    # Limitar tamaño a 10MB (antes era 50MB, muy grande para Word)
+                    if len(src) > 10000000:  # 10MB
+                        print(f"   ⚠️ Imagen demasiado grande ({img_size_mb:.2f} MB) - omitida")
+                        img.replace_with(soup.new_string(f'[Imagen muy grande ({img_size_mb:.1f} MB) - omitida]'))
+                        continue
+                    else:
+                        print(f"   ✅ Imagen base64 OK ({img_size_mb:.2f} MB)")
+            
             if img.get('alt'):
                 attrs_to_keep['alt'] = img['alt']
+            
+            # Manejar dimensiones de imagen
             if img.get('width'):
                 attrs_to_keep['width'] = img['width']
             if img.get('height'):
                 attrs_to_keep['height'] = img['height']
             
-            img.attrs = attrs_to_keep
+            # Si no tiene dimensiones, agregar un ancho por defecto razonable
+            if 'width' not in attrs_to_keep and 'height' not in attrs_to_keep:
+                attrs_to_keep['width'] = '400'  # Ancho por defecto en píxeles
             
-            # Limitar tamaño de imágenes base64 muy grandes
-            if img.get('src', '').startswith('data:image'):
-                img_size_mb = len(img['src']) / (1024 * 1024)
-                print(f"   📊 Imagen base64: {img_size_mb:.2f} MB")
-                
-                # Si la imagen base64 es muy grande (>50MB), agregar comentario
-                if len(img['src']) > 50000000:
-                    print(f"   ⚠️ Imagen demasiado grande ({img_size_mb:.2f} MB) - omitida")
-                    img.replace_with(soup.new_string(f'[Imagen muy grande ({img_size_mb:.1f} MB) - omitida]'))
-                else:
-                    print(f"   ✅ Imagen aceptable ({img_size_mb:.2f} MB)")
+            img.attrs = attrs_to_keep
         
         # Convertir de vuelta a string HTML limpio
         clean_html = str(soup)
@@ -102,6 +113,7 @@ def limpiar_html_para_word(html_content):
 def agregar_html_a_documento(doc, html_content, parser=None):
     """
     Convierte contenido HTML de CKEditor a formato Word y lo agrega al documento.
+    Maneja correctamente imágenes base64, negritas, cursivas, tablas, etc.
     
     Args:
         doc: Documento de python-docx
@@ -121,26 +133,139 @@ def agregar_html_a_documento(doc, html_content, parser=None):
         if not html_limpio or not html_limpio.strip():
             return doc
         
+        print(f"🔄 Procesando HTML para Word ({len(html_limpio)} caracteres)")
+        
+        # Procesamiento especial para imágenes base64
+        from bs4 import BeautifulSoup
+        import base64
+        import io
+        from docx.shared import Inches
+        import re
+        
+        soup = BeautifulSoup(html_limpio, 'html.parser')
+        imagenes_encontradas = soup.find_all('img')
+        
+        print(f"🖼️ Encontradas {len(imagenes_encontradas)} imágenes en el HTML")
+        
+        # Convertir imágenes base64 a placeholders únicos
+        image_map = {}
+        contador_imagenes = 0
+        
+        for img in soup.find_all('img'):
+            src = img.get('src', '')
+            print(f"📸 Procesando imagen: {src[:100]}...")
+            
+            if src.startswith('data:image'):
+                try:
+                    # Extraer datos base64
+                    if ',' in src:
+                        header, encoded = src.split(',', 1)
+                    else:
+                        print(f"⚠️ Formato de imagen base64 inválido")
+                        continue
+                    
+                    image_data = base64.b64decode(encoded)
+                    
+                    # Verificar tamaño de imagen
+                    print(f"📏 Tamaño de imagen: {len(image_data)} bytes")
+                    if len(image_data) > 10 * 1024 * 1024:  # 10 MB
+                        print(f"⚠️ Imagen demasiado grande, saltando")
+                        continue
+                    
+                    # Crear stream de imagen
+                    image_stream = io.BytesIO(image_data)
+                    
+                    # Determinar ancho
+                    width_str = img.get('width', img.get('style', ''))
+                    try:
+                        # Intentar extraer ancho del atributo width o style
+                        if 'width:' in width_str:
+                            match = re.search(r'width:\s*(\d+)', width_str)
+                            if match:
+                                width_pixels = int(match.group(1))
+                            else:
+                                width_pixels = 400
+                        elif width_str.endswith('px'):
+                            width_pixels = int(width_str[:-2])
+                        elif width_str.isdigit():
+                            width_pixels = int(width_str)
+                        else:
+                            width_pixels = 400
+                        
+                        # Convertir píxeles a pulgadas (96 DPI)
+                        width_inches = width_pixels / 96.0
+                        
+                        # Limitar ancho máximo a 6 pulgadas
+                        if width_inches > 6:
+                            width_inches = 6
+                        if width_inches < 1:
+                            width_inches = 4
+                    except:
+                        width_inches = 4  # Valor por defecto
+                    
+                    # Guardar datos de imagen con placeholder único
+                    contador_imagenes += 1
+                    placeholder = f"___IMAGE_PLACEHOLDER_{contador_imagenes}___"
+                    image_map[placeholder] = {
+                        'data': image_stream,
+                        'width': width_inches
+                    }
+                    
+                    # Reemplazar img con placeholder en un párrafo
+                    new_tag = soup.new_tag('p')
+                    new_tag.string = placeholder
+                    img.replace_with(new_tag)
+                    
+                    print(f"✅ Imagen {contador_imagenes} convertida a placeholder")
+                    
+                except Exception as e:
+                    print(f"⚠️ Error procesando imagen base64: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    continue
+        
+        print(f"🖼️ Total de imágenes procesadas: {contador_imagenes}")
+        
+        # Convertir el HTML con placeholders usando htmldocx
+        html_con_placeholders = str(soup)
+        
         # Crear parser si no se proporciona
         if parser is None:
             parser = HtmlToDocx()
         
-        # Agregar el HTML al documento
-        # htmldocx maneja automáticamente: negritas, cursivas, tablas, imágenes en base64, listas, etc.
-        parser.add_html_to_document(html_limpio, doc)
+        # Agregar el HTML al documento (con placeholders)
+        parser.add_html_to_document(html_con_placeholders, doc)
+        
+        # Reemplazar placeholders con imágenes reales
+        for paragraph in doc.paragraphs:
+            for placeholder, img_data in image_map.items():
+                if placeholder in paragraph.text:
+                    # Limpiar el texto del placeholder
+                    paragraph.text = ''
+                    # Agregar la imagen en su lugar
+                    run = paragraph.add_run()
+                    run.add_picture(img_data['data'], width=Inches(img_data['width']))
+                    print(f"✅ Imagen insertada en el documento")
+        
+        print(f"✅ HTML con {contador_imagenes} imágenes agregado al documento Word")
         
     except Exception as e:
         # Si falla la conversión HTML, agregar como texto plano
         print(f"⚠️ Error convirtiendo HTML a Word: {e}")
+        import traceback
+        traceback.print_exc()
+        
         from bs4 import BeautifulSoup
         try:
             soup = BeautifulSoup(html_content, 'html.parser')
             texto_plano = soup.get_text(separator='\n')
             if texto_plano.strip():
                 doc.add_paragraph(texto_plano)
+                print(f"⚠️ HTML convertido a texto plano como fallback")
         except:
-            # Último recurso: agregar el HTML como está
+            # Último recurso: agregar el HTML como está (truncado)
             doc.add_paragraph(str(html_content)[:500] + '...')
+            print(f"⚠️ HTML agregado como texto crudo (fallback final)")
     
     return doc
 
@@ -1658,47 +1783,152 @@ def generar_practica_word(request, practica_id):
         
         # Función auxiliar para agregar contenido HTML
         def agregar_html_a_celda(cell, html_content, limpiar=False):
-            """Agrega contenido HTML a una celda de tabla"""
+            """Agrega contenido HTML a una celda de tabla con soporte completo de imágenes"""
             if not html_content:
                 print("⚠️ Contenido HTML vacío")
                 return
             
             print(f"📝 Procesando HTML ({len(html_content)} caracteres)")
             
-            # Verificar si tiene imágenes
-            tiene_imagenes = 'data:image' in html_content or '<img' in html_content
-            if tiene_imagenes:
-                print("🖼️  HTML contiene imágenes!")
-                import re
-                imgs = re.findall(r'<img[^>]+>', html_content)
-                print(f"   Encontradas {len(imgs)} etiquetas <img>")
-            
-            # Limpiar HTML
-            html_limpio = limpiar_html_para_word(html_content)
-            
             # Limpiar párrafos existentes si se solicita
             if limpiar:
                 for p in cell.paragraphs:
                     p.clear()
             
-            if html_parser and html_limpio:
-                try:
-                    # Agregar el HTML directamente a la celda
-                    html_parser.add_html_to_cell(html_limpio, cell)
-                    print(f"✅ HTML agregado a celda")
-                except Exception as e:
-                    print(f"⚠️ Error agregando HTML: {e}")
-                    # Fallback: agregar como texto plano
-                    from bs4 import BeautifulSoup
-                    soup = BeautifulSoup(html_limpio, 'html.parser')
+            try:
+                from bs4 import BeautifulSoup
+                import base64
+                import io
+                from docx.shared import Inches
+                import re
+                
+                # Limpiar HTML primero
+                html_limpio = limpiar_html_para_word(html_content)
+                soup = BeautifulSoup(html_limpio, 'html.parser')
+                
+                # Buscar todas las imágenes
+                imagenes = soup.find_all('img')
+                print(f"🖼️  Encontradas {len(imagenes)} imágenes")
+                
+                # Reemplazar cada imagen con un marcador único y guardar los datos
+                image_data_map = {}
+                for idx, img in enumerate(imagenes):
+                    src = img.get('src', '')
+                    if src.startswith('data:image'):
+                        try:
+                            # Extraer datos base64
+                            if ',' in src:
+                                header, encoded = src.split(',', 1)
+                            else:
+                                continue
+                            
+                            image_bytes = base64.b64decode(encoded)
+                            print(f"📏 Imagen {idx+1}: {len(image_bytes)} bytes")
+                            
+                            if len(image_bytes) > 10 * 1024 * 1024:  # 10 MB
+                                print(f"⚠️ Imagen {idx+1} demasiado grande, saltando")
+                                continue
+                            
+                            # Determinar ancho
+                            width_str = img.get('width', img.get('style', ''))
+                            width_inches = 4  # Default
+                            
+                            try:
+                                if 'width:' in str(width_str):
+                                    match = re.search(r'width:\s*(\d+)', str(width_str))
+                                    if match:
+                                        width_pixels = int(match.group(1))
+                                        width_inches = width_pixels / 96.0
+                                elif str(width_str).replace('px', '').isdigit():
+                                    width_pixels = int(str(width_str).replace('px', ''))
+                                    width_inches = width_pixels / 96.0
+                                
+                                # Limitar ancho
+                                width_inches = max(1, min(6, width_inches))
+                            except:
+                                pass
+                            
+                            # Crear marcador único
+                            marker = f"___IMG_{idx}___"
+                            
+                            # Guardar datos de la imagen
+                            image_data_map[marker] = {
+                                'bytes': image_bytes,
+                                'width': width_inches
+                            }
+                            
+                            # Reemplazar imagen con marcador en un párrafo
+                            new_p = soup.new_tag('p')
+                            new_p.string = marker
+                            img.replace_with(new_p)
+                            
+                            print(f"✅ Imagen {idx+1} marcada como {marker}")
+                            
+                        except Exception as e:
+                            print(f"⚠️ Error procesando imagen {idx+1}: {e}")
+                            continue
+                
+                # Convertir HTML modificado a string
+                html_con_marcadores = str(soup)
+                
+                # Usar htmldocx para procesar el HTML (sin imágenes base64)
+                if html_parser:
+                    try:
+                        # Crear documento temporal
+                        from docx import Document
+                        temp_doc = Document()
+                        html_parser.add_html_to_document(html_con_marcadores, temp_doc)
+                        
+                        # Copiar párrafos al cell, reemplazando marcadores con imágenes
+                        for para in temp_doc.paragraphs:
+                            texto = para.text
+                            
+                            # Verificar si contiene un marcador de imagen
+                            marcador_encontrado = None
+                            for marker in image_data_map.keys():
+                                if marker in texto:
+                                    marcador_encontrado = marker
+                                    break
+                            
+                            if marcador_encontrado:
+                                # Crear párrafo con imagen
+                                new_p = cell.add_paragraph()
+                                img_data = image_data_map[marcador_encontrado]
+                                
+                                # Insertar imagen
+                                run = new_p.add_run()
+                                image_stream = io.BytesIO(img_data['bytes'])
+                                run.add_picture(image_stream, width=Inches(img_data['width']))
+                                print(f"✅ Imagen insertada en celda (marcador: {marcador_encontrado})")
+                            else:
+                                # Copiar párrafo normal
+                                new_p = cell.add_paragraph()
+                                new_p.alignment = para.alignment
+                                
+                                for run in para.runs:
+                                    new_run = new_p.add_run(run.text)
+                                    new_run.bold = run.bold
+                                    new_run.italic = run.italic
+                                    new_run.underline = run.underline
+                        
+                        print(f"✅ HTML procesado exitosamente")
+                        
+                    except Exception as e:
+                        print(f"⚠️ Error procesando HTML con htmldocx: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        # Fallback a texto plano
+                        p = cell.add_paragraph()
+                        p.add_run(soup.get_text())
+                else:
+                    # Sin parser, usar texto plano
                     p = cell.add_paragraph()
                     p.add_run(soup.get_text())
-            else:
-                # Sin parser HTML, extraer texto
-                from bs4 import BeautifulSoup
-                soup = BeautifulSoup(html_content, 'html.parser')
-                p = cell.add_paragraph()
-                p.add_run(soup.get_text())
+                    
+            except Exception as e:
+                print(f"⚠️ Error general en agregar_html_a_celda: {e}")
+                import traceback
+                traceback.print_exc()
         
         # TABLA 2: COMPETENCIAS
         if len(doc.tables) > 2:
