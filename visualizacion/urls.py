@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/filtros/<str:filtro>/', views.api_filtros, name='api_filtros'),
     path('api/buscar/', views.api_buscar, name='api_buscar'),
     path('api/categoria/<str:categoria>/', views.api_categoria, name='api_categoria'),
+    path('api/buscar-titulos-guias/', views.api_buscar_titulos_guias, name='api_buscar_titulos_guias'),
     
     # Vista temporal de debug
     path('debug/', views.debug_api_view, name='debug_api'),

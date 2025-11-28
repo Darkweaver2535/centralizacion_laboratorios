@@ -1114,3 +1114,42 @@ def api_categoria(request, categoria):
 def debug_api_view(request):
     """Vista temporal para debug de APIs"""
     return render(request, 'debug_api.html')
+
+@login_required
+def api_buscar_titulos_guias(request):
+    """API para buscar títulos de guías con autocompletado"""
+    try:
+        query = request.GET.get('q', '').strip()
+        
+        if len(query) < 2:
+            return JsonResponse({'resultados': []})
+        
+        # Buscar en PracticaLaboratorio
+        practicas = PracticaLaboratorio.objects.filter(
+            nombre__icontains=query
+        ).select_related(
+            'contenido_analitico__unidad_didactica__asignatura'
+        ).order_by('nombre')[:10]
+        
+        resultados = []
+        for practica in practicas:
+            try:
+                asignatura = practica.contenido_analitico.unidad_didactica.asignatura
+                carrera = asignatura.carrera if hasattr(asignatura, 'carrera') else 'N/A'
+                
+                resultados.append({
+                    'id': practica.id,
+                    'nombre': practica.nombre or 'Sin título',
+                    'asignatura': asignatura.nombre if asignatura else 'N/A',
+                    'carrera': str(carrera),
+                    'semestre': f'{asignatura.semestre}°' if asignatura and asignatura.semestre else 'N/A'
+                })
+            except Exception as e:
+                print(f"Error procesando práctica {practica.id}: {e}")
+                continue
+        
+        return JsonResponse({'resultados': resultados})
+        
+    except Exception as e:
+        print(f"Error en api_buscar_titulos_guias: {e}")
+        return JsonResponse({'error': str(e)}, status=500)

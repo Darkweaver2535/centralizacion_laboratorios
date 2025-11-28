@@ -117,6 +117,21 @@
                         </select>
                     </div>
                 </div>
+                
+                <!-- Filtro de búsqueda por título (solo para guías) -->
+                <div class="filter-row" id="filtro-titulo-guias" style="display: none;">
+                    <div class="filter-group" style="flex: 1;">
+                        <label for="busqueda_titulo"><i class="fas fa-search"></i> Buscar por Título del Laboratorio</label>
+                        <input type="text" 
+                               id="busqueda_titulo" 
+                               name="busqueda_titulo" 
+                               class="form-control" 
+                               placeholder="Escribe para buscar títulos..." 
+                               autocomplete="off"
+                               oninput="buscarTitulosGuias(this.value)">
+                        <div id="sugerencias-titulo" class="sugerencias-autocomplete" style="display: none;"></div>
+                    </div>
+                </div>
             </div>
             
             <!-- Paso 3: Botón de Confirmar -->
@@ -224,10 +239,6 @@
                                     <th>Asignatura</th>
                                     <th>Semestre</th>
                                     <th>Competencias</th>
-                                    <th>Objetivo de la Práctica</th>
-                                    <th>Tipo</th>
-                                    <th>Duración (hrs)</th>
-                                    <th>Estado</th>
                                     <th>Acción</th>
                                 {% else %}
                                     <th>Nombre</th>
@@ -365,27 +376,6 @@
                                                 Sin competencias definidas
                                             {% endif %}
                                         </div>
-                                    </td>
-                                    <td>
-                                        <div class="objetivo-preview">
-                                            {% if practica.contenido_analitico.objetivos_practica.all %}
-                                                {% for objetivo in practica.contenido_analitico.objetivos_practica.all|slice:":1" %}
-                                                    {{ objetivo.descripcion|truncatechars:100 }}
-                                                {% endfor %}
-                                                {% if practica.contenido_analitico.objetivos_practica.count > 1 %}
-                                                    <small class="text-muted">(+{{ practica.contenido_analitico.objetivos_practica.count|add:"-1" }} más)</small>
-                                                {% endif %}
-                                            {% else %}
-                                                Sin objetivos definidos
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge badge-info">{{ practica.get_tipo_practica_display|default:"Grupal" }}</span>
-                                    </td>
-                                    <td class="text-center">{{ practica.duracion_horas|default:"2.0" }} hrs</td>
-                                    <td>
-                                        <span class="badge badge-success">Activa</span>
                                     </td>
                                     <td>
                                         <button class="btn btn-primary btn-sm" onclick="generarGuiaWord({{ practica.id }}, '{{ practica.nombre|escapejs }}')">
@@ -1369,6 +1359,78 @@
 .btn-secondary:hover {
     background: #e5e7eb;
 }
+
+/* Estilos para autocompletado de títulos */
+.sugerencias-autocomplete {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-top: -1px;
+}
+
+.sugerencia-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.2s ease;
+}
+
+.sugerencia-item:hover {
+    background: #f3f4f6;
+}
+
+.sugerencia-item:last-child {
+    border-bottom: none;
+}
+
+.sugerencia-item strong {
+    display: block;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.sugerencia-item small {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.sugerencia-item.no-resultados {
+    color: #9ca3af;
+    text-align: center;
+    cursor: default;
+}
+
+.sugerencia-item.no-resultados:hover {
+    background: white;
+}
+
+.filter-group {
+    position: relative;
+}
+
+.filter-group input.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.filter-group input.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
 </style>
 
 <script>
@@ -1423,6 +1485,16 @@ function actualizarCategoriaSeleccionada(categoria) {
     
     document.getElementById('selectedIcon').className = icons[categoria];
     document.getElementById('selectedName').textContent = names[categoria];
+    
+    // Mostrar/ocultar filtro de búsqueda por título (solo para guías)
+    const filtroTituloGuias = document.getElementById('filtro-titulo-guias');
+    if (filtroTituloGuias) {
+        if (categoria === 'guias') {
+            filtroTituloGuias.style.display = 'block';
+        } else {
+            filtroTituloGuias.style.display = 'none';
+        }
+    }
 }
 
 // Función para cambiar categoría - volver al PASO 1
@@ -2014,6 +2086,74 @@ function verDetallesCompletos(practicaId) {
     // Redirigir a la vista de detalle de la práctica
     window.location.href = `/guias/practica/${practicaId}/detalle/`;
 }
+
+// Función para buscar títulos de guías con autocompletado
+let timeoutBusqueda = null;
+function buscarTitulosGuias(valor) {
+    const sugerenciasDiv = document.getElementById('sugerencias-titulo');
+    
+    // Limpiar timeout anterior
+    if (timeoutBusqueda) {
+        clearTimeout(timeoutBusqueda);
+    }
+    
+    // Si el valor está vacío, ocultar sugerencias
+    if (!valor || valor.trim().length < 2) {
+        sugerenciasDiv.style.display = 'none';
+        return;
+    }
+    
+    // Esperar 300ms antes de buscar (debounce)
+    timeoutBusqueda = setTimeout(() => {
+        // Hacer petición AJAX para buscar títulos
+        fetch(`/visualizacion/api/buscar-titulos-guias/?q=${encodeURIComponent(valor)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.resultados && data.resultados.length > 0) {
+                    mostrarSugerenciasTitulos(data.resultados);
+                } else {
+                    sugerenciasDiv.innerHTML = '<div class="sugerencia-item no-resultados">No se encontraron títulos</div>';
+                    sugerenciasDiv.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error al buscar títulos:', error);
+                sugerenciasDiv.style.display = 'none';
+            });
+    }, 300);
+}
+
+function mostrarSugerenciasTitulos(resultados) {
+    const sugerenciasDiv = document.getElementById('sugerencias-titulo');
+    sugerenciasDiv.innerHTML = '';
+    
+    resultados.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'sugerencia-item';
+        div.innerHTML = `
+            <strong>${item.nombre}</strong>
+            <small>${item.asignatura} - ${item.carrera}</small>
+        `;
+        div.onclick = function() {
+            document.getElementById('busqueda_titulo').value = item.nombre;
+            sugerenciasDiv.style.display = 'none';
+            // Aplicar filtro automáticamente
+            confirmarFiltros();
+        };
+        sugerenciasDiv.appendChild(div);
+    });
+    
+    sugerenciasDiv.style.display = 'block';
+}
+
+// Cerrar sugerencias al hacer click fuera
+document.addEventListener('click', function(e) {
+    const sugerenciasDiv = document.getElementById('sugerencias-titulo');
+    const inputBusqueda = document.getElementById('busqueda_titulo');
+    if (sugerenciasDiv && inputBusqueda && e.target !== inputBusqueda && !sugerenciasDiv.contains(e.target)) {
+        sugerenciasDiv.style.display = 'none';
+    }
+});
 
 // Función auxiliar para obtener el token CSRF
 function getCookie(name) {
