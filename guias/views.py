@@ -75,9 +75,15 @@ def limpiar_html_para_word(html_content):
             
             # Limitar tamaño de imágenes base64 muy grandes
             if img.get('src', '').startswith('data:image'):
-                # Si la imagen base64 es muy grande (>5MB), agregar comentario
-                if len(img['src']) > 5000000:
-                    img.replace_with(soup.new_string('[Imagen muy grande - omitida]'))
+                img_size_mb = len(img['src']) / (1024 * 1024)
+                print(f"   📊 Imagen base64: {img_size_mb:.2f} MB")
+                
+                # Si la imagen base64 es muy grande (>50MB), agregar comentario
+                if len(img['src']) > 50000000:
+                    print(f"   ⚠️ Imagen demasiado grande ({img_size_mb:.2f} MB) - omitida")
+                    img.replace_with(soup.new_string(f'[Imagen muy grande ({img_size_mb:.1f} MB) - omitida]'))
+                else:
+                    print(f"   ✅ Imagen aceptable ({img_size_mb:.2f} MB)")
         
         # Convertir de vuelta a string HTML limpio
         clean_html = str(soup)
@@ -1523,17 +1529,85 @@ def generar_practica_word(request, practica_id):
         
         # === DATOS PARA REEMPLAZAR ===
         # NOTA: Los marcadores deben coincidir EXACTAMENTE con los de la plantilla
+        
+        # Obtener datos relacionados
+        contenido = practica.contenido_analitico
+        unidad = contenido.unidad_didactica if contenido else None
+        
         replacements = {
+            # Datos básicos
             '{{ nombre_de_la_asignatura }}': asignatura.nombre if asignatura else 'N/A',
             '{{ parte_indice }}': f"PL {practica.orden if practica.orden else 1}",
             '{{ pagina }}': '1',
             '{{ titulo }}': practica.nombre,
-            '{{ asignatura }}': asignatura.nombre if asignatura else 'N/A',
+            '{{ numero_de_practica }}': str(practica.orden) if practica.orden else '1',
+            
+            # Asignatura y carrera
             '{{ carrera }}': asignatura.carrera.nombre if (asignatura and asignatura.carrera) else 'N/A',
             '{{ semestre }}': str(asignatura.semestre) if (asignatura and asignatura.semestre) else 'N/A',
-            '{{ nombre_practica }}': practica.nombre,
+            
+            # Unidad didáctica
+            '{{ unidad_didactica }}': unidad.nombre if unidad else 'N/A',
+            
+            # Contenido analítico
+            '{{ contenido_analitico }}': contenido.nombre if contenido else 'N/A',
+            
+            # Práctica
+            '{{ objetivo_de_la_practica }}': '',  # Se llenará en la tabla correspondiente
+            '{{ competencias }}': '',  # Se llenará en la tabla correspondiente
+            '{{ criterios_de_desempeno }}': '',  # Se llenará en la tabla correspondiente
+            
+            # Duración y estudiantes
             '{{ duracion }}': f"{practica.duracion_horas} horas" if practica.duracion_horas else 'N/A',
             '{{ numero_estudiantes }}': str(practica.numero_estudiantes) if practica.numero_estudiantes else 'Según capacidad',
+            
+            # Docente (si existe)
+            '{{ docente }}': '',
+            '{{ grado_y_nombre_de_docente }}': '',
+            '{{correo_institucional_de_docente }}': '',
+            
+            # Contenido de las secciones (se llenan en las tablas)
+            '{{ fundamento_teorico }}': '',
+            '{{ procedimiento }}': '',
+            '{{ calculos_resultados }}': '',
+            '{{ cuestionario }}': '',
+            '{{ bibliografía }}': '',
+            
+            # Equipos, materiales, herramientas (se llenan en tablas)
+            '{{ equipo1 }}': '',
+            '{{ equipo2 }}': '',
+            '{{ equipo3 }}': '',
+            '{{ cantidad_equipo1 }}': '',
+            '{{ cantidad_equipo2 }}': '',
+            '{{ cantidad_equipo3 }}': '',
+            
+            '{{ material1 }}': '',
+            '{{ material2 }}': '',
+            '{{ material3 }}': '',
+            '{{ cantidad_material1 }}': '',
+            '{{ cantidad_material2 }}': '',
+            '{{ cantidad_material3 }}': '',
+            
+            '{{ herramienta1 }}': '',
+            '{{ herramienta2}}': '',  # Nota: hay un espacio faltante en la plantilla
+            '{{ herramienta3 }}': '',
+            '{{ herramienta4 }}': '',
+            '{{ herramienta5 }}': '',
+            '{{ cantidad_herramienta1 }}': '',
+            '{{ cantidad_herramienta2 }}': '',
+            '{{ cantidad_herramienta3 }}': '',
+            '{{ cantidad_herramienta4 }}': '',
+            '{{ cantidad_herramienta5 }}': '',
+            '{{ cantidad_herramienta6 }}': '',
+            
+            '{{ reactivo1 }}': '',
+            '{{ reactivo2 }}': '',
+            '{{ reactivo3 }}': '',
+            '{{ reactivo4 }}': '',
+            '{{ cantidad_ reactivo1 }}': '',  # Nota: hay un espacio en la plantilla
+            '{{ cantidad_reactivo2 }}': '',
+            '{{ cantidad_reactivo3 }}': '',
+            '{{ cantidad_reactivo4 }}': '',
         }
         
         # Función mejorada para reemplazar texto en párrafos
@@ -1586,7 +1660,18 @@ def generar_practica_word(request, practica_id):
         def agregar_html_a_celda(cell, html_content, limpiar=False):
             """Agrega contenido HTML a una celda de tabla"""
             if not html_content:
+                print("⚠️ Contenido HTML vacío")
                 return
+            
+            print(f"📝 Procesando HTML ({len(html_content)} caracteres)")
+            
+            # Verificar si tiene imágenes
+            tiene_imagenes = 'data:image' in html_content or '<img' in html_content
+            if tiene_imagenes:
+                print("🖼️  HTML contiene imágenes!")
+                import re
+                imgs = re.findall(r'<img[^>]+>', html_content)
+                print(f"   Encontradas {len(imgs)} etiquetas <img>")
             
             # Limpiar HTML
             html_limpio = limpiar_html_para_word(html_content)
@@ -1653,6 +1738,9 @@ def generar_practica_word(request, practica_id):
                     run_titulo = p_titulo.add_run(fund.titulo)
                     run_titulo.bold = True
                     run_titulo.font.size = Pt(12)
+                    
+                    # DEBUG: Verificar contenido antes de agregar
+                    print(f"🔍 fund.titulo: {fund.titulo}, contenido length: {len(fund.contenido) if fund.contenido else 0}")
                     
                     # Agregar contenido HTML sin limpiar
                     if fund.contenido:
