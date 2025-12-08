@@ -2233,7 +2233,7 @@
                 <div class="col-12">
                     <div class="form-group">
                         <label class="form-label"><i class="fas fa-toolbox me-2"></i>Equipos</label>
-                        <select name="equipos_${contenidoIndex}_${grupoIndex}" class="form-select equipos-select" multiple size="8" 
+                        <select name="equipos_${contenidoIndex}_${grupoIndex}" class="form-select equipos-select" multiple size="4" 
                                 onchange="handleRecursoSelection(this, 'equipos', ${contenidoIndex}, ${grupoIndex})">
                             <option value="">Cargando equipos...</option>
                         </select>
@@ -2252,8 +2252,8 @@
                         </div>
                         
                         <!-- Lista de seleccionados -->
-                        <div class="recursos-seleccionados-lista" id="equipos_seleccionados_${contenidoIndex}_${grupoIndex}"
-                             style="margin-top: 10px; max-height: 120px; overflow-y: auto;">
+                        <div class="recursos-seleccionados-lista" id="equipos_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                             style="margin-top: 10px; max-height: 80px; overflow-y: auto;">
                         </div>
                     </div>
                 </div>
@@ -2283,7 +2283,7 @@
                         
                         <!-- Contenido Tab Materiales -->
                         <div class="tab-content-insumo active" id="tab_materiales_${contenidoIndex}_${grupoIndex}">
-                            <select name="materiales_${contenidoIndex}_${grupoIndex}" class="form-select materiales-select" multiple size="6"
+                            <select name="materiales_${contenidoIndex}_${grupoIndex}" class="form-select materiales-select" multiple size="4"
                                     onchange="handleRecursoSelection(this, 'materiales', ${contenidoIndex}, ${grupoIndex})">
                                 <option value="">Cargando materiales...</option>
                             </select>
@@ -2303,13 +2303,13 @@
                             
                             <!-- Lista de seleccionados -->
                             <div class="recursos-seleccionados-lista" id="materiales_seleccionados_${contenidoIndex}_${grupoIndex}" 
-                                 style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
+                                 style="margin-top: 10px; max-height: 70px; overflow-y: auto;">
                             </div>
                         </div>
                         
                         <!-- Contenido Tab Herramientas -->
                         <div class="tab-content-insumo" id="tab_herramientas_${contenidoIndex}_${grupoIndex}">
-                            <select name="herramientas_${contenidoIndex}_${grupoIndex}" class="form-select herramientas-select" multiple size="6"
+                            <select name="herramientas_${contenidoIndex}_${grupoIndex}" class="form-select herramientas-select" multiple size="4"
                                     onchange="handleRecursoSelection(this, 'herramientas', ${contenidoIndex}, ${grupoIndex})">
                                 <option value="">Cargando herramientas...</option>
                             </select>
@@ -2329,13 +2329,13 @@
                             
                             <!-- Lista de seleccionados -->
                             <div class="recursos-seleccionados-lista" id="herramientas_seleccionados_${contenidoIndex}_${grupoIndex}" 
-                                 style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
+                                 style="margin-top: 10px; max-height: 70px; overflow-y: auto;">
                             </div>
                         </div>
                         
                         <!-- Contenido Tab Reactivos -->
                         <div class="tab-content-insumo" id="tab_reactivos_${contenidoIndex}_${grupoIndex}">
-                            <select name="reactivos_${contenidoIndex}_${grupoIndex}" class="form-select reactivos-select" multiple size="6"
+                            <select name="reactivos_${contenidoIndex}_${grupoIndex}" class="form-select reactivos-select" multiple size="4"
                                     onchange="handleRecursoSelection(this, 'reactivos', ${contenidoIndex}, ${grupoIndex})">
                                 <option value="">Cargando reactivos...</option>
                             </select>
@@ -2355,7 +2355,7 @@
                             
                             <!-- Lista de seleccionados -->
                             <div class="recursos-seleccionados-lista" id="reactivos_seleccionados_${contenidoIndex}_${grupoIndex}" 
-                                 style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
+                                 style="margin-top: 10px; max-height: 70px; overflow-y: auto;">
                             </div>
                         </div>
                     </div>
