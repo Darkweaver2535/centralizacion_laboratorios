@@ -1448,6 +1448,118 @@
     #agregar-datos-malla-page .tab-content-insumo.active {
         display: block;
     }
+    
+    /* ESTILOS PARA CAMPOS DE BÚSQUEDA */
+    /* ============================================================ */
+    .input-group {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border-radius: 6px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        width: 100% !important;
+        display: flex !important;
+    }
+    
+    .input-group:hover {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+    
+    .input-group .input-group-text {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border: none;
+        color: #ffffff;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    
+    .input-group .form-control-sm {
+        border: 1px solid #e2e8f0;
+        border-left: none;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.85rem;
+        background-color: #ffffff;
+        transition: all 0.2s ease;
+        flex-grow: 1;
+        height: auto;
+    }
+    
+    .input-group .form-control-sm:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        border-left: none;
+        background-color: #f8fafc;
+        outline: none;
+    }
+    
+    .input-group:focus-within {
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+    
+    .input-group:focus-within .input-group-text {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    }
+    
+    /* Margen específico para separar buscador de select */
+    .mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .input-group .form-control-sm:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-left: none;
+        background-color: #f8fafc;
+        outline: none;
+    }
+    
+    .input-group:focus-within {
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+    
+    .input-group:focus-within .input-group-text {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    /* Estilo para placeholder de búsqueda */
+    .buscar-equipos::placeholder,
+    .buscar-materiales::placeholder,
+    .buscar-herramientas::placeholder,
+    .buscar-reactivos::placeholder {
+        color: #94a3b8;
+        font-style: italic;
+        font-size: 0.85rem;
+    }
+    
+    /* Ajuste de tamaño de fuente para los selects */
+    .equipos-select,
+    .materiales-select,
+    .herramientas-select,
+    .reactivos-select {
+        font-size: 0.875rem !important;
+        line-height: 1.4;
+        padding: 0.5rem;
+    }
+    
+    .equipos-select option,
+    .materiales-select option,
+    .herramientas-select option,
+    .reactivos-select option {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Animación sutil para las opciones filtradas */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-2px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -1861,29 +1973,120 @@
 
     // Variables globales para manejar selecciones múltiples
     let recursosSeleccionados = {};
+    
+    // Caché para evitar múltiples llamadas a la API
+    let cacheRecursos = {
+        equipos: null,
+        materiales: null,
+        herramientas: null,
+        reactivos: null
+    };
+    let cargandoRecursos = false;
 
     // Función para cargar recursos automáticamente cuando cambia la unidad académica
     function cargarTodosLosRecursos() {
         const unidadSelect = document.querySelector('select[name="unidad_academica"]');
         const unidadId = unidadSelect ? unidadSelect.value : '';
         
+        console.log('🔍 cargarTodosLosRecursos llamado, unidadId:', unidadId, 'cargandoRecursos:', cargandoRecursos);
+        
         if (!unidadId) {
+            console.warn('⚠️ No hay unidad seleccionada, abortando carga');
             return;
         }
-
-        // Cargar en todos los selects de recursos existentes
-        document.querySelectorAll('.equipos-select').forEach(select => {
-            cargarEquiposEnSelect(select, unidadId);
+        
+        if (cargandoRecursos) {
+            console.warn('⚠️ Ya hay una carga en progreso, abortando');
+            return;
+        }
+        
+        cargandoRecursos = true;
+        console.log('🚀 Iniciando carga paralela de recursos...');
+        
+        // Cargar todos los recursos en paralelo usando Promise.all
+        Promise.all([
+            fetch(`/dashboard/ajax/equipos-por-unidad/?unidad_id=${unidadId}`).then(r => {
+                console.log('📡 Respuesta equipos:', r.status);
+                return r.json();
+            }),
+            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Material`).then(r => {
+                console.log('📡 Respuesta materiales:', r.status);
+                return r.json();
+            }),
+            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Herramienta`).then(r => {
+                console.log('📡 Respuesta herramientas:', r.status);
+                return r.json();
+            }),
+            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Reactivo`).then(r => {
+                console.log('📡 Respuesta reactivos:', r.status);
+                return r.json();
+            })
+        ])
+        .then(([equiposData, materialesData, herramientasData, reactivosData]) => {
+            console.log('✅ Datos recibidos:');
+            console.log('  - Equipos:', equiposData.length);
+            console.log('  - Materiales:', materialesData.length);
+            console.log('  - Herramientas:', herramientasData.length);
+            console.log('  - Reactivos:', reactivosData.length);
+            
+            // Guardar en caché
+            cacheRecursos.equipos = equiposData;
+            cacheRecursos.materiales = materialesData;
+            cacheRecursos.herramientas = herramientasData;
+            cacheRecursos.reactivos = reactivosData;
+            
+            // Aplicar datos a todos los selects existentes
+            const equiposSelects = document.querySelectorAll('.equipos-select');
+            const materialesSelects = document.querySelectorAll('.materiales-select');
+            const herramientasSelects = document.querySelectorAll('.herramientas-select');
+            const reactivosSelects = document.querySelectorAll('.reactivos-select');
+            
+            console.log('📊 Poblando selects:');
+            console.log('  - Equipos selects:', equiposSelects.length);
+            console.log('  - Materiales selects:', materialesSelects.length);
+            console.log('  - Herramientas selects:', herramientasSelects.length);
+            console.log('  - Reactivos selects:', reactivosSelects.length);
+            
+            equiposSelects.forEach(select => {
+                poblarSelectDesdeCache(select, cacheRecursos.equipos, 'descripcion');
+            });
+            materialesSelects.forEach(select => {
+                poblarSelectDesdeCache(select, cacheRecursos.materiales, 'nombre');
+            });
+            herramientasSelects.forEach(select => {
+                poblarSelectDesdeCache(select, cacheRecursos.herramientas, 'nombre');
+            });
+            reactivosSelects.forEach(select => {
+                poblarSelectDesdeCache(select, cacheRecursos.reactivos, 'nombre');
+            });
+            
+            cargandoRecursos = false;
+            console.log('✅ Carga de recursos completada exitosamente');
+        })
+        .catch(error => {
+            console.error('❌ Error cargando recursos:', error);
+            cargandoRecursos = false;
         });
-        document.querySelectorAll('.materiales-select').forEach(select => {
-            cargarMaterialesEnSelect(select, unidadId);
-        });
-        document.querySelectorAll('.herramientas-select').forEach(select => {
-            cargarHerramientasEnSelect(select, unidadId);
-        });
-        document.querySelectorAll('.reactivos-select').forEach(select => {
-            cargarReactivosEnSelect(select, unidadId);
-        });
+    }
+    
+    // Función auxiliar para poblar un select desde el caché
+    function poblarSelectDesdeCache(selectElement, data, campo) {
+        console.log('📊 poblarSelectDesdeCache llamada con:', data?.length || 0, 'items, campo:', campo);
+        selectElement.innerHTML = '';
+        if (data && Array.isArray(data) && data.length > 0) {
+            data.forEach(item => {
+                if (item && item[campo] && item[campo].trim()) {
+                    const option = document.createElement('option');
+                    option.value = item[campo].trim();
+                    option.textContent = item[campo].trim();
+                    selectElement.appendChild(option);
+                }
+            });
+            console.log('✅ Select poblado con', selectElement.children.length, 'opciones');
+        } else {
+            selectElement.innerHTML = '<option value="">No hay datos disponibles</option>';
+            console.log('⚠️ No hay datos para poblar el select');
+        }
     }
     
     // Función para cambiar entre tabs de insumos
@@ -1917,25 +2120,19 @@
     }
 
     function cargarEquiposEnSelect(equiposSelect, unidadId) {
+        // Usar caché si está disponible
+        if (cacheRecursos.equipos) {
+            poblarSelectDesdeCache(equiposSelect, cacheRecursos.equipos, 'descripcion');
+            return;
+        }
+        
         equiposSelect.innerHTML = '<option value="">Cargando equipos...</option>';
 
         fetch(`/dashboard/ajax/equipos-por-unidad/?unidad_id=${unidadId}`)
             .then(response => response.json())
             .then(data => {
-                equiposSelect.innerHTML = '';
-                if (data && Array.isArray(data)) {
-                    data.forEach(equipo => {
-                        if (equipo && equipo.descripcion && equipo.descripcion.trim()) {
-                            const option = document.createElement('option');
-                            option.value = equipo.descripcion.trim();
-                            option.textContent = equipo.descripcion.trim();
-                            equiposSelect.appendChild(option);
-                        }
-                    });
-                }
-                if (equiposSelect.children.length === 0) {
-                    equiposSelect.innerHTML = '<option value="">No hay equipos disponibles</option>';
-                }
+                cacheRecursos.equipos = data;
+                poblarSelectDesdeCache(equiposSelect, data, 'descripcion');
             })
             .catch(error => {
                 console.error('Error cargando equipos:', error);
@@ -1944,84 +2141,144 @@
     }
 
     function cargarMaterialesEnSelect(materialesSelect, unidadId) {
+        // Usar caché si está disponible
+        if (cacheRecursos.materiales) {
+            console.log('✅ Usando caché para materiales:', cacheRecursos.materiales.length, 'items');
+            poblarSelectDesdeCache(materialesSelect, cacheRecursos.materiales, 'nombre');
+            return;
+        }
+        
         materialesSelect.innerHTML = '<option value="">Cargando materiales...</option>';
+        console.log('🔄 Cargando materiales desde API, unidadId:', unidadId);
 
         fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Material`)
-            .then(response => response.json())
+            .then(response => {
+                console.log('📡 Respuesta materiales status:', response.status);
+                return response.json();
+            })
             .then(data => {
-                materialesSelect.innerHTML = '';
-                if (data && Array.isArray(data)) {
-                    data.forEach(material => {
-                        if (material && material.nombre && material.nombre.trim()) {
-                            const option = document.createElement('option');
-                            option.value = material.nombre.trim();
-                            option.textContent = material.nombre.trim();
-                            materialesSelect.appendChild(option);
-                        }
-                    });
-                }
-                if (materialesSelect.children.length === 0) {
-                    materialesSelect.innerHTML = '<option value="">No hay materiales disponibles</option>';
-                }
+                console.log('✅ Materiales recibidos:', data.length, 'items', data.slice(0, 3));
+                cacheRecursos.materiales = data;
+                poblarSelectDesdeCache(materialesSelect, data, 'nombre');
             })
             .catch(error => {
-                console.error('Error cargando materiales:', error);
+                console.error('❌ Error cargando materiales:', error);
                 materialesSelect.innerHTML = '<option value="">Error cargando materiales</option>';
             });
     }
 
     function cargarHerramientasEnSelect(herramientasSelect, unidadId) {
+        // Usar caché si está disponible
+        if (cacheRecursos.herramientas) {
+            console.log('✅ Usando caché para herramientas:', cacheRecursos.herramientas.length, 'items');
+            poblarSelectDesdeCache(herramientasSelect, cacheRecursos.herramientas, 'nombre');
+            return;
+        }
+        
         herramientasSelect.innerHTML = '<option value="">Cargando herramientas...</option>';
+        console.log('🔄 Cargando herramientas desde API, unidadId:', unidadId);
 
         fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Herramienta`)
-            .then(response => response.json())
+            .then(response => {
+                console.log('📡 Respuesta herramientas status:', response.status);
+                return response.json();
+            })
             .then(data => {
-                herramientasSelect.innerHTML = '';
-                if (data && Array.isArray(data)) {
-                    data.forEach(herramienta => {
-                        if (herramienta && herramienta.nombre && herramienta.nombre.trim()) {
-                            const option = document.createElement('option');
-                            option.value = herramienta.nombre.trim();
-                            option.textContent = herramienta.nombre.trim();
-                            herramientasSelect.appendChild(option);
-                        }
-                    });
-                }
-                if (herramientasSelect.children.length === 0) {
-                    herramientasSelect.innerHTML = '<option value="">No hay herramientas disponibles</option>';
-                }
+                console.log('✅ Herramientas recibidas:', data.length, 'items', data.slice(0, 3));
+                cacheRecursos.herramientas = data;
+                poblarSelectDesdeCache(herramientasSelect, data, 'nombre');
             })
             .catch(error => {
-                console.error('Error cargando herramientas:', error);
+                console.error('❌ Error cargando herramientas:', error);
                 herramientasSelect.innerHTML = '<option value="">Error cargando herramientas</option>';
             });
     }
     
     function cargarReactivosEnSelect(reactivosSelect, unidadId) {
+        // Usar caché si está disponible
+        if (cacheRecursos.reactivos) {
+            console.log('✅ Usando caché para reactivos:', cacheRecursos.reactivos.length, 'items');
+            poblarSelectDesdeCache(reactivosSelect, cacheRecursos.reactivos, 'nombre');
+            return;
+        }
+        
         reactivosSelect.innerHTML = '<option value="">Cargando reactivos...</option>';
+        console.log('🔄 Cargando reactivos desde API, unidadId:', unidadId);
 
         fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Reactivo`)
-            .then(response => response.json())
+            .then(response => {
+                console.log('📡 Respuesta reactivos status:', response.status);
+                return response.json();
+            })
             .then(data => {
-                reactivosSelect.innerHTML = '';
-                if (data && Array.isArray(data)) {
-                    data.forEach(reactivo => {
-                        if (reactivo && reactivo.nombre && reactivo.nombre.trim()) {
-                            const option = document.createElement('option');
-                            option.value = reactivo.nombre.trim();
-                            option.textContent = reactivo.nombre.trim();
-                            reactivosSelect.appendChild(option);
-                        }
-                    });
-                }
-                if (reactivosSelect.children.length === 0) {
-                    reactivosSelect.innerHTML = '<option value="">No hay reactivos disponibles</option>';
-                }
+                console.log('✅ Reactivos recibidos:', data.length, 'items', data.slice(0, 3));
+                cacheRecursos.reactivos = data;
+                poblarSelectDesdeCache(reactivosSelect, data, 'nombre');
             })
             .catch(error => {
-                console.error('Error cargando reactivos:', error);
+                console.error('❌ Error cargando reactivos:', error);
                 reactivosSelect.innerHTML = '<option value="">Error cargando reactivos</option>';
             });
+    }
+
+    // FUNCIÓN DE FILTRADO EN TIEMPO REAL PARA BÚSQUEDA
+    // ============================================================
+    /**
+     * Filtra las opciones de un select basándose en el texto ingresado
+     * @param {HTMLInputElement} inputElement - Input de búsqueda
+     * @param {number} contenidoIndex - Índice del contenido
+     * @param {number} grupoIndex - Índice del grupo
+     * @param {string} tipoRecurso - Tipo: equipos, materiales, herramientas, reactivos
+     */
+    function filtrarSelect(inputElement, contenidoIndex, grupoIndex, tipoRecurso) {
+        const searchText = inputElement.value.toLowerCase().trim();
+        
+        // Encontrar el select correspondiente dentro del mismo contenedor
+        const container = inputElement.closest('.form-group, .tab-content-insumo');
+        if (!container) {
+            console.error('No se encontró el contenedor para el input de búsqueda');
+            return;
+        }
+        
+        const selectElement = container.querySelector(`.${tipoRecurso}-select`);
+        if (!selectElement) {
+            console.error(`No se encontró el select para ${tipoRecurso}`);
+            return;
+        }
+        
+        // Obtener todas las opciones del select
+        const options = Array.from(selectElement.options);
+        
+        // Si el texto de búsqueda está vacío, mostrar todas las opciones
+        if (searchText === '') {
+            options.forEach(option => {
+                option.style.display = '';
+            });
+            return;
+        }
+        
+        // Filtrar opciones basándose en el texto de búsqueda
+        let visibleCount = 0;
+        options.forEach(option => {
+            const optionText = option.textContent.toLowerCase();
+            const optionValue = option.value.toLowerCase();
+            
+            // Mostrar solo si contiene el texto buscado (en texto o valor)
+            // Excluir opciones vacías o de "Cargando..."
+            if (option.value && option.value !== '' && 
+                !optionText.includes('cargando') && 
+                (optionText.includes(searchText) || optionValue.includes(searchText))) {
+                option.style.display = '';
+                visibleCount++;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+        
+        // Mensaje si no hay resultados (opcional)
+        if (visibleCount === 0) {
+            console.log(`No se encontraron resultados para "${searchText}" en ${tipoRecurso}`);
+        }
     }
 
     // Manejar selección múltiple de recursos
@@ -2208,7 +2465,7 @@
             </div>
             
             <div class="row">
-                <div class="col-6">
+                <div class="col-12">
                     <div class="form-group">
                         <label class="form-label">Fundamento Teórico</label>
                         <textarea name="fundamento_teorico_${contenidoIndex}_${grupoIndex}" 
@@ -2217,7 +2474,10 @@
                                  rows="4"></textarea>
                     </div>
                 </div>
-                <div class="col-6">
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
                     <div class="form-group">
                         <label class="form-label">Procedimientos</label>
                         <textarea name="procedimientos_${contenidoIndex}_${grupoIndex}" 
@@ -2232,8 +2492,22 @@
             <div class="row">
                 <div class="col-12">
                     <div class="form-group">
-                        <label class="form-label"><i class="fas fa-toolbox me-2"></i>Equipos</label>
-                        <select name="equipos_${contenidoIndex}_${grupoIndex}" class="form-select equipos-select" multiple size="4" 
+                        <label class="form-label" style="font-size: 0.95rem; font-weight: 600; color: #334155;">
+                            <i class="fas fa-toolbox me-2" style="color: #3b82f6;"></i>Equipos
+                        </label>
+                        
+                        <!-- Campo de búsqueda -->
+                        <div class="input-group mb-4">
+                            <span class="input-group-text">
+                                <i class="fas fa-search" style="font-size: 0.8rem;"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control form-control-sm buscar-equipos" 
+                                   placeholder="Filtrar equipos por nombre..." 
+                                   oninput="filtrarSelect(this, ${contenidoIndex}, ${grupoIndex}, 'equipos')">
+                        </div>
+                        
+                        <select name="equipos_${contenidoIndex}_${grupoIndex}" class="form-select equipos-select" multiple size="3" 
                                 onchange="handleRecursoSelection(this, 'equipos', ${contenidoIndex}, ${grupoIndex})">
                             <option value="">Cargando equipos...</option>
                         </select>
@@ -2283,7 +2557,18 @@
                         
                         <!-- Contenido Tab Materiales -->
                         <div class="tab-content-insumo active" id="tab_materiales_${contenidoIndex}_${grupoIndex}">
-                            <select name="materiales_${contenidoIndex}_${grupoIndex}" class="form-select materiales-select" multiple size="4"
+                            <!-- Campo de búsqueda -->
+                            <div class="input-group mb-4">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search" style="font-size: 0.8rem;"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control form-control-sm buscar-materiales" 
+                                       placeholder="Filtrar materiales..." 
+                                       oninput="filtrarSelect(this, ${contenidoIndex}, ${grupoIndex}, 'materiales')">
+                            </div>
+                            
+                            <select name="materiales_${contenidoIndex}_${grupoIndex}" class="form-select materiales-select" multiple size="3"
                                     onchange="handleRecursoSelection(this, 'materiales', ${contenidoIndex}, ${grupoIndex})">
                                 <option value="">Cargando materiales...</option>
                             </select>
@@ -2309,7 +2594,18 @@
                         
                         <!-- Contenido Tab Herramientas -->
                         <div class="tab-content-insumo" id="tab_herramientas_${contenidoIndex}_${grupoIndex}">
-                            <select name="herramientas_${contenidoIndex}_${grupoIndex}" class="form-select herramientas-select" multiple size="4"
+                            <!-- Campo de búsqueda -->
+                            <div class="input-group mb-4">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search" style="font-size: 0.8rem;"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control form-control-sm buscar-herramientas" 
+                                       placeholder="Filtrar herramientas..." 
+                                       oninput="filtrarSelect(this, ${contenidoIndex}, ${grupoIndex}, 'herramientas')">
+                            </div>
+                            
+                            <select name="herramientas_${contenidoIndex}_${grupoIndex}" class="form-select herramientas-select" multiple size="3"
                                     onchange="handleRecursoSelection(this, 'herramientas', ${contenidoIndex}, ${grupoIndex})">
                                 <option value="">Cargando herramientas...</option>
                             </select>
@@ -2335,7 +2631,18 @@
                         
                         <!-- Contenido Tab Reactivos -->
                         <div class="tab-content-insumo" id="tab_reactivos_${contenidoIndex}_${grupoIndex}">
-                            <select name="reactivos_${contenidoIndex}_${grupoIndex}" class="form-select reactivos-select" multiple size="4"
+                            <!-- Campo de búsqueda -->
+                            <div class="input-group mb-4">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search" style="font-size: 0.8rem;"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control form-control-sm buscar-reactivos" 
+                                       placeholder="Filtrar reactivos..." 
+                                       oninput="filtrarSelect(this, ${contenidoIndex}, ${grupoIndex}, 'reactivos')">
+                            </div>
+                            
+                            <select name="reactivos_${contenidoIndex}_${grupoIndex}" class="form-select reactivos-select" multiple size="3"
                                     onchange="handleRecursoSelection(this, 'reactivos', ${contenidoIndex}, ${grupoIndex})">
                                 <option value="">Cargando reactivos...</option>
                             </select>
@@ -2373,7 +2680,7 @@
                    id="reactivos_input_${contenidoIndex}_${grupoIndex}" value="">
             
             <div class="row">
-                <div class="col-6">
+                <div class="col-12">
                     <div class="form-group">
                         <label class="form-label">Cálculos y Resultados</label>
                         <textarea name="calculos_resultados_${contenidoIndex}_${grupoIndex}" 
@@ -2382,7 +2689,10 @@
                                  rows="4"></textarea>
                     </div>
                 </div>
-                <div class="col-6">
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
                     <div class="form-group">
                         <label class="form-label">Cuestionario</label>
                         <textarea name="cuestionario_${contenidoIndex}_${grupoIndex}" 
@@ -2398,6 +2708,34 @@
         contadorGruposDatos[contenidoIndex] = grupoIndex + 1;
         
         console.log(`➕ Grupo agregado - Contenido: ${contenidoIndex}, Grupo: ${grupoIndex}`);
+        
+        // IMPORTANTE: Cargar datos en los nuevos selects inmediatamente
+        setTimeout(() => {
+            const unidadSelect = document.querySelector('select[name="unidad_academica"]');
+            const unidadId = unidadSelect ? unidadSelect.value : '';
+            
+            if (unidadId) {
+                // Buscar los nuevos selects específicamente
+                const nuevoEquiposSelect = div.querySelector('.equipos-select');
+                const nuevoMaterialesSelect = div.querySelector('.materiales-select');
+                const nuevoHerramientasSelect = div.querySelector('.herramientas-select');
+                const nuevoReactivosSelect = div.querySelector('.reactivos-select');
+                
+                // Cargar datos en cada select
+                if (nuevoEquiposSelect) {
+                    cargarEquiposEnSelect(nuevoEquiposSelect, unidadId);
+                }
+                if (nuevoMaterialesSelect) {
+                    cargarMaterialesEnSelect(nuevoMaterialesSelect, unidadId);
+                }
+                if (nuevoHerramientasSelect) {
+                    cargarHerramientasEnSelect(nuevoHerramientasSelect, unidadId);
+                }
+                if (nuevoReactivosSelect) {
+                    cargarReactivosEnSelect(nuevoReactivosSelect, unidadId);
+                }
+            }
+        }, 100);
         
         // Animación de entrada
         setTimeout(() => {
@@ -3346,21 +3684,43 @@
 
     // Agregar event listener para carga automática cuando cambie la unidad académica
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 DOM Cargado - Inicializando sistema de recursos');
+        
         const unidadSelect = document.querySelector('select[name="unidad_academica"]');
         if (unidadSelect) {
+            console.log('📋 Unidad select encontrado, valor actual:', unidadSelect.value);
+            
             unidadSelect.addEventListener('change', function() {
+                console.log('🔄 Cambio de unidad detectado:', this.value);
+                // Limpiar caché cuando cambia la unidad
+                cacheRecursos = {
+                    equipos: null,
+                    materiales: null,
+                    herramientas: null,
+                    reactivos: null
+                };
                 cargarTodosLosRecursos();
             });
+            
+            // IMPORTANTE: Cargar datos automáticamente si ya hay una unidad seleccionada
+            if (unidadSelect.value) {
+                console.log('✅ Unidad ya seleccionada, cargando recursos automáticamente...');
+                setTimeout(() => {
+                    cargarTodosLosRecursos();
+                }, 500);
+            } else {
+                console.log('⚠️ No hay unidad seleccionada. Por favor selecciona una unidad académica.');
+            }
+        } else {
+            console.error('❌ No se encontró el select de unidad académica');
         }
         
         // Inicializar los nuevos grupos de datos con carga automática
         const originalAgregarGrupo = agregarGrupoDatosAdicionales;
         agregarGrupoDatosAdicionales = function(contenidoIndex) {
             originalAgregarGrupo(contenidoIndex);
-            // Cargar recursos después de agregar un nuevo grupo
-            setTimeout(() => {
-                cargarTodosLosRecursos();
-            }, 100);
+            // Los datos ya se cargan dentro de originalAgregarGrupo
+            // Solo necesitamos inicializar CKEditor
             
             // Inicializar CKEditor para los nuevos campos
             setTimeout(() => {

@@ -1175,42 +1175,34 @@ def get_equipos_por_unidad_ajax(request):
         from equipos.models import EquipoImportado
         from core.models import UnidadAcademica
         
+        # Optimización: usar only() para traer solo campos necesarios
+        equipos_query = EquipoImportado.objects.only(
+            'codigo', 'descripcion_activo', 'responsable', 'estado', 'oficina', 'unidad_academica'
+        )
+        
         if unidad_id:
-            # Obtener la unidad académica
-            unidad = UnidadAcademica.objects.filter(id=unidad_id).first()
+            unidad = UnidadAcademica.objects.filter(id=unidad_id).values('nombre').first()
             if unidad:
-                # Filtrar por el nombre de la unidad (UALP, UACB, etc.)
-                equipos = EquipoImportado.objects.filter(
-                    unidad_academica__icontains=unidad.nombre
-                ).order_by('descripcion_activo')[:200]  # Limitar para rendimiento
-            else:
-                equipos = EquipoImportado.objects.all().order_by('descripcion_activo')[:200]
-        else:
-            # Si no hay unidad específica, mostrar todos (limitado)
-            equipos = EquipoImportado.objects.all().order_by('descripcion_activo')[:200]
+                equipos_query = equipos_query.filter(
+                    unidad_academica__icontains=unidad['nombre']
+                )
         
-        # Obtener solo descripciones únicas para simplificar la selección
-        descripciones_unicas = set()
-        equipos_unicos = []
+        # Obtener descripciones únicas directamente de la BD
+        equipos_unicos = equipos_query.values(
+            'descripcion_activo'
+        ).distinct()[:150]  # Limitar para rendimiento
         
-        for equipo in equipos:
-            if equipo.descripcion_activo and equipo.descripcion_activo.strip():
-                descripcion = equipo.descripcion_activo.strip()
-                if descripcion not in descripciones_unicas:
-                    descripciones_unicas.add(descripcion)
-                    equipos_unicos.append({
-                        'id': equipo.codigo,
-                        'nombre': descripcion,
-                        'descripcion': descripcion,
-                        'codigo': equipo.codigo,
-                        'responsable': equipo.responsable or '',
-                        'estado': equipo.estado,
-                        'oficina': equipo.oficina or ''
-                    })
+        # Formatear respuesta rápida
+        equipos_data = [
+            {
+                'descripcion': eq['descripcion_activo'].strip() if eq['descripcion_activo'] else ''
+            }
+            for eq in equipos_unicos
+            if eq['descripcion_activo'] and eq['descripcion_activo'].strip()
+        ]
         
-        equipos_data = equipos_unicos
-        
-    except ImportError:
+    except Exception as e:
+        print(f"Error en get_equipos_por_unidad_ajax: {e}")
         equipos_data = []
     
     return JsonResponse(equipos_data, safe=False)
@@ -1227,43 +1219,38 @@ def get_insumos_por_unidad_ajax(request):
         from core.models import UnidadAcademica
         
         if unidad_id:
-            # Buscar insumos para la unidad académica seleccionada
-            insumos = Insumo.objects.all()
+            # Optimización: usar only() para traer solo campos necesarios
+            insumos_query = Insumo.objects.only(
+                'id', 'nombre_elemento', 'categoria', 'marca_modelo', 'estado', 'descripcion_caracteristicas'
+            )
             
             # Filtrar por categoría si se especifica
             if categoria == 'Material':
-                insumos = insumos.filter(categoria='materiales')
+                insumos_query = insumos_query.filter(categoria='materiales')
             elif categoria == 'Herramienta':
-                insumos = insumos.filter(categoria='herramientas')
+                insumos_query = insumos_query.filter(categoria='herramientas')
             elif categoria == 'Reactivo':
-                insumos = insumos.filter(categoria='reactivos')
-                
-            insumos = insumos.order_by('nombre_elemento')[:200]  # Limitar para rendimiento
+                insumos_query = insumos_query.filter(categoria='reactivos')
             
-            # Obtener solo nombres únicos para simplificar la selección
-            nombres_unicos = set()
-            insumos_unicos = []
+            # Obtener nombres únicos directamente de la BD
+            insumos_unicos = insumos_query.values(
+                'nombre_elemento'
+            ).distinct()[:100]  # Limitar para rendimiento
             
-            for insumo in insumos:
-                if insumo.nombre_elemento and insumo.nombre_elemento.strip():
-                    nombre = insumo.nombre_elemento.strip()
-                    if nombre not in nombres_unicos:
-                        nombres_unicos.add(nombre)
-                        insumos_unicos.append({
-                            'id': insumo.id,
-                            'nombre': nombre,
-                            'categoria': insumo.get_categoria_display(),
-                            'marca': insumo.marca_modelo or '',
-                            'estado': insumo.estado,
-                            'descripcion': insumo.descripcion_caracteristicas or ''
-                        })
-            
-            insumos_data = insumos_unicos
+            # Formatear respuesta rápida
+            insumos_data = [
+                {
+                    'nombre': ins['nombre_elemento'].strip() if ins['nombre_elemento'] else ''
+                }
+                for ins in insumos_unicos
+                if ins['nombre_elemento'] and ins['nombre_elemento'].strip()
+            ]
         else:
             # Si no hay unidad específica, devolver lista vacía
             insumos_data = []
             
-    except ImportError:
+    except Exception as e:
+        print(f"Error en get_insumos_por_unidad_ajax: {e}")
         insumos_data = []
     
     return JsonResponse(insumos_data, safe=False)
