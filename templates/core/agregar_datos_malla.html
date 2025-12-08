@@ -1408,6 +1408,46 @@
         color: #6b7280 !important;
         font-style: italic !important;
     }
+    
+    /* Estilos para tabs de insumos */
+    #agregar-datos-malla-page .tabs-insumos {
+        display: flex;
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 20px;
+        gap: 5px;
+    }
+    
+    #agregar-datos-malla-page .tab-insumo {
+        flex: 1;
+        padding: 12px 20px;
+        background: #f3f4f6;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        color: #6b7280;
+    }
+    
+    #agregar-datos-malla-page .tab-insumo:hover {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    
+    #agregar-datos-malla-page .tab-insumo.active {
+        background: white;
+        color: #3b82f6;
+        border-bottom-color: #3b82f6;
+    }
+    
+    #agregar-datos-malla-page .tab-content-insumo {
+        display: none;
+    }
+    
+    #agregar-datos-malla-page .tab-content-insumo.active {
+        display: block;
+    }
 </style>
 {% endblock %}
 
@@ -1841,6 +1881,39 @@
         document.querySelectorAll('.herramientas-select').forEach(select => {
             cargarHerramientasEnSelect(select, unidadId);
         });
+        document.querySelectorAll('.reactivos-select').forEach(select => {
+            cargarReactivosEnSelect(select, unidadId);
+        });
+    }
+    
+    // Función para cambiar entre tabs de insumos
+    function cambiarTabInsumo(contenidoIndex, grupoIndex, tipoInsumo) {
+        // Actualizar tabs activos
+        const tabs = document.querySelectorAll(`#tab_materiales_${contenidoIndex}_${grupoIndex}`);
+        if (tabs.length > 0) {
+            const tabsContainer = tabs[0].parentElement.querySelector('.tabs-insumos');
+            if (tabsContainer) {
+                tabsContainer.querySelectorAll('.tab-insumo').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                tabsContainer.querySelectorAll('.tab-insumo').forEach((tab, index) => {
+                    const tipos = ['materiales', 'herramientas', 'reactivos'];
+                    if (tipos[index] === tipoInsumo) {
+                        tab.classList.add('active');
+                    }
+                });
+            }
+        }
+        
+        // Actualizar contenido activo
+        document.querySelectorAll(`[id^="tab_"][id*="_${contenidoIndex}_${grupoIndex}"]`).forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        const contentToShow = document.getElementById(`tab_${tipoInsumo}_${contenidoIndex}_${grupoIndex}`);
+        if (contentToShow) {
+            contentToShow.classList.add('active');
+        }
     }
 
     function cargarEquiposEnSelect(equiposSelect, unidadId) {
@@ -1923,6 +1996,33 @@
                 herramientasSelect.innerHTML = '<option value="">Error cargando herramientas</option>';
             });
     }
+    
+    function cargarReactivosEnSelect(reactivosSelect, unidadId) {
+        reactivosSelect.innerHTML = '<option value="">Cargando reactivos...</option>';
+
+        fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Reactivo`)
+            .then(response => response.json())
+            .then(data => {
+                reactivosSelect.innerHTML = '';
+                if (data && Array.isArray(data)) {
+                    data.forEach(reactivo => {
+                        if (reactivo && reactivo.nombre && reactivo.nombre.trim()) {
+                            const option = document.createElement('option');
+                            option.value = reactivo.nombre.trim();
+                            option.textContent = reactivo.nombre.trim();
+                            reactivosSelect.appendChild(option);
+                        }
+                    });
+                }
+                if (reactivosSelect.children.length === 0) {
+                    reactivosSelect.innerHTML = '<option value="">No hay reactivos disponibles</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando reactivos:', error);
+                reactivosSelect.innerHTML = '<option value="">Error cargando reactivos</option>';
+            });
+    }
 
     // Manejar selección múltiple de recursos
     function handleRecursoSelection(selectElement, tipoRecurso, contenidoIndex, grupoIndex) {
@@ -1963,6 +2063,8 @@
             inputId = `otro_material_${contenidoIndex}_${grupoIndex}`;
         } else if (tipoRecurso === 'herramientas') {
             inputId = `otro_herramienta_${contenidoIndex}_${grupoIndex}`;
+        } else if (tipoRecurso === 'reactivos') {
+            inputId = `otro_reactivo_${contenidoIndex}_${grupoIndex}`;
         }
         
         const input = document.getElementById(inputId);
@@ -2126,12 +2228,12 @@
                 </div>
             </div>
             
-            <!-- Selección múltiple de recursos -->
+            <!-- Selección de Equipos - Ancho Completo -->
             <div class="row">
-                <div class="col-4">
+                <div class="col-12">
                     <div class="form-group">
-                        <label class="form-label">Equipos</label>
-                        <select name="equipos_${contenidoIndex}_${grupoIndex}" class="form-select equipos-select" multiple size="6" 
+                        <label class="form-label"><i class="fas fa-toolbox me-2"></i>Equipos</label>
+                        <select name="equipos_${contenidoIndex}_${grupoIndex}" class="form-select equipos-select" multiple size="8" 
                                 onchange="handleRecursoSelection(this, 'equipos', ${contenidoIndex}, ${grupoIndex})">
                             <option value="">Cargando equipos...</option>
                         </select>
@@ -2150,64 +2252,111 @@
                         </div>
                         
                         <!-- Lista de seleccionados -->
-                        <div class="recursos-seleccionados-lista" id="equipos_seleccionados_${contenidoIndex}_${grupoIndex}" 
-                             style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
+                        <div class="recursos-seleccionados-lista" id="equipos_seleccionados_${contenidoIndex}_${grupoIndex}"
+                             style="margin-top: 10px; max-height: 120px; overflow-y: auto;">
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-4">
+            </div>
+            
+            <!-- Sección de Insumos con Tabs -->
+            <div class="row">
+                <div class="col-12">
                     <div class="form-group">
-                        <label class="form-label">Materiales</label>
-                        <select name="materiales_${contenidoIndex}_${grupoIndex}" class="form-select materiales-select" multiple size="6"
-                                onchange="handleRecursoSelection(this, 'materiales', ${contenidoIndex}, ${grupoIndex})">
-                            <option value="">Cargando materiales...</option>
-                        </select>
+                        <label class="form-label"><i class="fas fa-flask me-2"></i>Insumos</label>
                         
-                        <!-- Opción "Otro" para materiales -->
-                        <div class="otro-recurso-container" style="margin-top: 10px;">
-                            <div class="input-group">
-                                <input type="text" class="form-control form-control-sm" 
-                                       placeholder="Escribir otro material..." 
-                                       id="otro_material_${contenidoIndex}_${grupoIndex}">
-                                <button type="button" class="btn btn-sm btn-outline-primary" 
-                                        onclick="agregarOtroRecurso('materiales', ${contenidoIndex}, ${grupoIndex})">
-                                    <i class="fas fa-plus"></i> Agregar
-                                </button>
+                        <!-- Tabs de Insumos -->
+                        <div class="tabs-insumos">
+                            <button type="button" class="tab-insumo active" 
+                                    onclick="cambiarTabInsumo(${contenidoIndex}, ${grupoIndex}, 'materiales')">
+                                <i class="fas fa-vial me-1"></i> Materiales
+                            </button>
+                            <button type="button" class="tab-insumo" 
+                                    onclick="cambiarTabInsumo(${contenidoIndex}, ${grupoIndex}, 'herramientas')">
+                                <i class="fas fa-wrench me-1"></i> Herramientas
+                            </button>
+                            <button type="button" class="tab-insumo" 
+                                    onclick="cambiarTabInsumo(${contenidoIndex}, ${grupoIndex}, 'reactivos')">
+                                <i class="fas fa-flask me-1"></i> Reactivos
+                            </button>
+                        </div>
+                        
+                        <!-- Contenido Tab Materiales -->
+                        <div class="tab-content-insumo active" id="tab_materiales_${contenidoIndex}_${grupoIndex}">
+                            <select name="materiales_${contenidoIndex}_${grupoIndex}" class="form-select materiales-select" multiple size="6"
+                                    onchange="handleRecursoSelection(this, 'materiales', ${contenidoIndex}, ${grupoIndex})">
+                                <option value="">Cargando materiales...</option>
+                            </select>
+                            
+                            <!-- Opción "Otro" para materiales -->
+                            <div class="otro-recurso-container" style="margin-top: 10px;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" 
+                                           placeholder="Escribir otro material..." 
+                                           id="otro_material_${contenidoIndex}_${grupoIndex}">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="agregarOtroRecurso('materiales', ${contenidoIndex}, ${grupoIndex})">
+                                        <i class="fas fa-plus"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Lista de seleccionados -->
+                            <div class="recursos-seleccionados-lista" id="materiales_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                                 style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
                             </div>
                         </div>
                         
-                        <!-- Lista de seleccionados -->
-                        <div class="recursos-seleccionados-lista" id="materiales_seleccionados_${contenidoIndex}_${grupoIndex}" 
-                             style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-4">
-                    <div class="form-group">
-                        <label class="form-label">Herramientas</label>
-                        <select name="herramientas_${contenidoIndex}_${grupoIndex}" class="form-select herramientas-select" multiple size="6"
-                                onchange="handleRecursoSelection(this, 'herramientas', ${contenidoIndex}, ${grupoIndex})">
-                            <option value="">Cargando herramientas...</option>
-                        </select>
-                        
-                        <!-- Opción "Otro" para herramientas -->
-                        <div class="otro-recurso-container" style="margin-top: 10px;">
-                            <div class="input-group">
-                                <input type="text" class="form-control form-control-sm" 
-                                       placeholder="Escribir otra herramienta..." 
-                                       id="otro_herramienta_${contenidoIndex}_${grupoIndex}">
-                                <button type="button" class="btn btn-sm btn-outline-primary" 
-                                        onclick="agregarOtroRecurso('herramientas', ${contenidoIndex}, ${grupoIndex})">
-                                    <i class="fas fa-plus"></i> Agregar
-                                </button>
+                        <!-- Contenido Tab Herramientas -->
+                        <div class="tab-content-insumo" id="tab_herramientas_${contenidoIndex}_${grupoIndex}">
+                            <select name="herramientas_${contenidoIndex}_${grupoIndex}" class="form-select herramientas-select" multiple size="6"
+                                    onchange="handleRecursoSelection(this, 'herramientas', ${contenidoIndex}, ${grupoIndex})">
+                                <option value="">Cargando herramientas...</option>
+                            </select>
+                            
+                            <!-- Opción "Otro" para herramientas -->
+                            <div class="otro-recurso-container" style="margin-top: 10px;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" 
+                                           placeholder="Escribir otra herramienta..." 
+                                           id="otro_herramienta_${contenidoIndex}_${grupoIndex}">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="agregarOtroRecurso('herramientas', ${contenidoIndex}, ${grupoIndex})">
+                                        <i class="fas fa-plus"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Lista de seleccionados -->
+                            <div class="recursos-seleccionados-lista" id="herramientas_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                                 style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
                             </div>
                         </div>
                         
-                        <!-- Lista de seleccionados -->
-                        <div class="recursos-seleccionados-lista" id="herramientas_seleccionados_${contenidoIndex}_${grupoIndex}" 
-                             style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
+                        <!-- Contenido Tab Reactivos -->
+                        <div class="tab-content-insumo" id="tab_reactivos_${contenidoIndex}_${grupoIndex}">
+                            <select name="reactivos_${contenidoIndex}_${grupoIndex}" class="form-select reactivos-select" multiple size="6"
+                                    onchange="handleRecursoSelection(this, 'reactivos', ${contenidoIndex}, ${grupoIndex})">
+                                <option value="">Cargando reactivos...</option>
+                            </select>
+                            
+                            <!-- Opción "Otro" para reactivos -->
+                            <div class="otro-recurso-container" style="margin-top: 10px;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" 
+                                           placeholder="Escribir otro reactivo..." 
+                                           id="otro_reactivo_${contenidoIndex}_${grupoIndex}">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="agregarOtroRecurso('reactivos', ${contenidoIndex}, ${grupoIndex})">
+                                        <i class="fas fa-plus"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Lista de seleccionados -->
+                            <div class="recursos-seleccionados-lista" id="reactivos_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                                 style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2220,6 +2369,8 @@
                    id="materiales_input_${contenidoIndex}_${grupoIndex}" value="">
             <input type="hidden" name="herramientas_seleccionados_${contenidoIndex}_${grupoIndex}" 
                    id="herramientas_input_${contenidoIndex}_${grupoIndex}" value="">
+            <input type="hidden" name="reactivos_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                   id="reactivos_input_${contenidoIndex}_${grupoIndex}" value="">
             
             <div class="row">
                 <div class="col-6">

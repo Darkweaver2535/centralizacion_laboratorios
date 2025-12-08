@@ -1168,26 +1168,26 @@ def get_contenidos_analiticos_por_unidad_ajax(request):
 
 @login_required
 def get_equipos_por_unidad_ajax(request):
-    """Obtener equipos filtrados por unidad académica usando datos importados - SOLO UALP"""
+    """Obtener equipos filtrados por unidad académica usando datos importados"""
     unidad_id = request.GET.get('unidad_id')
     
     try:
         from equipos.models import EquipoImportado
         from core.models import UnidadAcademica
         
-        # SOLO permitir UALP (ID=1) para pruebas
-        if unidad_id and unidad_id == '1':
+        if unidad_id:
+            # Obtener la unidad académica
             unidad = UnidadAcademica.objects.filter(id=unidad_id).first()
-            if unidad and unidad.nombre == 'UALP':
+            if unidad:
                 # Filtrar por el nombre de la unidad (UALP, UACB, etc.)
                 equipos = EquipoImportado.objects.filter(
-                    unidad_academica=unidad.nombre
-                ).order_by('descripcion_activo')
+                    unidad_academica__icontains=unidad.nombre
+                ).order_by('descripcion_activo')[:200]  # Limitar para rendimiento
             else:
-                equipos = EquipoImportado.objects.none()
+                equipos = EquipoImportado.objects.all().order_by('descripcion_activo')[:200]
         else:
-            # Si no hay unidad específica, mostrar todos
-            equipos = EquipoImportado.objects.all().order_by('descripcion_activo')
+            # Si no hay unidad específica, mostrar todos (limitado)
+            equipos = EquipoImportado.objects.all().order_by('descripcion_activo')[:200]
         
         # Obtener solo descripciones únicas para simplificar la selección
         descripciones_unicas = set()
@@ -1208,7 +1208,7 @@ def get_equipos_por_unidad_ajax(request):
                         'oficina': equipo.oficina or ''
                     })
         
-        equipos_data = equipos_unicos[:100]  # Limitar a 100 para rendimiento
+        equipos_data = equipos_unicos
         
     except ImportError:
         equipos_data = []
@@ -1218,52 +1218,47 @@ def get_equipos_por_unidad_ajax(request):
 
 @login_required
 def get_insumos_por_unidad_ajax(request):
-    """Obtener insumos filtrados por unidad académica - SOLO UALP"""
+    """Obtener insumos filtrados por unidad académica y categoría"""
     unidad_id = request.GET.get('unidad_id')
-    categoria = request.GET.get('categoria', '')  # Material, Herramienta, etc.
+    categoria = request.GET.get('categoria', '')  # Material, Herramienta, Reactivo
     
     try:
         from insumos.models import Insumo
         from core.models import UnidadAcademica
         
-        # SOLO permitir UALP (ID=1) para pruebas
-        if unidad_id and unidad_id == '1':
-            unidad = UnidadAcademica.objects.filter(id=unidad_id).first()
-            if unidad and unidad.nombre == 'UALP':
-                # Buscar insumos para cualquier unidad académica
-                insumos = Insumo.objects.all()
+        if unidad_id:
+            # Buscar insumos para la unidad académica seleccionada
+            insumos = Insumo.objects.all()
+            
+            # Filtrar por categoría si se especifica
+            if categoria == 'Material':
+                insumos = insumos.filter(categoria='materiales')
+            elif categoria == 'Herramienta':
+                insumos = insumos.filter(categoria='herramientas')
+            elif categoria == 'Reactivo':
+                insumos = insumos.filter(categoria='reactivos')
                 
-                # Filtrar por categoría si se especifica
-                if categoria == 'Material':
-                    insumos = insumos.filter(categoria='materiales')
-                elif categoria == 'Herramienta':
-                    insumos = insumos.filter(categoria='herramientas')
-                elif categoria == 'Reactivo':
-                    insumos = insumos.filter(categoria='reactivos')
-                    
-                insumos = insumos.order_by('nombre_elemento')
-                
-                # Obtener solo nombres únicos para simplificar la selección
-                nombres_unicos = set()
-                insumos_unicos = []
-                
-                for insumo in insumos:
-                    if insumo.nombre_elemento and insumo.nombre_elemento.strip():
-                        nombre = insumo.nombre_elemento.strip()
-                        if nombre not in nombres_unicos:
-                            nombres_unicos.add(nombre)
-                            insumos_unicos.append({
-                                'id': insumo.id,
-                                'nombre': nombre,
-                                'categoria': insumo.get_categoria_display(),
-                                'marca': insumo.marca_modelo or '',
-                                'estado': insumo.estado,
-                                'descripcion': insumo.descripcion_caracteristicas or ''
-                            })
-                
-                insumos_data = insumos_unicos
-            else:
-                insumos_data = []
+            insumos = insumos.order_by('nombre_elemento')[:200]  # Limitar para rendimiento
+            
+            # Obtener solo nombres únicos para simplificar la selección
+            nombres_unicos = set()
+            insumos_unicos = []
+            
+            for insumo in insumos:
+                if insumo.nombre_elemento and insumo.nombre_elemento.strip():
+                    nombre = insumo.nombre_elemento.strip()
+                    if nombre not in nombres_unicos:
+                        nombres_unicos.add(nombre)
+                        insumos_unicos.append({
+                            'id': insumo.id,
+                            'nombre': nombre,
+                            'categoria': insumo.get_categoria_display(),
+                            'marca': insumo.marca_modelo or '',
+                            'estado': insumo.estado,
+                            'descripcion': insumo.descripcion_caracteristicas or ''
+                        })
+            
+            insumos_data = insumos_unicos
         else:
             # Si no hay unidad específica, devolver lista vacía
             insumos_data = []
