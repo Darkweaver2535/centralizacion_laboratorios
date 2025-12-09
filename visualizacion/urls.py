@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-from . import views_filter
 
 app_name = 'visualizacion'
 
@@ -38,10 +37,4 @@ urlpatterns = [
     
     # Vista temporal de debug
     path('debug/', views.debug_api_view, name='debug_api'),
-    
-    # Nuevas rutas para sistema de filtros mejorado con django-filter
-    path('filter/', views_filter.visualizacion_filter_index, name='filter_index'),
-    path('filter/equipos/', views_filter.EquipoFilterView.as_view(), name='equipos_filter'),
-    path('filter/insumos/', views_filter.InsumoFilterView.as_view(), name='insumos_filter'),
-    path('filter/guias/', views_filter.GuiaFilterView.as_view(), name='guias_filter'),
 ]
