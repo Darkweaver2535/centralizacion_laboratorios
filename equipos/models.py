@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
 from core.models import (
     UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, 
     Practica, Laboratorio, CriterioDesempeno, UnidadDidactica, ContenidoAnalitico
@@ -44,39 +45,45 @@ class Equipo(models.Model):
     unidad_academica = models.ForeignKey(
         UnidadAcademica, 
         on_delete=models.CASCADE,
-        verbose_name="Unidad Académica"
+        verbose_name="Unidad Académica",
+        db_index=True  # Índice para consultas frecuentes
     )
     
     # 2. CARRERA
     carrera = models.ForeignKey(
         Carrera, 
         on_delete=models.CASCADE,
-        verbose_name="Carrera"
+        verbose_name="Carrera",
+        db_index=True  # Índice para consultas frecuentes
     )
     
     # 3. SEMESTRE
     semestre = models.IntegerField(
         choices=[(i, f"{i}° Semestre") for i in range(1, 11)],
-        verbose_name="Semestre"
+        verbose_name="Semestre",
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
     
     # 4. ASIGNATURA
     asignatura = models.ForeignKey(
         Asignatura, 
         on_delete=models.CASCADE,
-        verbose_name="Asignatura"
+        verbose_name="Asignatura",
+        db_index=True  # Índice para consultas frecuentes
     )
     
     # 5. CARGA HORARIA SEMANAL
     carga_horaria_semanal = models.IntegerField(
         verbose_name="Carga Horaria Semanal",
-        help_text="Horas por semana"
+        help_text="Horas por semana",
+        validators=[MinValueValidator(0)]
     )
     
     # 6. CARGA HORARIA SEMESTRAL
     carga_horaria_semestral = models.IntegerField(
         verbose_name="Carga Horaria Semestral",
-        help_text="Total de horas en el semestre"
+        help_text="Total de horas en el semestre",
+        validators=[MinValueValidator(0)]
     )
     
     # 7. CRITERIO DE DESEMPEÑO
@@ -152,7 +159,8 @@ class Equipo(models.Model):
     # 16. NÚMERO DE UNIDADES DEL EQUIPO
     numero_unidades = models.IntegerField(
         default=1,
-        verbose_name="Número de Unidades del Equipo"
+        verbose_name="Número de Unidades del Equipo",
+        validators=[MinValueValidator(0)]
     )
     
     # 17. ES UN ACTIVO FIJO DE ACUERDO A SU ACTA DE ENTREGA?
@@ -181,7 +189,8 @@ class Equipo(models.Model):
     laboratorio = models.ForeignKey(
         Laboratorio, 
         on_delete=models.CASCADE,
-        verbose_name="Ubicación del Equipo (Laboratorio)"
+        verbose_name="Ubicación del Equipo (Laboratorio)",
+        db_index=True  # Índice para consultas frecuentes
     )
     
     # 21. SECCIÓN/ÁREA
@@ -209,7 +218,8 @@ class Equipo(models.Model):
     # 24. NÚMERO DE EQUIPOS REQUERIDOS
     numero_equipos_requeridos = models.IntegerField(
         default=0,
-        verbose_name="Número de Equipos Requeridos"
+        verbose_name="Número de Equipos Requeridos",
+        validators=[MinValueValidator(0)]
     )
     
     # Campos adicionales para auditoría
@@ -278,6 +288,12 @@ class Equipo(models.Model):
     class Meta:
         verbose_name = "Equipo"
         verbose_name_plural = "Equipos"
+        ordering = ['unidad_academica', 'carrera', 'asignatura', 'equipo_existente']
+        indexes = [
+            models.Index(fields=['estado']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['unidad_academica', 'carrera']),
+        ]
         ordering = ['unidad_academica', 'carrera', 'semestre', 'asignatura']
     
     def __str__(self):

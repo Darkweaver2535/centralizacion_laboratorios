@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from core.models import UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, Practica, Laboratorio
 
 class TipoInsumo(models.Model):
@@ -94,14 +95,16 @@ class Insumo(models.Model):
     unidad_academica = models.ForeignKey(
         UnidadAcademica, 
         on_delete=models.CASCADE,
-        verbose_name="Unidad Académica"
+        verbose_name="Unidad Académica",
+        db_index=True  # Índice para consultas frecuentes
     )
     
     # 2. LABORATORIO
     laboratorio = models.ForeignKey(
         Laboratorio, 
         on_delete=models.CASCADE,
-        verbose_name="Laboratorio"
+        verbose_name="Laboratorio",
+        db_index=True  # Índice para consultas frecuentes
     )
     
     # 3. CATEGORÍA
@@ -160,7 +163,8 @@ class Insumo(models.Model):
     # 10. CANTIDAD
     cantidad = models.FloatField(
         default=0,
-        verbose_name="Cantidad"
+        verbose_name="Cantidad",
+        validators=[MinValueValidator(0)]
     )
     
     # 11. UNIDAD DE MEDIDA
@@ -259,13 +263,16 @@ class Insumo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
     
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
     class Meta:
         verbose_name = "Insumo"
         verbose_name_plural = "Insumos"
-        ordering = ['unidad_academica', 'carrera', 'categoria', 'nombre_elemento']
+        ordering = ['unidad_academica', 'laboratorio', 'categoria', 'nombre_elemento']
+        indexes = [
+            models.Index(fields=['estado']),
+            models.Index(fields=['categoria']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['unidad_academica', 'laboratorio']),
+        ]
     
     def __str__(self):
         return f"{self.nombre_elemento} - {self.categoria} - {self.laboratorio}"
