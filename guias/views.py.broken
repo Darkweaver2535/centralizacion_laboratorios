@@ -9,9 +9,6 @@ from django.utils import timezone
 import os
 import json
 from datetime import datetime
-import subprocess
-import tempfile
-import shutil
 
 # Importaciones para generación de documentos
 try:
@@ -32,13 +29,8 @@ except ImportError:
     REPORTLAB_AVAILABLE = False
 
 from io import BytesIO
-from bs4 import BeautifulSoup
 
-from core.models import (
-    Carrera, Asignatura, ContenidoAnalitico, FundamentoTeorico, Procedimientos, 
-    CalculosResultados, Cuestionario, PracticaLaboratorio, Competencias, 
-    ObjetivoPractica, MaterialesHerramientasEquipos, Bibliografia
-)
+from core.models import Carrera, Asignatura, ContenidoAnalitico, FundamentoTeorico, Procedimientos, CalculosResultados, Cuestionario
 from .models import GuiaGenerada
 from .forms import GuiaLaboratorioForm, GuiaFilterForm
 
@@ -716,14 +708,13 @@ def generar_documento_word(guia):
         # Datos para la tabla
         datos_info = [
             ('CARRERA:', guia.carrera.get_nombre_display()),
-            ('SEMESTRE:', str(guia.semestre)),
-            ('ASIGNATURA:', guia.asignatura.nombre),
-            ('CONTENIDO ANALÍTICO:', guia.contenido_analitico),
-            ('UNIDAD DIDÁCTICA:', guia.unidad_didactica),
-            ('DOCENTE:', f'{guia.usuario_creador.first_name} {guia.usuario_creador.last_name}'),
-            ('Correo Institucional:', ''),
-            ('BIBLIOGRAFÍA DE REFERENCIA:', guia.referencia_bibliografica if guia.referencia_bibliografica else '-'),
-            ('', '')  # Fila en blanco
+            ('SEMESTRE:', f'{guia.get_semestre_display()}'),
+            ('ASIGNATURA:', guia.asignatura.get_nombre_display()),
+            ('CONTENIDO ANALÍTICO:', guia.contenido_analitico if guia.contenido_analitico else ''),
+            ('UNIDAD DIDÁCTICA:', guia.unidad_didactica if guia.unidad_didactica else ''),
+            ('DOCENTE:', f'{guia.usuario_creador.first_name} {guia.usuario_creador.last_name}' if guia.usuario_creador.first_name else guia.usuario_creador.username),
+            ('Correo Institucional:', guia.usuario_creador.email if guia.usuario_creador.email else ''),
+            ('BIBLIOGRAFÍA DE REFERENCIA:', guia.referencia_bibliografica if guia.referencia_bibliografica else ''),
         ]
         
         # Llenar datos
@@ -741,266 +732,113 @@ def generar_documento_word(guia):
         # Fila especial para práctica de laboratorio
         practica_row = datos_table.add_row()
         merged_cell = practica_row.cells[0].merge(practica_row.cells[1])
-        merged_cell.text = f'PRÁCTICA DE LABORATORIO N°{guia.numero_practica}: {guia.titulo}'
+        merged_cell.text = f'PRÁCTICA DE LABORATORIO N° {guia.numero_practica}    TÍTULO: {guia.titulo}'
         merged_cell.paragraphs[0].runs[0].font.bold = True
+        merged_cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
         
         doc.add_paragraph()
         
-        # Secciones principales con contenido real
-        # 2. COMPETENCIAS
-        seccion_heading = doc.add_heading('2. COMPETENCIAS', 2)
-        seccion_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        # Sección 2: COMPETENCIAS
+        competencias_heading = doc.add_heading('2. COMPETENCIAS', 2)
         if guia.competencias:
-            doc.add_paragraph(guia.competencias)
+            agregar_html_a_documento(doc, guia.competencias)
         else:
             doc.add_paragraph()
         
-        # 3. CRITERIOS DE DESEMPEÑO
-        seccion_heading = doc.add_heading('3. CRITERIOS DE DESEMPEÑO', 2)
-        seccion_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        # Sección 3: CRITERIOS DE DESEMPEÑO
+        criterios_heading = doc.add_heading('3. CRITERIOS DE DESEMPEÑO', 2)
         if guia.criterios_evaluacion:
-            doc.add_paragraph(guia.criterios_evaluacion)
+            agregar_html_a_documento(doc, guia.criterios_evaluacion)
         else:
             doc.add_paragraph()
         
-        # 4. OBJETIVO DE LA PRÁCTICA
-        seccion_heading = doc.add_heading('4. OBJETIVO DE LA PRÁCTICA DE LABORATORIO', 2)
-        seccion_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        # Sección 4: OBJETIVO DE LA PRÁCTICA
+        objetivo_heading = doc.add_heading('4. OBJETIVO DE LA PRÁCTICA DE LABORATORIO', 2)
         if guia.objetivo_general:
-            doc.add_paragraph(guia.objetivo_general)
+            agregar_html_a_documento(doc, guia.objetivo_general)
         else:
             doc.add_paragraph()
         
-        # 5. MATERIALES, HERRAMIENTAS Y EQUIPOS
-        seccion_heading = doc.add_heading('5. MATERIALES, HERRAMIENTAS Y EQUIPOS', 2)
-        seccion_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
-        crear_tabla_materiales(doc)
-        
-        doc.add_page_break()
-        
-        # ========== PÁGINA DE CONTINUACIÓN ==========
-        crear_encabezado_pagina(doc, "GUÍA DE LABORATORIO")
-        
-        # Continuación de materiales
-        reactivos_title = doc.add_paragraph('DETALLE REACTIVOS:')
-        reactivos_title.runs[0].font.bold = True
-        
-        reactivos_table = doc.add_table(rows=5, cols=2)
-        reactivos_table.style = 'Table Grid'
-        
-        # Encabezado
-        reactivos_table.cell(0, 0).text = ''
-        reactivos_table.cell(0, 1).text = 'CANTIDAD'
-        reactivos_table.cell(0, 1).paragraphs[0].runs[0].font.bold = True
-        reactivos_table.cell(0, 1).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
-        # Herramientas
-        doc.add_paragraph()
-        herramientas_title = doc.add_paragraph('DETALLE HERRAMIENTAS')
-        herramientas_title.runs[0].font.bold = True
-        
-        herramientas_table = doc.add_table(rows=8, cols=2)
-        herramientas_table.style = 'Table Grid'
-        
-        # Encabezado
-        herramientas_table.cell(0, 0).text = ''
-        herramientas_table.cell(0, 1).text = 'CANTIDAD'
-        herramientas_table.cell(0, 1).paragraphs[0].runs[0].font.bold = True
-        herramientas_table.cell(0, 1).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
-        # ========== SECCIONES CON CONTENIDO HTML DE CKEDITOR ==========
-        
-        try:
-            # Crear parser HTML una sola vez para reutilizar
-            html_parser = HtmlToDocx()
-        except Exception as parser_error:
-            html_parser = None
-        
-        # Obtener todos los procedimientos relacionados al contenido analítico de la guía
-        if hasattr(guia, 'contenido_analitico_obj'):
-            contenido_obj = guia.contenido_analitico_obj
-        else:
-            # Intentar obtener el contenido analítico por nombre
-            try:
-                # Buscar por nombre del contenido analítico
-                contenido_obj = ContenidoAnalitico.objects.filter(
-                    nombre=guia.contenido_analitico
-                ).first()
-                
-                # Si no se encuentra por nombre, intentar por descripción
-                if not contenido_obj:
-                    contenido_obj = ContenidoAnalitico.objects.filter(
-                        descripcion__icontains=guia.contenido_analitico
-                    ).first()
-                    
-            except Exception as search_error:
-                contenido_obj = None
-        
-        # 6. FUNDAMENTO TEÓRICO
-        doc.add_paragraph()
-        fundamento_heading = doc.add_heading('6. FUNDAMENTO TEÓRICO', 2)
-        fundamento_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
-        
-        if contenido_obj:
-            # Obtener y agregar FUNDAMENTOS TEÓRICOS
-            fundamentos = FundamentoTeorico.objects.filter(contenido_analitico=contenido_obj).order_by('orden')
-            if fundamentos.exists():
-                for fundamento in fundamentos:
-                    # Contenido HTML del fundamento (sin título adicional)
-                    if fundamento.contenido:
-                        agregar_html_a_documento(doc, fundamento.contenido, html_parser)
-                    # Referencias si existen
-                    if fundamento.referencias:
-                        doc.add_paragraph()
-                        ref_para = doc.add_paragraph()
-                        ref_run = ref_para.add_run('Referencias:')
-                        ref_run.bold = True
-                        agregar_html_a_documento(doc, fundamento.referencias, html_parser)
-            else:
-                doc.add_paragraph()
+        # Sección 5: FUNDAMENTO TEÓRICO
+        fundamento_heading = doc.add_heading('5. FUNDAMENTO TEÓRICO', 2)
+        if guia.fundamento_teorico:
+            agregar_html_a_documento(doc, guia.fundamento_teorico)
         else:
             doc.add_paragraph()
         
-        # 7. PROCEDIMIENTO
-        doc.add_paragraph()
+        # Sección 6: MATERIALES, HERRAMIENTAS Y EQUIPOS
+        materiales_heading = doc.add_heading('6. MATERIALES, HERRAMIENTAS Y EQUIPOS', 2)
+        
+        # Mostrar equipos requeridos
+        if guia.equipos_requeridos.exists():
+            doc.add_paragraph('EQUIPOS:', style='Heading 3')
+            equipos_table = doc.add_table(rows=1, cols=3)
+            equipos_table.style = 'Table Grid'
+            equipos_table.cell(0, 0).text = 'EQUIPO'
+            equipos_table.cell(0, 1).text = 'CANTIDAD'
+            equipos_table.cell(0, 2).text = 'OBSERVACIONES'
+            for i in range(3):
+                equipos_table.cell(0, i).paragraphs[0].runs[0].font.bold = True
+            
+            for equipo in guia.equipos_requeridos.all():
+                row = equipos_table.add_row()
+                row.cells[0].text = str(equipo.equipo_existente)
+                row.cells[1].text = str(equipo.numero_equipos_requeridos) if equipo.numero_equipos_requeridos else '1'
+                row.cells[2].text = ''
+        else:
+            doc.add_paragraph()
+        
+        # Mostrar insumos requeridos
+        if guia.insumos_requeridos.exists():
+            doc.add_paragraph('MATERIALES, HERRAMIENTAS Y REACTIVOS:', style='Heading 3')
+            insumos_table = doc.add_table(rows=1, cols=3)
+            insumos_table.style = 'Table Grid'
+            insumos_table.cell(0, 0).text = 'DESCRIPCIÓN'
+            insumos_table.cell(0, 1).text = 'CANTIDAD'
+            insumos_table.cell(0, 2).text = 'CATEGORÍA'
+            for i in range(3):
+                insumos_table.cell(0, i).paragraphs[0].runs[0].font.bold = True
+            
+            for insumo in guia.insumos_requeridos.all():
+                row = insumos_table.add_row()
+                row.cells[0].text = str(insumo.nombre_elemento)
+                row.cells[1].text = str(insumo.cantidad) if insumo.cantidad else '1'
+                row.cells[2].text = str(insumo.get_categoria_display()) if insumo.categoria else ''
+        else:
+            doc.add_paragraph()
+        
+        # Sección 7: PROCEDIMIENTO
         procedimiento_heading = doc.add_heading('7. PROCEDIMIENTO', 2)
-        procedimiento_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
-        
-        if contenido_obj:
-            # Obtener y agregar PROCEDIMIENTOS
-            procedimientos = Procedimientos.objects.filter(contenido_analitico=contenido_obj).order_by('orden', 'numero_paso')
-            if procedimientos.exists():
-                for proc in procedimientos:
-                    # Paso numerado
-                    paso_titulo = doc.add_paragraph()
-                    paso_run = paso_titulo.add_run(f"Paso {proc.numero_paso}: {proc.titulo_paso}")
-                    paso_run.bold = True
-                    paso_run.font.size = Pt(12)
-                    
-                    # Descripción HTML del procedimiento
-                    if proc.descripcion:
-                        agregar_html_a_documento(doc, proc.descripcion, html_parser)
-                    
-                    # Tiempo estimado si existe
-                    if proc.tiempo_estimado:
-                        doc.add_paragraph()
-                        tiempo_para = doc.add_paragraph()
-                        tiempo_run = tiempo_para.add_run(f"⏱ Tiempo estimado: {proc.tiempo_estimado}")
-                        tiempo_run.italic = True
-                    
-                    # Precauciones si existen
-                    if proc.precauciones:
-                        doc.add_paragraph()
-                        prec_para = doc.add_paragraph()
-                        prec_run = prec_para.add_run('⚠️ Precauciones:')
-                        prec_run.bold = True
-                        agregar_html_a_documento(doc, proc.precauciones, html_parser)
-                    
-                    # Observaciones si existen
-                    if proc.observaciones:
-                        doc.add_paragraph()
-                        obs_para = doc.add_paragraph()
-                        obs_run = obs_para.add_run('📝 Observaciones:')
-                        obs_run.bold = True
-                        agregar_html_a_documento(doc, proc.observaciones, html_parser)
-            else:
-                doc.add_paragraph()
+        if guia.procedimientos:
+            agregar_html_a_documento(doc, guia.procedimientos)
         else:
             doc.add_paragraph()
         
-        # 8. CÁLCULOS Y RESULTADOS
-        doc.add_paragraph()
+        # Sección 8: CÁLCULOS Y RESULTADOS
         calculos_heading = doc.add_heading('8. CÁLCULOS Y RESULTADOS', 2)
-        calculos_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
-        
-        if contenido_obj:
-            calculos = CalculosResultados.objects.filter(contenido_analitico=contenido_obj).order_by('orden')
-            if calculos.exists():
-                for calculo in calculos:
-                    # Fórmula si existe
-                    if calculo.formula:
-                        formula_para = doc.add_paragraph()
-                        formula_run = formula_para.add_run(f"📐 Fórmula: {calculo.formula}")
-                        formula_run.font.name = 'Courier New'
-                        formula_run.bold = True
-                    
-                    # Procedimiento de cálculo (HTML)
-                    if calculo.procedimiento_calculo:
-                        agregar_html_a_documento(doc, calculo.procedimiento_calculo, html_parser)
-                    
-                    # Resultado esperado
-                    if calculo.resultado_esperado:
-                        doc.add_paragraph()
-                        resultado_para = doc.add_paragraph()
-                        resultado_run = resultado_para.add_run(f"✓ Resultado esperado: {calculo.resultado_esperado}")
-                        resultado_run.bold = True
-                    
-                    # Unidades
-                    if calculo.unidades:
-                        unidades_para = doc.add_paragraph(f"Unidades: {calculo.unidades}")
-                    
-                    # Margen de error
-                    if calculo.margen_error:
-                        margen_para = doc.add_paragraph(f"±Margen de error: {calculo.margen_error}")
-                        margen_para.runs[0].italic = True
-            else:
-                doc.add_paragraph()
+        if guia.calculos_resultados:
+            agregar_html_a_documento(doc, guia.calculos_resultados)
         else:
             doc.add_paragraph()
         
-        # 9. CUESTIONARIO
-        doc.add_paragraph()
+        # Sección 9: CUESTIONARIO
         cuestionario_heading = doc.add_heading('9. CUESTIONARIO', 2)
-        cuestionario_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
-        
-        if contenido_obj:
-            # Obtener y agregar CUESTIONARIO
-            preguntas = Cuestionario.objects.filter(contenido_analitico=contenido_obj).order_by('orden', 'numero_pregunta')
-            if preguntas.exists():
-                for pregunta in preguntas:
-                    # Número y pregunta
-                    pregunta_para = doc.add_paragraph()
-                    numero_run = pregunta_para.add_run(f"{pregunta.numero_pregunta}. ")
-                    numero_run.bold = True
-                    
-                    # Pregunta HTML
-                    if pregunta.pregunta:
-                        agregar_html_a_documento(doc, pregunta.pregunta, html_parser)
-                    
-                    # Tipo de pregunta
-                    doc.add_paragraph()
-                    tipo_para = doc.add_paragraph(f"[{pregunta.get_tipo_pregunta_display()}]")
-                    tipo_para.runs[0].italic = True
-                    tipo_para.runs[0].font.size = Pt(9)
-                    
-                    # Respuesta esperada (si existe - para el docente)
-                    if pregunta.respuesta_esperada:
-                        doc.add_paragraph('💡 Respuesta esperada (guía docente):', style='Heading 5')
-                        agregar_html_a_documento(doc, pregunta.respuesta_esperada, html_parser)
-                    
-                    # Puntuación
-                    if pregunta.puntuacion:
-                        puntos_para = doc.add_paragraph(f"Puntuación: {pregunta.puntuacion} pts")
-                        puntos_para.runs[0].font.size = Pt(9)
-                    
-                    doc.add_paragraph()  # Espaciado entre preguntas
-            else:
-                doc.add_paragraph("No se han definido preguntas de cuestionario para esta práctica.")
+        if guia.cuestionario:
+            agregar_html_a_documento(doc, guia.cuestionario)
         else:
             doc.add_paragraph()
-            doc.add_paragraph()
         
-        # Firma al final
+        # Espacio para firma
         doc.add_paragraph()
         doc.add_paragraph()
-        doc.add_paragraph()
+        firma_para = doc.add_paragraph()
+        firma_para.add_run('_' * 60)
+        firma_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
         
-        firma_nombre = doc.add_paragraph(f'{guia.usuario_creador.first_name} {guia.usuario_creador.last_name}'.upper())
-        firma_nombre.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        firma_nombre.runs[0].font.bold = True
-        
-        firma_cargo = doc.add_paragraph(f'DOCENTE DE LABORATORIO DE LA ASIGNATURA ({guia.asignatura.nombre.upper()})')
-        firma_cargo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        firma_texto = doc.add_paragraph(f'DOCENTE DE LABORATORIO DE LA ASIGNATURA {guia.asignatura.get_nombre_display().upper()} (firma)')
+        firma_texto.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for run in firma_texto.runs:
+            run.font.size = Pt(10)
         
         # ========== GUARDAR DOCUMENTO CON VALIDACIÓN ==========
         try:
@@ -1689,44 +1527,19 @@ def detalle_guia_completa(request, guia_id):
 
 # ===== NUEVAS VISTAS PARA PRÁCTICAS DE LABORATORIO =====
 
-def html_to_latex(html_content):
-    """Convierte HTML de CKEditor a LaTeX, escapando caracteres especiales"""
-    if not html_content:
-        return ""
-    
-    # Extraer texto limpio del HTML
-    soup = BeautifulSoup(html_content, 'html.parser')
-    text = soup.get_text()
-    
-    # Escapar caracteres especiales de LaTeX
-    replacements = {
-        '\\': '\\textbackslash{}',
-        '&': '\\&',
-        '%': '\\%',
-        '$': '\\$',
-        '#': '\\#',
-        '_': '\\_',
-        '{': '\\{',
-        '}': '\\}',
-        '~': '\\textasciitilde{}',
-        '^': '\\textasciicircum{}',
-    }
-    
-    for old, new in replacements.items():
-        text = text.replace(old, new)
-    
-    # Convertir saltos de línea dobles en párrafos LaTeX
-    text = text.replace('\n\n', '\n\n\\par ')
-    
-    return text
-
-
 @login_required
 def generar_practica_word(request, practica_id):
-    """Generar PDF con LaTeX de una práctica de laboratorio - VERSIÓN COMPLETA EMI"""
+    """Generar PDF profesional de una práctica usando LaTeX"""
+    
+    from core.models import PracticaLaboratorio, FundamentoTeorico, Procedimientos, CalculosResultados, Cuestionario, Competencia, ObjetivoPractica
+    import os
+    import subprocess
+    import tempfile
+    import shutil
+    from pathlib import Path
     
     try:
-        # Obtener la práctica y modelos relacionados  
+        # Obtener la práctica
         practica = get_object_or_404(PracticaLaboratorio, id=practica_id)
         asignatura = practica.contenido_analitico.unidad_didactica.asignatura
         unidad = practica.contenido_analitico.unidad_didactica
@@ -1738,10 +1551,41 @@ def generar_practica_word(request, practica_id):
         temp_dir = tempfile.mkdtemp()
         tex_file = os.path.join(temp_dir, 'practica.tex')
         
-        # ============================================================
-        # GENERAR CONTENIDO LaTeX COMPLETO
-        # ============================================================
+        # Función para limpiar HTML y convertir a LaTeX
+        def html_to_latex(html_content):
+            """Convierte HTML de CKEditor a LaTeX"""
+            if not html_content:
+                return ""
+            
+            from bs4 import BeautifulSoup
+            import re
+            
+            soup = BeautifulSoup(html_content, 'html.parser')
+            text = soup.get_text()
+            
+            # Escapar caracteres especiales de LaTeX
+            replacements = {
+                '\\': '\\textbackslash{}',
+                '&': '\\&',
+                '%': '\\%',
+                '$': '\\$',
+                '#': '\\#',
+                '_': '\\_',
+                '{': '\\{',
+                '}': '\\}',
+                '~': '\\textasciitilde{}',
+                '^': '\\textasciicircum{}',
+            }
+            
+            for old, new in replacements.items():
+                text = text.replace(old, new)
+            
+            # Convertir saltos de línea
+            text = text.replace('\n\n', '\n\n\\par ')
+            
+            return text
         
+        # Generar contenido LaTeX
         latex_content = r"""\documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
@@ -1781,9 +1625,7 @@ def generar_practica_word(request, practica_id):
 
 \begin{document}
 
-% ============================================================
-% PORTADA Y ENCABEZADO EMI
-% ============================================================
+% Encabezado profesional
 \begin{tcolorbox}[colback=emiazul,colframe=emiazul,arc=0mm,boxrule=0pt]
 \begin{center}
 \color{white}
@@ -1792,313 +1634,179 @@ def generar_practica_word(request, practica_id):
 \end{center}
 \end{tcolorbox}
 
-\begin{tcolorbox}[colback=emidorado,colframe=emidorado,arc=0mm,boxrule=0pt]
-\begin{center}
-\large\textbf{GUÍA DE LABORATORIO}
-\end{center}
+\begin{tcolorbox}[colback=white,colframe=emiazul,arc=0mm,boxrule=1pt]
+\textbf{ASIGNATURA:} """ + (asignatura.nombre if asignatura else 'N/A') + r"""\\
+\textbf{CARRERA:} """ + (asignatura.carrera.nombre if (asignatura and asignatura.carrera) else 'N/A') + r"""\\
+\textbf{SEMESTRE:} """ + str(asignatura.semestre if (asignatura and asignatura.semestre) else 'N/A') + r"""
 \end{tcolorbox}
 
-\begin{tcolorbox}[colback=white,colframe=emiazul,arc=0mm,boxrule=1pt]
-\textbf{ASIGNATURA:} """ + (asignatura.nombre if asignatura else 'N/A') + r"""
+\begin{tcolorbox}[colback=emidorado,colframe=emidorado,arc=0mm,boxrule=0pt]
+\begin{center}
+\large\textbf{PRÁCTICA N° """ + str(practica.orden if practica.orden else 1) + r""": """ + practica.nombre.upper() + r"""}
+\end{center}
 \end{tcolorbox}
 
 \vspace{1cm}
 
-% ============================================================
-% 1. DATOS GENERALES
-% ============================================================
-\section{DATOS GENERALES}
+% 1. DATOS INFORMATIVOS
+\section{Datos Informativos}
 
 \begin{tabular}{|>{\columncolor{emigris}}p{5cm}|p{10cm}|}
 \hline
-\textbf{CARRERA} & """ + (asignatura.carrera.get_nombre_display() if (asignatura and asignatura.carrera) else 'N/A') + r""" \\
+\textbf{Unidad Didáctica} & """ + (unidad.nombre if unidad else 'N/A') + r""" \\
 \hline
-\textbf{SEMESTRE} & """ + str(asignatura.semestre if (asignatura and asignatura.semestre) else 'N/A') + r""" \\
+\textbf{Contenido Analítico} & """ + (contenido.nombre if contenido else 'N/A') + r""" \\
 \hline
-\textbf{ASIGNATURA} & """ + (asignatura.nombre if asignatura else 'N/A') + r""" \\
+\textbf{Duración (Horas)} & """ + (f"{practica.duracion_horas} horas" if practica.duracion_horas else 'N/A') + r""" \\
 \hline
-"""
-        
-        # Determinar qué mostrar como "Contenido Analítico"
-        contenido_analitico_text = contenido.nombre
-        if contenido.descripcion and not contenido.descripcion.startswith("Práctica de laboratorio:"):
-            contenido_analitico_text = contenido.descripcion
-        elif contenido.nombre == practica.nombre or contenido.nombre in ['TITULOOOO', 'titulo', 'Título']:
-            # Si el contenido tiene el mismo nombre que la práctica, mostrar la unidad didáctica
-            contenido_analitico_text = f"{unidad.nombre}" if unidad else contenido.nombre
-        
-        latex_content += r"""\textbf{CONTENIDO ANALÍTICO} & """ + html_to_latex(contenido_analitico_text) + r""" \\
-\hline
-\textbf{UNIDAD DIDÁCTICA} & """ + html_to_latex(unidad.nombre if unidad else 'N/A') + r""" \\
-\hline
-\textbf{DOCENTE} & \rule{8cm}{0.4pt} \\
-\hline
-\textbf{Correo Institucional} & \rule{8cm}{0.4pt} \\
-\hline
-"""
-        
-        # Agregar bibliografía
-        bibliografias = Bibliografia.objects.filter(contenido_analitico=contenido).order_by('orden')
-        biblio_text = ""
-        if bibliografias.exists():
-            biblio_items = [html_to_latex(b.titulo) for b in bibliografias[:3]]
-            biblio_text = ", ".join(biblio_items)
-        else:
-            biblio_text = "N/A"
-        
-        latex_content += r"""\textbf{BIBLIOGRAFÍA DE REFERENCIA} & """ + biblio_text + r""" \\
+\textbf{N° de Estudiantes} & """ + (str(practica.numero_estudiantes) if practica.numero_estudiantes else 'Según capacidad') + r""" \\
 \hline
 \end{tabular}
 
 \vspace{0.5cm}
 
-\begin{tcolorbox}[colback=emidorado,colframe=emiazul,arc=0mm,boxrule=1pt]
-\begin{center}
-\large\textbf{PRÁCTICA DE LABORATORIO N° """ + str(practica.orden if practica.orden else 1) + r"""}\\[0.3cm]
-\Large\textbf{TÍTULO: """ + html_to_latex(practica.nombre.upper()) + r"""}
-\end{center}
-\end{tcolorbox}
-
-\vspace{0.5cm}
+% 2. COMPETENCIAS
+\section{Competencias}
 
 """
         
-        # ============================================================
-        # 2. COMPETENCIAS
-        # ============================================================
-        latex_content += r"""\section{COMPETENCIAS}
-
-"""
-        
-        competencias = Competencias.objects.filter(contenido_analitico=contenido).order_by('orden')
+        # Obtener competencias del contenido analítico
+        competencias = Competencia.objects.filter(contenido_analitico=contenido).order_by('orden')
         if competencias.exists():
             latex_content += r"\begin{itemize}[leftmargin=*]" + "\n"
             for comp in competencias:
-                tipo_comp = comp.get_tipo_competencia_display() if hasattr(comp, 'tipo_competencia') else "Competencia"
-                latex_content += f"\\item \\textbf{{{tipo_comp}}}: {html_to_latex(comp.descripcion)}\n"
+                latex_content += f"\\item \\textbf{{{comp.get_tipo_competencia_display()}}}: {html_to_latex(comp.descripcion)}\n"
             latex_content += r"\end{itemize}" + "\n\n"
         else:
-            latex_content += "No hay competencias definidas para esta práctica.\n\n"
+            latex_content += "No hay competencias definidas.\n\n"
         
-        # ============================================================
-        # 3. CRITERIOS DE DESEMPEÑO
-        # ============================================================
-        latex_content += r"""\section{CRITERIOS DE DESEMPEÑO}
-
-"""
+        # 3. CRITERIOS DE DESEMPEÑO (Objetivos de tipo desempeño)
+        latex_content += r"\section{Criterios de Desempeño}" + "\n\n"
+        objetivos_desempeno = ObjetivoPractica.objects.filter(
+            contenido_analitico=contenido, 
+            tipo_objetivo='desempeno'
+        ).order_by('orden')
         
-        # Mostrar TODOS los objetivos como criterios de desempeño
-        criterios = ObjetivoPractica.objects.filter(contenido_analitico=contenido).order_by('orden')
-        
-        if criterios.exists():
+        if objetivos_desempeno.exists():
             latex_content += r"\begin{enumerate}[leftmargin=*]" + "\n"
-            for criterio in criterios:
-                latex_content += f"\\item {html_to_latex(criterio.descripcion)}\n"
+            for obj in objetivos_desempeno:
+                latex_content += f"\\item {html_to_latex(obj.descripcion)}\n"
             latex_content += r"\end{enumerate}" + "\n\n"
         else:
             latex_content += "No hay criterios de desempeño definidos.\n\n"
         
-        # ============================================================
-        # 4. OBJETIVO DE LA PRÁCTICA DE LABORATORIO
-        # ============================================================
-        latex_content += r"""\section{OBJETIVO DE LA PRÁCTICA DE LABORATORIO}
-
-"""
+        # 4. OBJETIVOS DE LA PRÁCTICA
+        latex_content += r"\section{Objetivos de la Práctica}" + "\n\n"
+        objetivos_practica = ObjetivoPractica.objects.filter(contenido_analitico=contenido).order_by('orden')
         
-        objetivos = ObjetivoPractica.objects.filter(contenido_analitico=contenido).order_by('orden')
-        
-        if objetivos.exists():
+        if objetivos_practica.exists():
             latex_content += r"\begin{itemize}[leftmargin=*]" + "\n"
-            for obj in objetivos:
-                tipo_display = obj.get_tipo_objetivo_display() if hasattr(obj, 'tipo_objetivo') else ""
-                if tipo_display:
-                    latex_content += f"\\item \\textbf{{{tipo_display}}}: {html_to_latex(obj.descripcion)}\n"
-                else:
-                    latex_content += f"\\item {html_to_latex(obj.descripcion)}\n"
+            for obj in objetivos_practica:
+                latex_content += f"\\item \\textbf{{{obj.get_tipo_objetivo_display()}}}: {html_to_latex(obj.descripcion)}\n"
             latex_content += r"\end{itemize}" + "\n\n"
         else:
             latex_content += "No hay objetivos definidos.\n\n"
         
-        # ============================================================
         # 5. FUNDAMENTO TEÓRICO
-        # ============================================================
-        latex_content += r"""\section{FUNDAMENTO TEÓRICO}
-
-"""
-        
+        latex_content += r"\section{Fundamento Teórico}" + "\n\n"
         fundamentos = FundamentoTeorico.objects.filter(contenido_analitico=contenido).order_by('orden')
         
         if fundamentos.exists():
             for fund in fundamentos:
-                if fund.titulo:
-                    latex_content += f"\\subsection{{{html_to_latex(fund.titulo)}}}\n\n"
-                latex_content += html_to_latex(fund.contenido) + "\n\n"
+                latex_content += f"\\subsection{{{fund.titulo}}}\n\n"
+                if fund.contenido:
+                    latex_content += html_to_latex(fund.contenido) + "\n\n"
+                if fund.referencias:
+                    latex_content += "\\textbf{Referencias:} " + html_to_latex(fund.referencias) + "\n\n"
         else:
-            latex_content += "No hay fundamento teórico definido.\n\n"
+            latex_content += "No hay fundamentos teóricos definidos.\n\n"
         
-        # ============================================================
-        # 6. MATERIALES, HERRAMIENTAS Y EQUIPOS
-        # ============================================================
-        latex_content += r"""\section{MATERIALES, HERRAMIENTAS Y EQUIPOS}
-
-"""
+        # 6. MATERIALES, EQUIPOS Y HERRAMIENTAS
+        latex_content += r"\section{Materiales, Equipos y Herramientas}" + "\n\n"
+        materiales_equipos = contenido.materiales_herramientas_equipos.all() if hasattr(contenido, 'materiales_herramientas_equipos') else []
         
-        # Obtener todos los elementos agrupados por tipo
-        equipos = MaterialesHerramientasEquipos.objects.filter(
-            contenido_analitico=contenido, 
-            tipo_elemento='equipo'
-        ).order_by('orden')
-        
-        materiales = MaterialesHerramientasEquipos.objects.filter(
-            contenido_analitico=contenido, 
-            tipo_elemento='material'
-        ).order_by('orden')
-        
-        herramientas = MaterialesHerramientasEquipos.objects.filter(
-            contenido_analitico=contenido, 
-            tipo_elemento='herramienta'
-        ).order_by('orden')
-        
-        reactivos = MaterialesHerramientasEquipos.objects.filter(
-            contenido_analitico=contenido, 
-            tipo_elemento='reactivo'
-        ).order_by('orden')
-        
-        # 6.1 Equipos
-        if equipos.exists():
-            latex_content += r"""\subsection{Equipos}
-
-\begin{longtable}{|p{10cm}|p{3cm}|}
+        if materiales_equipos:
+            latex_content += r"""\begin{longtable}{|c|p{10cm}|c|}
 \hline
-\textbf{Equipo} & \textbf{Cantidad} \\
+\rowcolor{emiazul}
+\textcolor{white}{\textbf{N°}} & \textcolor{white}{\textbf{Descripción}} & \textcolor{white}{\textbf{Cantidad}} \\
 \hline
+\endfirsthead
+\hline
+\rowcolor{emiazul}
+\textcolor{white}{\textbf{N°}} & \textcolor{white}{\textbf{Descripción}} & \textcolor{white}{\textbf{Cantidad}} \\
+\hline
+\endhead
 """
-            for equipo in equipos:
-                latex_content += f"{html_to_latex(equipo.nombre)} & {equipo.cantidad if equipo.cantidad else '1'} \\\\\n\\hline\n"
+            for idx, item in enumerate(materiales_equipos, 1):
+                nombre = html_to_latex(item.nombre if hasattr(item, 'nombre') else str(item))
+                cantidad = str(item.cantidad) if hasattr(item, 'cantidad') else "1"
+                if idx % 2 == 0:
+                    latex_content += f"\\rowcolor{{emigris}}\n"
+                latex_content += f"{idx} & {nombre} & {cantidad} \\\\\n\\hline\n"
             
-            latex_content += r"""\end{longtable}
-
-"""
+            latex_content += r"\end{longtable}" + "\n\n"
+        else:
+            latex_content += "No hay materiales/equipos definidos.\n\n"
         
-        # 6.2 Materiales
-        if materiales.exists():
-            latex_content += r"""\subsection{Materiales}
-
-\begin{longtable}{|p{10cm}|p{3cm}|}
-\hline
-\textbf{Material} & \textbf{Cantidad} \\
-\hline
-"""
-            for material in materiales:
-                latex_content += f"{html_to_latex(material.nombre)} & {material.cantidad if material.cantidad else '1'} \\\\\n\\hline\n"
-            
-            latex_content += r"""\end{longtable}
-
-"""
-        
-        # 6.3 Herramientas
-        if herramientas.exists():
-            latex_content += r"""\subsection{Herramientas}
-
-\begin{longtable}{|p{10cm}|p{3cm}|}
-\hline
-\textbf{Herramienta} & \textbf{Cantidad} \\
-\hline
-"""
-            for herramienta in herramientas:
-                latex_content += f"{html_to_latex(herramienta.nombre)} & {herramienta.cantidad if herramienta.cantidad else '1'} \\\\\n\\hline\n"
-            
-            latex_content += r"""\end{longtable}
-
-"""
-        
-        # 6.4 Reactivos
-        if reactivos.exists():
-            latex_content += r"""\subsection{Reactivos}
-
-\begin{longtable}{|p{10cm}|p{3cm}|}
-\hline
-\textbf{Reactivo} & \textbf{Cantidad} \\
-\hline
-"""
-            for reactivo in reactivos:
-                latex_content += f"{html_to_latex(reactivo.nombre)} & {reactivo.cantidad if reactivo.cantidad else '1'} \\\\\n\\hline\n"
-            
-            latex_content += r"""\end{longtable}
-
-"""
-        
-        if not (equipos.exists() or materiales.exists() or herramientas.exists() or reactivos.exists()):
-            latex_content += "No hay materiales, equipos ni herramientas definidos.\n\n"
-        
-        # ============================================================
         # 7. PROCEDIMIENTO
-        # ============================================================
-        latex_content += r"""\section{PROCEDIMIENTO}
-
-"""
-        
-        procedimientos = Procedimientos.objects.filter(contenido_analitico=contenido).order_by('numero_paso', 'orden')
+        latex_content += r"\section{Procedimiento}" + "\n\n"
+        procedimientos = Procedimientos.objects.filter(contenido_analitico=contenido).order_by('orden', 'numero_paso')
         
         if procedimientos.exists():
-            latex_content += r"\begin{enumerate}[leftmargin=*]" + "\n"
             for proc in procedimientos:
-                if proc.titulo_paso:
-                    latex_content += f"\\item \\textbf{{{html_to_latex(proc.titulo_paso)}}}\n\n"
-                latex_content += f"{html_to_latex(proc.descripcion)}\n\n"
-            latex_content += r"\end{enumerate}" + "\n\n"
+                latex_content += f"\\subsection{{Paso {proc.numero_paso}: {html_to_latex(proc.titulo_paso)}}}\n\n"
+                if proc.descripcion:
+                    latex_content += html_to_latex(proc.descripcion) + "\n\n"
+                if proc.tiempo_estimado:
+                    latex_content += f"\\textit{{Tiempo estimado: {html_to_latex(proc.tiempo_estimado)}}}\n\n"
+                if proc.precauciones:
+                    latex_content += "\\textbf{⚠️ Precauciones:} " + html_to_latex(proc.precauciones) + "\n\n"
+                if proc.observaciones:
+                    latex_content += "\\textbf{Observaciones:} " + html_to_latex(proc.observaciones) + "\n\n"
         else:
-            latex_content += "No hay procedimiento definido.\n\n"
+            latex_content += "No hay procedimientos definidos.\n\n"
         
-        # ============================================================
         # 8. CÁLCULOS Y RESULTADOS
-        # ============================================================
-        latex_content += r"""\section{CÁLCULOS Y RESULTADOS}
-
-"""
-        
+        latex_content += r"\section{Cálculos y Resultados}" + "\n\n"
         calculos = CalculosResultados.objects.filter(contenido_analitico=contenido).order_by('orden')
         
         if calculos.exists():
             for calc in calculos:
-                if calc.titulo:
-                    latex_content += f"\\subsection{{{html_to_latex(calc.titulo)}}}\n\n"
-                
+                latex_content += f"\\subsection{{{html_to_latex(calc.titulo)}}}\n\n"
                 if calc.formula:
-                    latex_content += f"\\textbf{{Fórmula:}} {html_to_latex(calc.formula)}\n\n"
-                
+                    latex_content += f"\\textbf{{Fórmula:}} \\texttt{{{html_to_latex(calc.formula)}}}\n\n"
                 if calc.procedimiento_calculo:
                     latex_content += html_to_latex(calc.procedimiento_calculo) + "\n\n"
+                if calc.resultado_esperado:
+                    latex_content += f"\\textbf{{Resultado esperado:}} {html_to_latex(calc.resultado_esperado)}\n\n"
+                if calc.unidades:
+                    latex_content += f"\\textit{{Unidades: {html_to_latex(calc.unidades)}}}\n\n"
+                if calc.margen_error:
+                    latex_content += f"\\textit{{Margen de error: {html_to_latex(calc.margen_error)}}}\n\n"
         else:
-            latex_content += "No hay cálculos y resultados definidos.\n\n"
+            latex_content += "No hay cálculos definidos.\n\n"
         
-        # ============================================================
         # 9. CUESTIONARIO
-        # ============================================================
-        latex_content += r"""\section{CUESTIONARIO}
-
-"""
+        latex_content += r"\section{Cuestionario}" + "\n\n"
+        cuestionarios = Cuestionario.objects.filter(contenido_analitico=contenido).order_by('orden', 'numero_pregunta')
         
-        cuestionario = Cuestionario.objects.filter(contenido_analitico=contenido).order_by('numero_pregunta', 'orden')
-        
-        if cuestionario.exists():
+        if cuestionarios.exists():
             latex_content += r"\begin{enumerate}[leftmargin=*]" + "\n"
-            for pregunta in cuestionario:
-                latex_content += f"\\item {html_to_latex(pregunta.pregunta)}\n\n"
+            for cuest in cuestionarios:
+                latex_content += f"\\item {html_to_latex(cuest.pregunta)} "
+                latex_content += f"\\textit{{[{cuest.get_tipo_pregunta_display()}]"
+                if cuest.puntuacion:
+                    latex_content += f" - {cuest.puntuacion} pts"
+                latex_content += "}\n\n"
+                
+                if cuest.respuesta_esperada:
+                    latex_content += f"\\textcolor{{gray}}{{\\small\\textbf{{Respuesta esperada:}} {html_to_latex(cuest.respuesta_esperada)}}}\n\n"
             latex_content += r"\end{enumerate}" + "\n\n"
         else:
             latex_content += "No hay cuestionario definido.\n\n"
         
-        # ============================================================
-        # FIRMA DEL DOCENTE
-        # ============================================================
-        latex_content += r"""
-\vspace{2cm}
-
-\noindent\rule{10cm}{0.4pt}\\
-\textbf{DOCENTE DE LABORATORIO DE LA ASIGNATURA """ + (asignatura.nombre if asignatura else 'N/A') + r"""} (firma)
-
-\end{document}"""
+        latex_content += r"\end{document}"
         
         # Escribir archivo .tex
         with open(tex_file, 'w', encoding='utf-8') as f:
@@ -2107,36 +1815,598 @@ def generar_practica_word(request, practica_id):
         print(f"✅ Archivo LaTeX generado: {tex_file}")
         
         # Compilar con pdflatex
-        result = subprocess.run(
-            ['pdflatex', '-interaction=nonstopmode', '-output-directory', temp_dir, tex_file],
-            capture_output=True,
-            text=True,
-            timeout=30
+        try:
+            result = subprocess.run(
+                ['pdflatex', '-interaction=nonstopmode', '-output-directory', temp_dir, tex_file],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            # Segunda compilación para referencias
+            subprocess.run(
+                ['pdflatex', '-interaction=nonstopmode', '-output-directory', temp_dir, tex_file],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            pdf_file = os.path.join(temp_dir, 'practica.pdf')
+            
+            if os.path.exists(pdf_file):
+                print(f"✅ PDF generado: {pdf_file}")
+                
+                # Leer PDF
+                with open(pdf_file, 'rb') as f:
+                    pdf_content = f.read()
+                
+                # Limpiar directorio temporal
+                shutil.rmtree(temp_dir)
+                
+                # Crear respuesta HTTP
+                response = HttpResponse(pdf_content, content_type='application/pdf')
+                
+                # Nombre de archivo
+                import re
+                titulo_limpio = re.sub(r'[^\w\s-]', '', practica.nombre)
+                titulo_limpio = re.sub(r'[-\s]+', '_', titulo_limpio)
+                filename = f"Guia_Lab_{titulo_limpio[:40]}.pdf"
+                
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                response['Content-Length'] = len(pdf_content)
+                
+                print(f"✅ PDF enviado: {len(pdf_content)} bytes")
+                return response
+            else:
+                print(f"❌ Error: PDF no generado")
+                print(f"Log: {result.stdout}")
+                print(f"Errores: {result.stderr}")
+                
+                # Limpiar
+                shutil.rmtree(temp_dir)
+                return JsonResponse({
+                    'error': 'Error al compilar LaTeX',
+                    'log': result.stderr
+                }, status=500)
+                
+        except subprocess.TimeoutExpired:
+            shutil.rmtree(temp_dir)
+            return JsonResponse({'error': 'Timeout al compilar LaTeX'}, status=500)
+        except FileNotFoundError:
+            shutil.rmtree(temp_dir)
+            return JsonResponse({
+                'error': 'pdflatex no está instalado. Instala: brew install basictex'
+            }, status=500)
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def generar_practica_pdf(request, practica_id):
+    """Alias para generar_practica_word que ahora genera PDF con LaTeX"""
+    return generar_practica_word(request, practica_id)
+
+
+@login_required
+def detalle_practica_completa(request, practica_id):
+    """Vista de detalle completa de una práctica de laboratorio"""
+    
+    from core.models import PracticaLaboratorio
+    
+    practica = get_object_or_404(PracticaLaboratorio, id=practica_id)
+    asignatura = practica.contenido_analitico.unidad_didactica.asignatura
+    unidad = practica.contenido_analitico.unidad_didactica
+    contenido = practica.contenido_analitico
+    
+    context = {
+            section.top_margin = Inches(0.75)
+            section.bottom_margin = Inches(0.75)
+            section.left_margin = Inches(1.0)
+            section.right_margin = Inches(1.0)
+        
+        # === 1. ENCABEZADO MEJORADO ===
+        header_table = doc.add_table(rows=4, cols=3)
+        header_table.style = 'Table Grid'
+        
+        # Aplicar bordes y sombreado al encabezado
+        def set_cell_background(cell, fill):
+            """Aplica color de fondo a una celda"""
+            shading_elm = OxmlElement('w:shd')
+            shading_elm.set(qn('w:fill'), fill)
+            cell._element.get_or_add_tcPr().append(shading_elm)
+        
+        # Fila 1: Logo EMI (fusionar todas las columnas)
+        row1_cells = header_table.rows[0].cells
+        row1_cells[0].merge(row1_cells[1]).merge(row1_cells[2])
+        set_cell_background(row1_cells[0], '002E5D')  # Azul EMI
+        p_logo = row1_cells[0].paragraphs[0]
+        p_logo.text = "ESCUELA MILITAR DE INGENIERÍA"
+        p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_logo.runs[0].font.size = Pt(14)
+        p_logo.runs[0].font.bold = True
+        p_logo.runs[0].font.color.rgb = RGBColor(255, 255, 255)
+        
+        # Agregar subtítulo EMI
+        p_subtitulo = row1_cells[0].add_paragraph()
+        p_subtitulo.text = '"Mcal. Antonio José de Sucre"'
+        p_subtitulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_subtitulo.runs[0].font.size = Pt(10)
+        p_subtitulo.runs[0].font.italic = True
+        p_subtitulo.runs[0].font.color.rgb = RGBColor(255, 255, 255)
+        
+        # Fila 2: Datos de la asignatura
+        row2_cells = header_table.rows[1].cells
+        set_cell_background(row2_cells[0], 'E8E8E8')
+        row2_cells[0].paragraphs[0].text = "ASIGNATURA:"
+        row2_cells[0].paragraphs[0].runs[0].font.bold = True
+        row2_cells[0].paragraphs[0].runs[0].font.size = Pt(9)
+        
+        row2_cells[1].merge(row2_cells[2])
+        row2_cells[1].paragraphs[0].text = asignatura.nombre if asignatura else 'N/A'
+        row2_cells[1].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        # Fila 3: Carrera y Semestre
+        row3_cells = header_table.rows[2].cells
+        set_cell_background(row3_cells[0], 'E8E8E8')
+        row3_cells[0].paragraphs[0].text = "CARRERA:"
+        row3_cells[0].paragraphs[0].runs[0].font.bold = True
+        row3_cells[0].paragraphs[0].runs[0].font.size = Pt(9)
+        
+        row3_cells[1].paragraphs[0].text = asignatura.carrera.nombre if (asignatura and asignatura.carrera) else 'N/A'
+        row3_cells[1].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        set_cell_background(row3_cells[2], 'E8E8E8')
+        p_sem = row3_cells[2].paragraphs[0]
+        p_sem.text = f"SEMESTRE: {asignatura.semestre if (asignatura and asignatura.semestre) else 'N/A'}"
+        p_sem.runs[0].font.bold = True
+        p_sem.runs[0].font.size = Pt(9)
+        p_sem.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        # Fila 4: Título de la práctica
+        row4_cells = header_table.rows[3].cells
+        row4_cells[0].merge(row4_cells[1]).merge(row4_cells[2])
+        set_cell_background(row4_cells[0], 'FFD700')  # Dorado
+        p_titulo = row4_cells[0].paragraphs[0]
+        p_titulo.text = f"PRÁCTICA N° {practica.orden if practica.orden else 1}: {practica.nombre.upper()}"
+        p_titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_titulo.runs[0].font.size = Pt(12)
+        p_titulo.runs[0].font.bold = True
+        p_titulo.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        
+        doc.add_paragraph()
+        
+        # Función auxiliar para crear títulos de sección
+        def agregar_titulo_seccion(doc, numero, texto, color_rgb=(0, 46, 93)):
+            """Agrega un título de sección profesional"""
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(12)
+            p.paragraph_format.space_after = Pt(6)
+            
+            # Número de sección
+            run_num = p.add_run(f"{numero}. ")
+            run_num.font.size = Pt(14)
+            run_num.font.bold = True
+            run_num.font.color.rgb = RGBColor(*color_rgb)
+            
+            # Texto de sección
+            run_texto = p.add_run(texto.upper())
+            run_texto.font.size = Pt(14)
+            run_texto.font.bold = True
+            run_texto.font.color.rgb = RGBColor(*color_rgb)
+            
+            # Línea separadora
+            p_line = doc.add_paragraph()
+            p_line.paragraph_format.space_after = Pt(6)
+            run_line = p_line.add_run("_" * 80)
+            run_line.font.color.rgb = RGBColor(*color_rgb)
+            
+            return p
+        
+        # === FUNCIÓN AUXILIAR PARA AGREGAR HTML (DEBE ESTAR ANTES DE USARLA) ===
+        def agregar_html_al_documento(documento, html_content):
+            """Agrega contenido HTML al documento con soporte de imágenes"""
+            if not html_content:
+                return
+            
+            try:
+                from bs4 import BeautifulSoup
+                import base64
+                import io
+                from docx.shared import Inches
+                import re
+                
+                # Limpiar HTML
+                html_limpio = limpiar_html_para_word(html_content)
+                soup = BeautifulSoup(html_limpio, 'html.parser')
+                
+                # Buscar imágenes
+                imagenes = soup.find_all('img')
+                image_data_map = {}
+                
+                for idx, img in enumerate(imagenes):
+                    src = img.get('src', '')
+                    if src.startswith('data:image'):
+                        try:
+                            if ',' in src:
+                                header, encoded = src.split(',', 1)
+                            else:
+                                continue
+                            
+                            image_bytes = base64.b64decode(encoded)
+                            
+                            if len(image_bytes) > 10 * 1024 * 1024:
+                                continue
+                            
+                            # Determinar ancho
+                            width_inches = 4
+                            width_str = img.get('width', img.get('style', ''))
+                            
+                            try:
+                                if 'width:' in str(width_str):
+                                    match = re.search(r'width:\s*(\d+)', str(width_str))
+                                    if match:
+                                        width_pixels = int(match.group(1))
+                                        width_inches = max(1, min(6, width_pixels / 96.0))
+                                elif str(width_str).replace('px', '').isdigit():
+                                    width_pixels = int(str(width_str).replace('px', ''))
+                                    width_inches = max(1, min(6, width_pixels / 96.0))
+                            except:
+                                pass
+                            
+                            # Crear marcador
+                            marker = f"___IMG_{idx}___"
+                            image_data_map[marker] = {
+                                'bytes': image_bytes,
+                                'width': width_inches
+                            }
+                            
+                            # Reemplazar imagen con marcador
+                            new_p = soup.new_tag('p')
+                            new_p.string = marker
+                            img.replace_with(new_p)
+                            
+                        except Exception as e:
+                            print(f"⚠️ Error procesando imagen: {e}")
+                            continue
+                
+                # Procesar HTML con htmldocx
+                html_con_marcadores = str(soup)
+                
+                try:
+                    from htmldocx import HtmlToDocx
+                    html_parser = HtmlToDocx()
+                    
+                    # Crear documento temporal
+                    temp_doc = Document()
+                    html_parser.add_html_to_document(html_con_marcadores, temp_doc)
+                    
+                    # Copiar párrafos al documento principal
+                    for para in temp_doc.paragraphs:
+                        texto = para.text
+                        
+                        # Verificar si contiene marcador de imagen
+                        marcador_encontrado = None
+                        for marker in image_data_map.keys():
+                            if marker in texto:
+                                marcador_encontrado = marker
+                                break
+                        
+                        if marcador_encontrado:
+                            # Insertar imagen
+                            new_p = documento.add_paragraph()
+                            img_data = image_data_map[marcador_encontrado]
+                            run = new_p.add_run()
+                            image_stream = io.BytesIO(img_data['bytes'])
+                            run.add_picture(image_stream, width=Inches(img_data['width']))
+                        else:
+                            # Copiar párrafo normal
+                            new_p = documento.add_paragraph()
+                            new_p.alignment = para.alignment
+                            
+                            for run in para.runs:
+                                new_run = new_p.add_run(run.text)
+                                new_run.bold = run.bold
+                                new_run.italic = run.italic
+                                new_run.underline = run.underline
+                    
+                except Exception as e:
+                    print(f"⚠️ Error procesando HTML: {e}")
+                    # Fallback: texto plano
+                    documento.add_paragraph(soup.get_text())
+                    
+            except Exception as e:
+                print(f"⚠️ Error general en agregar_html_al_documento: {e}")
+        
+        # === 2. DATOS INFORMATIVOS ===
+        agregar_titulo_seccion(doc, 1, "Datos Informativos")
+        
+        datos_info = {
+            "Unidad Didáctica": unidad.nombre if unidad else "N/A",
+            "Contenido Analítico": contenido.nombre if contenido else "N/A",
+            "Duración (Horas)": f"{practica.duracion_horas} horas" if practica.duracion_horas else "N/A",
+            "N° de Estudiantes": str(practica.numero_estudiantes) if practica.numero_estudiantes else "Según capacidad",
+        }
+        
+        info_table = doc.add_table(rows=len(datos_info), cols=2)
+        info_table.style = 'Light Grid Accent 1'
+        for idx, (key, value) in enumerate(datos_info.items()):
+            row_cells = info_table.rows[idx].cells
+            set_cell_background(row_cells[0], 'D9E2F3')
+            row_cells[0].text = key
+            row_cells[0].paragraphs[0].runs[0].font.bold = True
+            row_cells[0].paragraphs[0].runs[0].font.size = Pt(10)
+            row_cells[1].text = value
+            row_cells[1].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        doc.add_paragraph()
+        
+        # === 3. COMPETENCIAS ===
+        agregar_titulo_seccion(doc, 2, "Competencias")
+        
+        competencias = contenido.competencias.all() if hasattr(contenido, 'competencias') else []
+        if competencias:
+            comp_text = '\n'.join([f"• {comp.descripcion}" for comp in competencias])
+            doc.add_paragraph(comp_text)
+        else:
+            doc.add_paragraph("No hay competencias definidas.")
+        
+        doc.add_paragraph()
+        
+        # === 4. CRITERIOS DE DESEMPEÑO ===
+        agregar_titulo_seccion(doc, 3, "Criterios de Desempeño")
+        
+        objetivos = contenido.objetivos_practica.all() if hasattr(contenido, 'objetivos_practica') else []
+        if objetivos:
+            obj_text = '\n'.join([f"{i+1}. {obj.descripcion}" for i, obj in enumerate(objetivos)])
+            doc.add_paragraph(obj_text)
+        else:
+            doc.add_paragraph("No hay criterios definidos.")
+        
+        doc.add_paragraph()
+        
+        # === 5. OBJETIVOS ===
+        agregar_titulo_seccion(doc, 4, "Objetivos de la Práctica")
+        
+        if objetivos:
+            obj_text = '\n'.join([f"• {obj.descripcion}" for obj in objetivos])
+            doc.add_paragraph(obj_text)
+        else:
+            doc.add_paragraph("No hay objetivos definidos.")
+        
+        doc.add_paragraph()
+        
+        # === 6. FUNDAMENTO TEÓRICO ===
+        agregar_titulo_seccion(doc, 5, "Fundamento Teórico")
+        
+        fundamentos = FundamentoTeorico.objects.filter(contenido_analitico=contenido).order_by('orden')
+        if fundamentos.exists():
+            for fund in fundamentos:
+                # Título del fundamento
+                p_titulo_fund = doc.add_paragraph()
+                run_titulo_fund = p_titulo_fund.add_run(fund.titulo)
+                run_titulo_fund.font.bold = True
+                run_titulo_fund.font.size = Pt(11)
+                
+                # Contenido HTML
+                if fund.contenido:
+                    agregar_html_al_documento(doc, fund.contenido)
+                
+                # Referencias
+                if fund.referencias:
+                    p_ref = doc.add_paragraph()
+                    run_ref = p_ref.add_run("Referencias:")
+                    run_ref.font.bold = True
+                    agregar_html_al_documento(doc, fund.referencias)
+        else:
+            doc.add_paragraph("No hay fundamentos teóricos definidos.")
+        
+        doc.add_paragraph()
+        
+        # === 7. MATERIALES, EQUIPOS Y HERRAMIENTAS ===
+        agregar_titulo_seccion(doc, 6, "Materiales, Equipos y Herramientas")
+        
+        materiales_equipos = contenido.materiales_herramientas_equipos.all() if hasattr(contenido, 'materiales_herramientas_equipos') else []
+        
+        if materiales_equipos:
+            mat_table = doc.add_table(rows=len(materiales_equipos) + 1, cols=3)
+            mat_table.style = 'Light Grid Accent 1'
+            
+            # Encabezado
+            header_cells = mat_table.rows[0].cells
+            for cell in header_cells:
+                set_cell_background(cell, '002E5D')
+            
+            header_cells[0].text = "N°"
+            header_cells[1].text = "Descripción"
+            header_cells[2].text = "Cantidad"
+            
+            for cell in header_cells:
+                cell.paragraphs[0].runs[0].font.bold = True
+                cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
+                cell.paragraphs[0].runs[0].font.size = Pt(10)
+                cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+            
+            # Datos
+            for idx, item in enumerate(materiales_equipos, 1):
+                row_cells = mat_table.rows[idx].cells
+                if idx % 2 == 0:
+                    for cell in row_cells:
+                        set_cell_background(cell, 'F2F2F2')
+                
+                row_cells[0].text = str(idx)
+                row_cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+                row_cells[0].paragraphs[0].runs[0].font.size = Pt(10)
+                
+                row_cells[1].text = item.nombre if hasattr(item, 'nombre') else str(item)
+                row_cells[1].paragraphs[0].runs[0].font.size = Pt(10)
+                
+                row_cells[2].text = str(item.cantidad) if hasattr(item, 'cantidad') else "1"
+                row_cells[2].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+                row_cells[2].paragraphs[0].runs[0].font.size = Pt(10)
+        else:
+            doc.add_paragraph("No hay materiales/equipos definidos.")
+        
+        doc.add_paragraph()
+        
+        # === 8. PROCEDIMIENTO ===
+        agregar_titulo_seccion(doc, 7, "Procedimiento")
+        
+        procedimientos = Procedimientos.objects.filter(contenido_analitico=contenido).order_by('orden', 'numero_paso')
+        if procedimientos.exists():
+            for proc in procedimientos:
+                # Título del paso
+                p_titulo_proc = doc.add_paragraph()
+                run_titulo_proc = p_titulo_proc.add_run(f"Paso {proc.numero_paso}: {proc.titulo_paso}")
+                run_titulo_proc.font.bold = True
+                run_titulo_proc.font.size = Pt(11)
+                
+                # Descripción
+                if proc.descripcion:
+                    agregar_html_al_documento(doc, proc.descripcion)
+                
+                # Tiempo estimado
+                if proc.tiempo_estimado:
+                    p_tiempo = doc.add_paragraph()
+                    run_tiempo = p_tiempo.add_run(f"⏱ Tiempo estimado: {proc.tiempo_estimado}")
+                    run_tiempo.italic = True
+                    run_tiempo.font.size = Pt(10)
+                
+                # Precauciones
+                if proc.precauciones:
+                    p_prec = doc.add_paragraph()
+                    run_prec = p_prec.add_run("⚠️ Precauciones:")
+                    run_prec.font.bold = True
+                    run_prec.font.size = Pt(10)
+                    agregar_html_al_documento(doc, proc.precauciones)
+                
+                # Observaciones
+                if proc.observaciones:
+                    p_obs = doc.add_paragraph()
+                    run_obs = p_obs.add_run("📝 Observaciones:")
+                    run_obs.font.bold = True
+                    run_obs.font.size = Pt(10)
+                    agregar_html_al_documento(doc, proc.observaciones)
+        else:
+            doc.add_paragraph("No hay procedimientos definidos.")
+        
+        doc.add_paragraph()
+        
+        # === 9. CÁLCULOS Y RESULTADOS ===
+        agregar_titulo_seccion(doc, 8, "Cálculos y Resultados")
+        
+        calculos = CalculosResultados.objects.filter(contenido_analitico=contenido).order_by('orden')
+        if calculos.exists():
+            for calc in calculos:
+                # Título
+                p_titulo_calc = doc.add_paragraph()
+                run_titulo_calc = p_titulo_calc.add_run(calc.titulo)
+                run_titulo_calc.font.bold = True
+                run_titulo_calc.font.size = Pt(11)
+                
+                # Fórmula
+                if calc.formula:
+                    p_formula = doc.add_paragraph()
+                    run_formula = p_formula.add_run(f"📐 Fórmula: {calc.formula}")
+                    run_formula.font.name = 'Courier New'
+                    run_formula.font.size = Pt(10)
+                
+                # Procedimiento de cálculo
+                if calc.procedimiento_calculo:
+                    agregar_html_al_documento(doc, calc.procedimiento_calculo)
+                
+                # Resultado esperado
+                if calc.resultado_esperado:
+                    p_resultado = doc.add_paragraph()
+                    run_resultado = p_resultado.add_run(f"✓ Resultado esperado: {calc.resultado_esperado}")
+                    run_resultado.font.bold = True
+                    run_resultado.font.size = Pt(10)
+                
+                # Unidades
+                if calc.unidades:
+                    p_unidades = doc.add_paragraph()
+                    run_unidades = p_unidades.add_run(f"📏 Unidades: {calc.unidades}")
+                    run_unidades.italic = True
+                    run_unidades.font.size = Pt(9)
+                
+                # Margen de error
+                if calc.margen_error:
+                    p_margen = doc.add_paragraph()
+                    run_margen = p_margen.add_run(f"⚠️ Margen de error: {calc.margen_error}")
+                    run_margen.font.size = Pt(9)
+        else:
+            doc.add_paragraph("No hay cálculos definidos.")
+        
+        doc.add_paragraph()
+        
+        # === 10. CUESTIONARIO ===
+        agregar_titulo_seccion(doc, 9, "Cuestionario")
+        
+        cuestionarios = Cuestionario.objects.filter(contenido_analitico=contenido).order_by('orden', 'numero_pregunta')
+        if cuestionarios.exists():
+            for cuest in cuestionarios:
+                # Número y pregunta
+                p_pregunta = doc.add_paragraph()
+                run_num = p_pregunta.add_run(f"{cuest.numero_pregunta}. ")
+                run_num.font.bold = True
+                run_num.font.size = Pt(11)
+                
+                # Agregar pregunta como HTML
+                if cuest.pregunta:
+                    agregar_html_al_documento(doc, cuest.pregunta)
+                
+                # Tipo de pregunta
+                p_tipo = doc.add_paragraph()
+                run_tipo = p_tipo.add_run(f"[{cuest.get_tipo_pregunta_display()}]")
+                run_tipo.italic = True
+                run_tipo.font.size = Pt(9)
+                
+                # Puntuación
+                if cuest.puntuacion:
+                    run_puntos = p_tipo.add_run(f" - Puntos: {cuest.puntuacion}")
+                    run_puntos.font.size = Pt(9)
+                
+                # Respuesta esperada (opcional, para guía docente)
+                if cuest.respuesta_esperada:
+                    p_resp = doc.add_paragraph()
+                    run_resp = p_resp.add_run("💡 Respuesta esperada (guía docente):")
+                    run_resp.font.bold = True
+                    run_resp.font.size = Pt(9)
+                    run_resp.font.color.rgb = RGBColor(100, 100, 100)
+                    agregar_html_al_documento(doc, cuest.respuesta_esperada)
+        else:
+            doc.add_paragraph("No hay cuestionario definido.")
+        
+        # === GUARDAR DOCUMENTO ===
+        buffer = BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        
+        # Validar tamaño
+        buffer_size = buffer.getbuffer().nbytes
+        if buffer_size == 0:
+            print("❌ Documento vacío")
+            return JsonResponse({'error': 'El documento está vacío'}, status=500)
+        
+        print(f"✅ Documento generado: {buffer_size} bytes")
+        
+        # Crear respuesta HTTP
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
         
-        pdf_file = os.path.join(temp_dir, 'practica.pdf')
+        # Nombre de archivo
+        import re
+        titulo_limpio = re.sub(r'[^\w\s-]', '', practica.nombre)
+        titulo_limpio = re.sub(r'[-\s]+', '_', titulo_limpio)
+        filename = f"Guia_Lab_{titulo_limpio[:40]}.docx"
         
-        if not os.path.exists(pdf_file):
-            print(f"❌ Error: PDF no generado")
-            print(f"Log: {result.stdout[-1000:]}")
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return JsonResponse({'error': 'No se pudo generar el PDF'}, status=500)
-        
-        print(f"✅ PDF generado: {pdf_file}")
-        
-        # Leer el PDF generado
-        with open(pdf_file, 'rb') as f:
-            pdf_data = f.read()
-        
-        # Limpiar directorio temporal
-        shutil.rmtree(temp_dir, ignore_errors=True)
-        
-        # Preparar respuesta HTTP
-        filename = f"Practica_{practica.orden if practica.orden else 'N'}_{practica.nombre[:30]}.pdf"
-        filename = filename.replace(' ', '_').replace('/', '_')
-        
-        response = HttpResponse(pdf_data, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Length'] = buffer_size
         
         return response
         
