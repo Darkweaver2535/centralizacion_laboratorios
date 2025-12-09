@@ -714,7 +714,7 @@ def generar_documento_word(guia):
             ('UNIDAD DIDÁCTICA:', guia.unidad_didactica),
             ('DOCENTE:', f'{guia.usuario_creador.first_name} {guia.usuario_creador.last_name}'),
             ('Correo Institucional:', ''),
-            ('BIBLIOGRAFÍA DE REFERENCIA:', '-\n-\n-\n-'),
+            ('BIBLIOGRAFÍA DE REFERENCIA:', guia.referencia_bibliografica if guia.referencia_bibliografica else '-'),
             ('', '')  # Fila en blanco
         ]
         
@@ -733,38 +733,40 @@ def generar_documento_word(guia):
         # Fila especial para práctica de laboratorio
         practica_row = datos_table.add_row()
         merged_cell = practica_row.cells[0].merge(practica_row.cells[1])
-        merged_cell.text = f'PRÁCTICA DE LABORATORIO N°: ...... TÍTULO: {guia.titulo}'
+        merged_cell.text = f'PRÁCTICA DE LABORATORIO N°{guia.numero_practica}: {guia.titulo}'
         merged_cell.paragraphs[0].runs[0].font.bold = True
         
         doc.add_paragraph()
         
-        # Secciones principales
-        secciones = [
-            ('2. COMPETENCIAS', True),
-            ('3. CRITERIOS DE DESEMPEÑO', True), 
-            ('4. OBJETIVO DE LA PRÁCTICA DE LABORATORIO', False),
-            ('5. MATERIALES, HERRAMIENTAS Y EQUIPOS', False),
-            ('6. PROCEDIMIENTO', True),
-            ('7. CUESTIONARIO', True)
-        ]
+        # Secciones principales con contenido real
+        # 2. COMPETENCIAS
+        seccion_heading = doc.add_heading('2. COMPETENCIAS', 2)
+        seccion_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        if guia.competencias:
+            doc.add_paragraph(guia.competencias)
+        else:
+            doc.add_paragraph()
         
-        for seccion_titulo, es_sombreada in secciones:
-            # Título de sección
-            seccion_heading = doc.add_heading(seccion_titulo, 2)
-            seccion_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
-            
-            if seccion_titulo == '5. MATERIALES, HERRAMIENTAS Y EQUIPOS':
-                # Crear tabla de materiales especial
-                crear_tabla_materiales(doc)
-            else:
-                # Agregar espacio para contenido
-                content_para = doc.add_paragraph()
-                if es_sombreada:
-                    # Agregar sombreado ligero para secciones importantes
-                    pass
-                
-                # Agregar espacio adicional
-                doc.add_paragraph()
+        # 3. CRITERIOS DE DESEMPEÑO
+        seccion_heading = doc.add_heading('3. CRITERIOS DE DESEMPEÑO', 2)
+        seccion_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        if guia.criterios_evaluacion:
+            doc.add_paragraph(guia.criterios_evaluacion)
+        else:
+            doc.add_paragraph()
+        
+        # 4. OBJETIVO DE LA PRÁCTICA
+        seccion_heading = doc.add_heading('4. OBJETIVO DE LA PRÁCTICA DE LABORATORIO', 2)
+        seccion_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        if guia.objetivo_general:
+            doc.add_paragraph(guia.objetivo_general)
+        else:
+            doc.add_paragraph()
+        
+        # 5. MATERIALES, HERRAMIENTAS Y EQUIPOS
+        seccion_heading = doc.add_heading('5. MATERIALES, HERRAMIENTAS Y EQUIPOS', 2)
+        seccion_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        crear_tabla_materiales(doc)
         
         doc.add_page_break()
         
@@ -806,10 +808,6 @@ def generar_documento_word(guia):
         except Exception as parser_error:
             html_parser = None
         
-        # 6. PROCEDIMIENTO con contenido HTML
-        doc.add_paragraph()
-        procedimiento_heading = doc.add_heading('6. PROCEDIMIENTO', 2)
-        
         # Obtener todos los procedimientos relacionados al contenido analítico de la guía
         if hasattr(guia, 'contenido_analitico_obj'):
             contenido_obj = guia.contenido_analitico_obj
@@ -830,23 +828,37 @@ def generar_documento_word(guia):
             except Exception as search_error:
                 contenido_obj = None
         
+        # 6. FUNDAMENTO TEÓRICO
+        doc.add_paragraph()
+        fundamento_heading = doc.add_heading('6. FUNDAMENTO TEÓRICO', 2)
+        fundamento_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        
         if contenido_obj:
             # Obtener y agregar FUNDAMENTOS TEÓRICOS
             fundamentos = FundamentoTeorico.objects.filter(contenido_analitico=contenido_obj).order_by('orden')
             if fundamentos.exists():
-                doc.add_heading('Fundamentos Teóricos', 3)
                 for fundamento in fundamentos:
-                    # Título del fundamento
-                    doc.add_heading(fundamento.titulo, 4)
-                    # Contenido HTML del fundamento
+                    # Contenido HTML del fundamento (sin título adicional)
                     if fundamento.contenido:
                         agregar_html_a_documento(doc, fundamento.contenido, html_parser)
                     # Referencias si existen
                     if fundamento.referencias:
-                        doc.add_paragraph('Referencias:', style='Heading 5')
+                        doc.add_paragraph()
+                        ref_para = doc.add_paragraph()
+                        ref_run = ref_para.add_run('Referencias:')
+                        ref_run.bold = True
                         agregar_html_a_documento(doc, fundamento.referencias, html_parser)
-                doc.add_paragraph()  # Espaciado
-            
+            else:
+                doc.add_paragraph()
+        else:
+            doc.add_paragraph()
+        
+        # 7. PROCEDIMIENTO
+        doc.add_paragraph()
+        procedimiento_heading = doc.add_heading('7. PROCEDIMIENTO', 2)
+        procedimiento_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        
+        if contenido_obj:
             # Obtener y agregar PROCEDIMIENTOS
             procedimientos = Procedimientos.objects.filter(contenido_analitico=contenido_obj).order_by('orden', 'numero_paso')
             if procedimientos.exists():
@@ -863,48 +875,54 @@ def generar_documento_word(guia):
                     
                     # Tiempo estimado si existe
                     if proc.tiempo_estimado:
+                        doc.add_paragraph()
                         tiempo_para = doc.add_paragraph()
                         tiempo_run = tiempo_para.add_run(f"⏱ Tiempo estimado: {proc.tiempo_estimado}")
                         tiempo_run.italic = True
                     
                     # Precauciones si existen
                     if proc.precauciones:
-                        doc.add_paragraph('⚠️ Precauciones:', style='Heading 5')
+                        doc.add_paragraph()
+                        prec_para = doc.add_paragraph()
+                        prec_run = prec_para.add_run('⚠️ Precauciones:')
+                        prec_run.bold = True
                         agregar_html_a_documento(doc, proc.precauciones, html_parser)
                     
                     # Observaciones si existen
                     if proc.observaciones:
-                        doc.add_paragraph('📝 Observaciones:', style='Heading 5')
+                        doc.add_paragraph()
+                        obs_para = doc.add_paragraph()
+                        obs_run = obs_para.add_run('📝 Observaciones:')
+                        obs_run.bold = True
                         agregar_html_a_documento(doc, proc.observaciones, html_parser)
-                    
-                    doc.add_paragraph()  # Espaciado entre pasos
             else:
-                doc.add_paragraph("No se han definido procedimientos específicos para esta práctica.")
-            
-            # Obtener y agregar CÁLCULOS Y RESULTADOS
+                doc.add_paragraph()
+        else:
+            doc.add_paragraph()
+        
+        # 8. CÁLCULOS Y RESULTADOS
+        doc.add_paragraph()
+        calculos_heading = doc.add_heading('8. CÁLCULOS Y RESULTADOS', 2)
+        calculos_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
+        
+        if contenido_obj:
             calculos = CalculosResultados.objects.filter(contenido_analitico=contenido_obj).order_by('orden')
             if calculos.exists():
-                doc.add_page_break()
-                crear_encabezado_pagina(doc, "GUÍA DE LABORATORIO")
-                doc.add_heading('CÁLCULOS Y RESULTADOS', 2)
-                
                 for calculo in calculos:
-                    # Título del cálculo
-                    doc.add_heading(calculo.titulo, 3)
-                    
                     # Fórmula si existe
                     if calculo.formula:
                         formula_para = doc.add_paragraph()
                         formula_run = formula_para.add_run(f"📐 Fórmula: {calculo.formula}")
                         formula_run.font.name = 'Courier New'
+                        formula_run.bold = True
                     
                     # Procedimiento de cálculo (HTML)
                     if calculo.procedimiento_calculo:
-                        doc.add_paragraph('Procedimiento:', style='Heading 4')
                         agregar_html_a_documento(doc, calculo.procedimiento_calculo, html_parser)
                     
                     # Resultado esperado
                     if calculo.resultado_esperado:
+                        doc.add_paragraph()
                         resultado_para = doc.add_paragraph()
                         resultado_run = resultado_para.add_run(f"✓ Resultado esperado: {calculo.resultado_esperado}")
                         resultado_run.bold = True
@@ -917,17 +935,15 @@ def generar_documento_word(guia):
                     if calculo.margen_error:
                         margen_para = doc.add_paragraph(f"±Margen de error: {calculo.margen_error}")
                         margen_para.runs[0].italic = True
-                    
-                    doc.add_paragraph()  # Espaciado
+            else:
+                doc.add_paragraph()
         else:
-            # Si no hay contenido analítico, dejar espacio en blanco
-            doc.add_paragraph()
             doc.add_paragraph()
         
-        # 7. CUESTIONARIO con contenido HTML
-        doc.add_page_break()
-        crear_encabezado_pagina(doc, "GUÍA DE LABORATORIO")
-        cuestionario_heading = doc.add_heading('7. CUESTIONARIO', 2)
+        # 9. CUESTIONARIO
+        doc.add_paragraph()
+        cuestionario_heading = doc.add_heading('9. CUESTIONARIO', 2)
+        cuestionario_heading.runs[0].font.color.rgb = RGBColor(0, 0, 0)
         
         if contenido_obj:
             # Obtener y agregar CUESTIONARIO
@@ -944,6 +960,7 @@ def generar_documento_word(guia):
                         agregar_html_a_documento(doc, pregunta.pregunta, html_parser)
                     
                     # Tipo de pregunta
+                    doc.add_paragraph()
                     tipo_para = doc.add_paragraph(f"[{pregunta.get_tipo_pregunta_display()}]")
                     tipo_para.runs[0].italic = True
                     tipo_para.runs[0].font.size = Pt(9)
