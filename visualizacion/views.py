@@ -237,7 +237,7 @@ def visualizacion_view(request):
         'carreras': carreras,
         'asignaturas': asignaturas,
         'unidades_didacticas': unidades_tematicas,
-        'contenidos_analiticos': [],  # TODO: Agregar si existe este modelo
+        'contenidos_analiticos': ContenidoAnalitico.objects.all().order_by('nombre'),
         'semestres': range(1, 11),
         
         # NUEVA: Información de filtros django-filter
@@ -1145,11 +1145,9 @@ def api_buscar_titulos_guias(request):
                     'semestre': f'{asignatura.semestre}°' if asignatura and asignatura.semestre else 'N/A'
                 })
             except Exception as e:
-                print(f"Error procesando práctica {practica.id}: {e}")
                 continue
         
         return JsonResponse({'resultados': resultados})
         
     except Exception as e:
-        print(f"Error en api_buscar_titulos_guias: {e}")
         return JsonResponse({'error': str(e)}, status=500)

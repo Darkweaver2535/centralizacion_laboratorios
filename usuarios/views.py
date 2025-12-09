@@ -150,9 +150,6 @@ def crear_usuario(request):
         return redirect('usuarios:lista')
     
     if request.method == 'POST':
-        print("=== DEBUG: Recibido POST request ===")
-        print(f"POST data: {request.POST}")
-        print(f"FILES: {request.FILES}")
         try:
             with transaction.atomic():
                 # Obtener datos del formulario
@@ -290,8 +287,6 @@ def crear_usuario_simple(request):
         return redirect('usuarios:lista')
     
     if request.method == 'POST':
-        print("=== DEBUG SIMPLE: Recibido POST request ===")
-        print(f"POST data: {request.POST}")
         try:
             with transaction.atomic():
                 # Obtener datos del formulario

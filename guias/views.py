@@ -71,15 +71,11 @@ def limpiar_html_para_word(html_content):
                 # Para imágenes base64, asegurar que estén correctamente formateadas
                 if src.startswith('data:image'):
                     img_size_mb = len(src) / (1024 * 1024)
-                    print(f"   📊 Imagen base64 detectada: {img_size_mb:.2f} MB")
                     
                     # Limitar tamaño a 10MB (antes era 50MB, muy grande para Word)
                     if len(src) > 10000000:  # 10MB
-                        print(f"   ⚠️ Imagen demasiado grande ({img_size_mb:.2f} MB) - omitida")
                         img.replace_with(soup.new_string(f'[Imagen muy grande ({img_size_mb:.1f} MB) - omitida]'))
                         continue
-                    else:
-                        print(f"   ✅ Imagen base64 OK ({img_size_mb:.2f} MB)")
             
             if img.get('alt'):
                 attrs_to_keep['alt'] = img['alt']
@@ -105,7 +101,6 @@ def limpiar_html_para_word(html_content):
         return clean_html
         
     except Exception as e:
-        print(f"⚠️ Error limpiando HTML: {e}")
         # Si falla la limpieza, devolver el HTML original
         return html_content
 
@@ -133,8 +128,6 @@ def agregar_html_a_documento(doc, html_content, parser=None):
         if not html_limpio or not html_limpio.strip():
             return doc
         
-        print(f"🔄 Procesando HTML para Word ({len(html_limpio)} caracteres)")
-        
         # Procesamiento especial para imágenes base64
         from bs4 import BeautifulSoup
         import base64
@@ -145,15 +138,12 @@ def agregar_html_a_documento(doc, html_content, parser=None):
         soup = BeautifulSoup(html_limpio, 'html.parser')
         imagenes_encontradas = soup.find_all('img')
         
-        print(f"🖼️ Encontradas {len(imagenes_encontradas)} imágenes en el HTML")
-        
         # Convertir imágenes base64 a placeholders únicos
         image_map = {}
         contador_imagenes = 0
         
         for img in soup.find_all('img'):
             src = img.get('src', '')
-            print(f"📸 Procesando imagen: {src[:100]}...")
             
             if src.startswith('data:image'):
                 try:
@@ -161,15 +151,12 @@ def agregar_html_a_documento(doc, html_content, parser=None):
                     if ',' in src:
                         header, encoded = src.split(',', 1)
                     else:
-                        print(f"⚠️ Formato de imagen base64 inválido")
                         continue
                     
                     image_data = base64.b64decode(encoded)
                     
                     # Verificar tamaño de imagen
-                    print(f"📏 Tamaño de imagen: {len(image_data)} bytes")
                     if len(image_data) > 10 * 1024 * 1024:  # 10 MB
-                        print(f"⚠️ Imagen demasiado grande, saltando")
                         continue
                     
                     # Crear stream de imagen
@@ -216,15 +203,8 @@ def agregar_html_a_documento(doc, html_content, parser=None):
                     new_tag.string = placeholder
                     img.replace_with(new_tag)
                     
-                    print(f"✅ Imagen {contador_imagenes} convertida a placeholder")
-                    
                 except Exception as e:
-                    print(f"⚠️ Error procesando imagen base64: {e}")
-                    import traceback
-                    traceback.print_exc()
                     continue
-        
-        print(f"🖼️ Total de imágenes procesadas: {contador_imagenes}")
         
         # Convertir el HTML con placeholders usando htmldocx
         html_con_placeholders = str(soup)
@@ -245,27 +225,18 @@ def agregar_html_a_documento(doc, html_content, parser=None):
                     # Agregar la imagen en su lugar
                     run = paragraph.add_run()
                     run.add_picture(img_data['data'], width=Inches(img_data['width']))
-                    print(f"✅ Imagen insertada en el documento")
-        
-        print(f"✅ HTML con {contador_imagenes} imágenes agregado al documento Word")
         
     except Exception as e:
         # Si falla la conversión HTML, agregar como texto plano
-        print(f"⚠️ Error convirtiendo HTML a Word: {e}")
-        import traceback
-        traceback.print_exc()
-        
         from bs4 import BeautifulSoup
         try:
             soup = BeautifulSoup(html_content, 'html.parser')
             texto_plano = soup.get_text(separator='\n')
             if texto_plano.strip():
                 doc.add_paragraph(texto_plano)
-                print(f"⚠️ HTML convertido a texto plano como fallback")
         except:
             # Último recurso: agregar el HTML como está (truncado)
             doc.add_paragraph(str(html_content)[:500] + '...')
-            print(f"⚠️ HTML agregado como texto crudo (fallback final)")
     
     return doc
 
@@ -468,7 +439,6 @@ def descargar_word(request, guia_id):
     except FileNotFoundError:
         raise Http404("El archivo no se encontró en el servidor")
     except Exception as e:
-        print(f"❌ Error al descargar archivo Word: {e}")
         raise Http404(f"Error al procesar el archivo: {str(e)}")
 
 
@@ -760,9 +730,7 @@ def generar_documento_word(guia):
         try:
             # Crear parser HTML una sola vez para reutilizar
             html_parser = HtmlToDocx()
-            print("✅ Parser HTML creado exitosamente")
         except Exception as parser_error:
-            print(f"⚠️ Error creando parser HTML, usando método alternativo: {parser_error}")
             html_parser = None
         
         # 6. PROCEDIMIENTO con contenido HTML
@@ -787,7 +755,6 @@ def generar_documento_word(guia):
                     ).first()
                     
             except Exception as search_error:
-                print(f"⚠️ Error buscando contenido analítico: {search_error}")
                 contenido_obj = None
         
         if contenido_obj:
