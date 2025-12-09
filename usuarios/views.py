@@ -745,7 +745,7 @@ def configuracion_usuario(request):
     # Obtener actividad reciente del usuario
     actividades_recientes = LogActividad.objects.filter(
         usuario=request.user
-    ).order_by('-fecha_hora')[:10]
+    ).order_by('-fecha')[:10]
     
     context = {
         'usuario': request.user,
