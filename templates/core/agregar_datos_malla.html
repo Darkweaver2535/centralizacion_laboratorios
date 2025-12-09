@@ -2031,6 +2031,12 @@
             script.async = false; // Cargar de forma síncrona
             script.onload = function() {
                 console.log('✅ CKEditor 4.22.1 cargado exitosamente');
+                
+                // Ocultar advertencia de seguridad de CKEditor
+                if (typeof CKEDITOR !== 'undefined') {
+                    CKEDITOR.config.versionCheck = false;
+                }
+                
                 // Disparar evento personalizado cuando CKEditor esté listo
                 window.dispatchEvent(new Event('ckeditor-loaded'));
             };
@@ -2042,6 +2048,12 @@
             document.head.appendChild(script);
         } else {
             console.log('✅ CKEditor ya está cargado');
+            
+            // Ocultar advertencia de seguridad de CKEditor
+            if (typeof CKEDITOR !== 'undefined') {
+                CKEDITOR.config.versionCheck = false;
+            }
+            
             // Disparar evento inmediatamente si ya está cargado
             setTimeout(() => {
                 window.dispatchEvent(new Event('ckeditor-loaded'));
@@ -4040,6 +4052,9 @@
         
         // Configuración específica de CKEditor 4 para campos de laboratorio
         const ckeditorConfig = {
+            // Desactivar verificación de versión para ocultar advertencia de seguridad
+            versionCheck: false,
+            
             toolbar: [
                 { name: 'clipboard', items: ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo'] },
                 { name: 'editing', items: ['Find', 'Replace', '-', 'SelectAll', '-', 'Scayt'] },
