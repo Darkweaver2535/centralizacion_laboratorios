@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
 from core.models import UnidadAcademica, Carrera, Asignatura, UnidadTematica, GuiaLaboratorio, Practica, Laboratorio
 
 
@@ -35,9 +36,9 @@ class GuiaGenerada(models.Model):
     ]
     
     # === INFORMACIÓN CURRICULAR ===
-    carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE, verbose_name="Carrera")
+    carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE, verbose_name="Carrera", db_index=True)
     semestre = models.CharField(max_length=2, choices=SEMESTRES, verbose_name="Semestre")
-    asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE, verbose_name="Asignatura")
+    asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE, verbose_name="Asignatura", db_index=True)
     contenido_analitico = models.TextField(verbose_name="Contenido Analítico")
     unidad_didactica = models.CharField(max_length=200, verbose_name="Unidad Didáctica")
     
@@ -45,8 +46,18 @@ class GuiaGenerada(models.Model):
     titulo = models.CharField(max_length=200, verbose_name="Título de la Guía")
     codigo_guia = models.CharField(max_length=50, blank=True, verbose_name="Código de la Guía")
     tipo_practica = models.CharField(max_length=50, choices=TIPOS_PRACTICA, default='laboratorio', verbose_name="Tipo de Práctica")
-    duracion_horas = models.PositiveIntegerField(default=2, verbose_name="Duración en Horas")
-    numero_practica = models.PositiveIntegerField(default=1, verbose_name="Número de Práctica")
+    duracion_horas = models.PositiveIntegerField(
+        default=2,
+        validators=[MinValueValidator(1), MaxValueValidator(8)],
+        verbose_name="Duración en Horas",
+        help_text="Debe ser entre 1 y 8 horas"
+    )
+    numero_practica = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        verbose_name="Número de Práctica",
+        help_text="Debe ser mayor a 0"
+    )
     
     # === CAMPOS CRÍTICOS FALTANTES ===
     # 1. Referencia Bibliográfica
@@ -154,7 +165,13 @@ class GuiaGenerada(models.Model):
     class Meta:
         verbose_name = "Guía Generada"
         verbose_name_plural = "Guías Generadas"
-        ordering = ['-created_at']
+        ordering = ['-created_at', 'carrera', 'asignatura', 'numero_practica']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['carrera', 'asignatura']),
+            models.Index(fields=['carrera', 'semestre']),
+            models.Index(fields=['tipo_practica', 'created_at']),
+        ]
     
     def __str__(self):
         return f"Guía: {self.titulo} - {self.asignatura.nombre}"

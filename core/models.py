@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django_ckeditor_5.fields import CKEditor5Field
 
 class UnidadAcademica(models.Model):
@@ -200,7 +201,7 @@ class UnidadTematica(models.Model):
 
 class GuiaLaboratorio(models.Model):
     """Guías de laboratorio por unidad temática"""
-    unidad_tematica = models.ForeignKey(UnidadTematica, on_delete=models.CASCADE, related_name='guias_laboratorio')
+    unidad_tematica = models.ForeignKey(UnidadTematica, on_delete=models.CASCADE, related_name='guias_laboratorio', db_index=True)
     nombre = models.CharField(max_length=200)
     numero = models.IntegerField(help_text="Número de la guía")
     descripcion = models.TextField(blank=True)
@@ -212,13 +213,16 @@ class GuiaLaboratorio(models.Model):
         verbose_name_plural = "Guías de Laboratorio"
         ordering = ['numero']
         unique_together = ['unidad_tematica', 'numero']
+        indexes = [
+            models.Index(fields=['unidad_tematica', 'numero']),
+        ]
     
     def __str__(self):
         return f"Guía {self.numero}: {self.nombre}"
 
 class Practica(models.Model):
     """Prácticas de laboratorio"""
-    guia_laboratorio = models.ForeignKey(GuiaLaboratorio, on_delete=models.CASCADE, related_name='practicas')
+    guia_laboratorio = models.ForeignKey(GuiaLaboratorio, on_delete=models.CASCADE, related_name='practicas', db_index=True)
     nombre = models.CharField(max_length=200)
     numero = models.IntegerField(help_text="Número de la práctica")
     descripcion = models.TextField(blank=True)
@@ -230,6 +234,9 @@ class Practica(models.Model):
         verbose_name_plural = "Prácticas"
         ordering = ['numero']
         unique_together = ['guia_laboratorio', 'numero']
+        indexes = [
+            models.Index(fields=['guia_laboratorio', 'numero']),
+        ]
     
     def __str__(self):
         return f"Práctica {self.numero}: {self.nombre}"
@@ -367,17 +374,34 @@ class Bibliografia(models.Model):
 
 class PracticaLaboratorio(models.Model):
     """Práctica de laboratorio dentro del contenido analítico"""
-    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='practicas_laboratorio')
+    contenido_analitico = models.ForeignKey(ContenidoAnalitico, on_delete=models.CASCADE, related_name='practicas_laboratorio', db_index=True)
     nombre = models.CharField(max_length=300, verbose_name="Nombre de la práctica")
-    duracion_horas = models.DecimalField(max_digits=4, decimal_places=1, default=2.0, verbose_name="Duración en horas")
+    duracion_horas = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        default=2.0,
+        validators=[MinValueValidator(0.5), MaxValueValidator(8.0)],
+        verbose_name="Duración en horas",
+        help_text="Debe ser entre 0.5 y 8 horas"
+    )
     tipo_practica = models.CharField(max_length=50, choices=[
         ('individual', 'Individual'),
         ('grupal', 'Grupal'),
         ('demostrativa', 'Demostrativa'),
         ('virtual', 'Virtual')
     ], default='grupal')
-    numero_estudiantes = models.PositiveIntegerField(default=1, verbose_name="Número de estudiantes")
-    orden = models.PositiveIntegerField(default=1, verbose_name="Orden de la práctica")
+    numero_estudiantes = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        verbose_name="Número de estudiantes",
+        help_text="Debe ser entre 1 y 100 estudiantes"
+    )
+    orden = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        verbose_name="Orden de la práctica",
+        help_text="Debe ser mayor a 0"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -385,6 +409,10 @@ class PracticaLaboratorio(models.Model):
         verbose_name = "Práctica de Laboratorio"
         verbose_name_plural = "Prácticas de Laboratorio"
         ordering = ['orden', 'nombre']
+        indexes = [
+            models.Index(fields=['contenido_analitico', 'orden']),
+            models.Index(fields=['tipo_practica']),
+        ]
     
     def __str__(self):
         return f"Práctica {self.orden}: {self.nombre}"

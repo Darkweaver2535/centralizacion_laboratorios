@@ -374,6 +374,79 @@ def nueva_guia(request):
 
 
 @login_required
+def editar_guia(request, guia_id):
+    """Vista para editar una guía de laboratorio existente"""
+    
+    guia = get_object_or_404(GuiaGenerada, id=guia_id)
+    
+    # Verificar permisos: solo el creador o admin puede editar
+    if not request.user.is_staff and guia.usuario_creador != request.user:
+        messages.error(request, 'No tiene permisos para editar esta guía.')
+        return redirect('guias:lista')
+    
+    if request.method == 'POST':
+        form = GuiaLaboratorioForm(request.POST, instance=guia)
+        if form.is_valid():
+            try:
+                guia = form.save(commit=False)
+                # Mantener el usuario creador original
+                guia.save()
+                form.save_m2m()  # Guardar relaciones ManyToMany
+                
+                # Regenerar documentos Word y PDF
+                word_file = None
+                pdf_file = None
+                
+                if DOCX_AVAILABLE:
+                    word_file = generar_documento_word(guia)
+                else:
+                    messages.warning(request, 'No se pudo regenerar el archivo Word.')
+                
+                if REPORTLAB_AVAILABLE:
+                    pdf_file = generar_documento_pdf(guia)
+                else:
+                    messages.warning(request, 'No se pudo regenerar el archivo PDF.')
+                
+                # Actualizar archivos
+                if word_file:
+                    from django.core.files.base import ContentFile
+                    guia.archivo_word.save(
+                        f'guia_{guia.id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.docx',
+                        ContentFile(word_file.getvalue()),
+                        save=True
+                    )
+                
+                if pdf_file:
+                    from django.core.files.base import ContentFile
+                    guia.archivo_pdf.save(
+                        f'guia_{guia.id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf',
+                        ContentFile(pdf_file.getvalue()),
+                        save=True
+                    )
+                
+                messages.success(request, 'Guía actualizada correctamente.')
+                return redirect('guias:lista')
+                
+            except Exception as e:
+                messages.error(request, f'Error al actualizar la guía: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = GuiaLaboratorioForm(instance=guia)
+    
+    context = {
+        'form': form,
+        'guia': guia,
+        'title': f'Editar Guía: {guia.titulo}',
+        'is_edit': True
+    }
+    
+    return render(request, 'guias/nueva.html', context)
+
+
+@login_required
 def detalle_guia(request, guia_id):
     """Vista que redirige a la lista de guías"""
     return redirect('guias:lista')
