@@ -97,7 +97,7 @@ class GuiaLaboratorioForm(forms.ModelForm):
             'duracion_horas',
             'numero_practica',
             'competencias',
-            'criterios_desempeno',
+            'criterios_evaluacion',
             'equipos_requeridos',
             'insumos_requeridos',
         ]
@@ -147,10 +147,10 @@ class GuiaLaboratorioForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Competencias a desarrollar'
             }),
-            'criterios_desempeno': forms.Textarea(attrs={
+            'criterios_evaluacion': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Criterios de desempeño'
+                'placeholder': 'Criterios de evaluación'
             }),
         }
         
@@ -165,7 +165,7 @@ class GuiaLaboratorioForm(forms.ModelForm):
             'duracion_horas': 'Duración (horas)',
             'numero_practica': 'Número de Práctica',
             'competencias': 'Competencias',
-            'criterios_desempeno': 'Criterios de Desempeño',
+            'criterios_evaluacion': 'Criterios de Evaluación',
             'equipos_requeridos': 'Equipos Requeridos',
             'insumos_requeridos': 'Insumos Requeridos',
         }
