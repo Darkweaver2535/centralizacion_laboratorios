@@ -37,7 +37,7 @@ from bs4 import BeautifulSoup
 from core.models import (
     Carrera, Asignatura, ContenidoAnalitico, FundamentoTeorico, Procedimientos, 
     CalculosResultados, Cuestionario, PracticaLaboratorio, Competencias, 
-    ObjetivoPractica, MaterialesHerramientasEquipos, Bibliografia
+    ObjetivoPractica, MaterialesHerramientasEquipos, Bibliografia, Titulo
 )
 from .models import GuiaGenerada
 from .forms import GuiaLaboratorioForm, GuiaFilterForm
@@ -1852,10 +1852,18 @@ def generar_practica_word(request, practica_id):
 
 \vspace{0.5cm}
 
-\begin{tcolorbox}[colback=emidorado,colframe=emiazul,arc=0mm,boxrule=1pt]
+"""
+        
+        # Usar el Título del formulario si existe, si no usar el nombre de la práctica
+        titulo_practica = practica.nombre
+        titulos = Titulo.objects.filter(contenido_analitico=contenido).order_by('orden')
+        if titulos.exists():
+            titulo_practica = titulos.first().texto
+        
+        latex_content += r"""\begin{tcolorbox}[colback=emidorado,colframe=emiazul,arc=0mm,boxrule=1pt]
 \begin{center}
 \large\textbf{PRÁCTICA DE LABORATORIO N° """ + str(practica.orden if practica.orden else 1) + r"""}\\[0.3cm]
-\Large\textbf{TÍTULO: """ + html_to_latex(practica.nombre.upper()) + r"""}
+\Large\textbf{TÍTULO: """ + html_to_latex(titulo_practica.upper()) + r"""}
 \end{center}
 \end{tcolorbox}
 
