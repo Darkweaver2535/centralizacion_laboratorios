@@ -1772,42 +1772,82 @@ def generar_practica_word(request, practica_id):
 \titleformat{\subsection}
   {\normalfont\large\bfseries\color{emiazul}}{\thesubsection}{1em}{}
 
-% Encabezado y pie de página
-\pagestyle{fancy}
-\fancyhf{}
-\fancyhead[L]{\small\textbf{EMI - """ + (asignatura.carrera.nombre if (asignatura and asignatura.carrera) else 'N/A') + r"""}}
-\fancyhead[R]{\small\textbf{Práctica """ + str(practica.orden if practica.orden else 1) + r"""}}
-\fancyfoot[C]{\thepage}
+% Encabezado y pie de página (no aplicar a la portada)
+\fancypagestyle{contenido}{
+  \fancyhf{}
+  \fancyhead[L]{\small\textbf{EMI - """ + (asignatura.carrera.nombre if (asignatura and asignatura.carrera) else 'N/A') + r"""}}
+  \fancyhead[R]{\small\textbf{Práctica """ + str(practica.orden if practica.orden else 1) + r"""}}
+  \fancyfoot[C]{\thepage}
+}
 
 \begin{document}
 
 % ============================================================
-% PORTADA Y ENCABEZADO EMI
+% PORTADA
 % ============================================================
-\begin{tcolorbox}[colback=emiazul,colframe=emiazul,arc=0mm,boxrule=0pt]
-\begin{center}
-\color{white}
-\Large\textbf{ESCUELA MILITAR DE INGENIERÍA}\\[0.3cm]
-\normalsize\textit{"Mcal. Antonio José de Sucre"}
-\end{center}
-\end{tcolorbox}
+\thispagestyle{empty}
 
-\begin{tcolorbox}[colback=emidorado,colframe=emidorado,arc=0mm,boxrule=0pt]
+% Logo EMI centrado
 \begin{center}
-\large\textbf{GUÍA DE LABORATORIO}
+\includegraphics[width=14.3cm,height=19.6cm,keepaspectratio]{emi_logo.png}
 \end{center}
-\end{tcolorbox}
 
-\begin{tcolorbox}[colback=white,colframe=emiazul,arc=0mm,boxrule=1pt]
-\textbf{ASIGNATURA:} """ + (asignatura.nombre if asignatura else 'N/A') + r"""
-\end{tcolorbox}
+\vfill
+
+% Título centrado
+\begin{center}
+{\Huge\textbf{GUÍA DE LABORATORIO}}\\[1.5cm]
+{\Large\textbf{""" + html_to_latex(asignatura.nombre.upper()) + r"""}}
+\end{center}
+
+\vfill
+
+% Salto de página para comenzar contenido
+\newpage
+
+% ============================================================
+% PÁGINA 2: ÍNDICE DE CONTENIDOS
+% ============================================================
+\thispagestyle{empty}
+
+\begin{center}
+{\Large\textbf{GUÍA DE LABORATORIO}}
+\end{center}
+
+\vspace{0.5cm}
+
+\noindent\makebox[\linewidth]{\rule{\textwidth}{0.4pt}}
 
 \vspace{1cm}
+
+\begin{center}
+{\large\textbf{CONTENIDO}}
+\end{center}
+
+\vspace{1cm}
+
+\noindent\textbf{1. DATOS GENERALES} \dotfill Pág. \pageref{sec:datos}\\[0.5cm]
+\noindent\textbf{2. COMPETENCIAS} \dotfill Pág. \pageref{sec:competencias}\\[0.5cm]
+\noindent\textbf{3. CRITERIOS DE DESEMPEÑO} \dotfill Pág. \pageref{sec:criterios}\\[0.5cm]
+\noindent\textbf{4. OBJETIVO DE LA PRÁCTICA DE LABORATORIO} \dotfill Pág. \pageref{sec:objetivo}\\[0.5cm]
+\noindent\textbf{5. FUNDAMENTO TEÓRICO} \dotfill Pág. \pageref{sec:fundamento}\\[0.5cm]
+\noindent\textbf{6. MATERIALES, HERRAMIENTAS Y EQUIPOS} \dotfill Pág. \pageref{sec:materiales}\\[0.5cm]
+\noindent\textbf{7. PROCEDIMIENTO} \dotfill Pág. \pageref{sec:procedimiento}\\[0.5cm]
+\noindent\textbf{8. CÁLCULOS Y RESULTADOS} \dotfill Pág. \pageref{sec:calculos}\\[0.5cm]
+\noindent\textbf{9. CUESTIONARIO} \dotfill Pág. \pageref{sec:cuestionario}\\[0.5cm]
+
+\vfill
+
+\newpage
+
+% Activar estilo de encabezado para el contenido
+\pagestyle{contenido}
+\setcounter{page}{3}
 
 % ============================================================
 % 1. DATOS GENERALES
 % ============================================================
-\section{DATOS GENERALES}
+\section{DATOS GENERALES}\label{sec:datos}
 
 \begin{tabular}{|p{5cm}|p{10cm}|}
 \hline
@@ -1870,38 +1910,44 @@ def generar_practica_word(request, practica_id):
         # ============================================================
         # 2. COMPETENCIAS
         # ============================================================
-        latex_content += r"""\section{COMPETENCIAS}
+        latex_content += r"""\section{COMPETENCIAS}\label{sec:competencias}
 
 """
         
         competencias = Competencias.objects.filter(contenido_analitico=contenido).order_by('orden')
         if competencias.exists():
-            latex_content += r"\begin{itemize}[leftmargin=*]" + "\n"
+            latex_content += r"""\begin{longtable}{|p{15cm}|}
+\hline
+"""
             for comp in competencias:
-                latex_content += f"\\item {html_to_latex(comp.descripcion)}\n"
-            latex_content += r"\end{itemize}" + "\n\n"
+                latex_content += f"{html_to_latex(comp.descripcion)} \\\\\n\\hline\n"
+            latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay competencias definidas para esta práctica.\n\n"
         
         # ============================================================
         # 3. CRITERIOS DE DESEMPEÑO
         # ============================================================
-        latex_content += r"""\section{CRITERIOS DE DESEMPEÑO}
+        latex_content += r"""\section{CRITERIOS DE DESEMPEÑO}\label{sec:criterios}
 
 """
         
         # Mostrar SOLO el Criterio de Desempeño seleccionado del dropdown (si existe)
         if contenido.criterio_desempeno:
-            latex_content += html_to_latex(contenido.criterio_desempeno.nombre) + "\n\n"
+            latex_content += r"""\begin{longtable}{|p{15cm}|}
+\hline
+"""
+            latex_content += html_to_latex(contenido.criterio_desempeno.nombre) + r" \\" + "\n\\hline\n"
             if contenido.criterio_desempeno.descripcion:
-                latex_content += html_to_latex(contenido.criterio_desempeno.descripcion) + "\n\n"
+                latex_content += html_to_latex(contenido.criterio_desempeno.descripcion) + r" \\" + "\n\\hline\n"
+            latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay criterios de desempeño definidos.\n\n"
         
         # ============================================================
         # 4. OBJETIVO DE LA PRÁCTICA DE LABORATORIO
         # ============================================================
-        latex_content += r"""\section{OBJETIVO DE LA PRÁCTICA DE LABORATORIO}
+        latex_content += r"""\section{OBJETIVO DE LA PRÁCTICA DE LABORATORIO}\label{sec:objetivo}
 
 """
         
@@ -1911,30 +1957,38 @@ def generar_practica_word(request, practica_id):
         ).order_by('orden')
         
         if objetivos.exists():
+            latex_content += r"""\begin{longtable}{|p{15cm}|}
+\hline
+"""
             for obj in objetivos:
-                latex_content += html_to_latex(obj.descripcion) + "\n\n"
+                latex_content += html_to_latex(obj.descripcion) + r" \\" + "\n\\hline\n"
+            latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay objetivos definidos.\n\n"
         
         # ============================================================
         # 5. FUNDAMENTO TEÓRICO
         # ============================================================
-        latex_content += r"""\section{FUNDAMENTO TEÓRICO}
+        latex_content += r"""\section{FUNDAMENTO TEÓRICO}\label{sec:fundamento}
 
 """
         
         fundamentos = FundamentoTeorico.objects.filter(contenido_analitico=contenido).order_by('orden')
         
         if fundamentos.exists():
+            latex_content += r"""\begin{longtable}{|p{15cm}|}
+\hline
+"""
             for fund in fundamentos:
-                latex_content += html_to_latex(fund.contenido) + "\n\n"
+                latex_content += html_to_latex(fund.contenido) + r" \\" + "\n\\hline\n"
+            latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay fundamento teórico definido.\n\n"
         
         # ============================================================
         # 6. MATERIALES, HERRAMIENTAS Y EQUIPOS
         # ============================================================
-        latex_content += r"""\section{MATERIALES, HERRAMIENTAS Y EQUIPOS}
+        latex_content += r"""\section{MATERIALES, HERRAMIENTAS Y EQUIPOS}\label{sec:materiales}
 
 """
         
@@ -2029,49 +2083,61 @@ def generar_practica_word(request, practica_id):
         # ============================================================
         # 7. PROCEDIMIENTO
         # ============================================================
-        latex_content += r"""\section{PROCEDIMIENTO}
+        latex_content += r"""\section{PROCEDIMIENTO}\label{sec:procedimiento}
 
 """
         
         procedimientos = Procedimientos.objects.filter(contenido_analitico=contenido).order_by('numero_paso', 'orden')
         
         if procedimientos.exists():
+            latex_content += r"""\begin{longtable}{|p{15cm}|}
+\hline
+"""
             for proc in procedimientos:
-                latex_content += f"{html_to_latex(proc.descripcion)}\n\n"
+                latex_content += html_to_latex(proc.descripcion) + r" \\" + "\n\\hline\n"
+            latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay procedimiento definido.\n\n"
         
         # ============================================================
         # 8. CÁLCULOS Y RESULTADOS
         # ============================================================
-        latex_content += r"""\section{CÁLCULOS Y RESULTADOS}
+        latex_content += r"""\section{CÁLCULOS Y RESULTADOS}\label{sec:calculos}
 
 """
         
         calculos = CalculosResultados.objects.filter(contenido_analitico=contenido).order_by('orden')
         
         if calculos.exists():
+            latex_content += r"""\begin{longtable}{|p{15cm}|}
+\hline
+"""
             for calc in calculos:
                 if calc.formula:
                     latex_content += f"\\textbf{{Fórmula:}} {html_to_latex(calc.formula)}\n\n"
                 
                 if calc.procedimiento_calculo:
-                    latex_content += html_to_latex(calc.procedimiento_calculo) + "\n\n"
+                    latex_content += html_to_latex(calc.procedimiento_calculo) + r" \\" + "\n\\hline\n"
+            latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay cálculos y resultados definidos.\n\n"
         
         # ============================================================
         # 9. CUESTIONARIO
         # ============================================================
-        latex_content += r"""\section{CUESTIONARIO}
+        latex_content += r"""\section{CUESTIONARIO}\label{sec:cuestionario}
 
 """
         
         cuestionario = Cuestionario.objects.filter(contenido_analitico=contenido).order_by('numero_pregunta', 'orden')
         
         if cuestionario.exists():
+            latex_content += r"""\begin{longtable}{|p{15cm}|}
+\hline
+"""
             for pregunta in cuestionario:
-                latex_content += f"{html_to_latex(pregunta.pregunta)}\n\n"
+                latex_content += html_to_latex(pregunta.pregunta) + r" \\" + "\n\\hline\n"
+            latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay cuestionario definido.\n\n"
         
@@ -2079,10 +2145,13 @@ def generar_practica_word(request, practica_id):
         # FIRMA DEL DOCENTE
         # ============================================================
         latex_content += r"""
-\vspace{2cm}
+\vspace{3cm}
 
-\noindent\rule{10cm}{0.4pt}\\
-\textbf{DOCENTE DE LABORATORIO DE LA ASIGNATURA """ + (asignatura.nombre if asignatura else 'N/A') + r"""} (firma)
+\begin{center}
+\rule{10cm}{0.4pt}\\[0.3cm]
+\textbf{GRADO Y NOMBRE}\\[0.5cm]
+\textbf{DOCENTE DE LABORATORIO DE LA ASIGNATURA """ + html_to_latex(asignatura.nombre.upper()) + r"""}
+\end{center}
 
 \end{document}"""
         
@@ -2092,13 +2161,26 @@ def generar_practica_word(request, practica_id):
         
         print(f"✅ Archivo LaTeX generado: {tex_file}")
         
-        # Compilar con pdflatex
-        result = subprocess.run(
-            ['pdflatex', '-interaction=nonstopmode', '-output-directory', temp_dir, tex_file],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+        # Copiar el logo de EMI al directorio temporal
+        logo_source = os.path.join(settings.BASE_DIR, 'static', 'images', 'emi_logo.png')
+        logo_dest = os.path.join(temp_dir, 'emi_logo.png')
+        
+        if os.path.exists(logo_source):
+            shutil.copy2(logo_source, logo_dest)
+            print(f"✅ Logo copiado: {logo_dest}")
+        else:
+            print(f"⚠️ Logo no encontrado en: {logo_source}")
+        
+        # Compilar con pdflatex (dos veces para resolver referencias)
+        for i in range(2):
+            result = subprocess.run(
+                ['pdflatex', '-interaction=nonstopmode', '-output-directory', temp_dir, tex_file],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            if i == 0:
+                print(f"✅ Primera compilación completada")
         
         pdf_file = os.path.join(temp_dir, 'practica.pdf')
         
