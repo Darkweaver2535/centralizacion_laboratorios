@@ -1689,35 +1689,225 @@ def detalle_guia_completa(request, guia_id):
 
 # ===== NUEVAS VISTAS PARA PRÁCTICAS DE LABORATORIO =====
 
-def html_to_latex(html_content):
-    """Convierte HTML de CKEditor a LaTeX, escapando caracteres especiales"""
+def html_to_latex(html_content, temp_dir=None):
+    """Convierte HTML de CKEditor a LaTeX con soporte completo de formato"""
     if not html_content:
         return ""
     
-    # Extraer texto limpio del HTML
     soup = BeautifulSoup(html_content, 'html.parser')
-    text = soup.get_text()
+    image_counter = [0]  # Usar lista para modificar en función anidada
     
-    # Escapar caracteres especiales de LaTeX
-    replacements = {
-        '\\': '\\textbackslash{}',
-        '&': '\\&',
-        '%': '\\%',
-        '$': '\\$',
-        '#': '\\#',
-        '_': '\\_',
-        '{': '\\{',
-        '}': '\\}',
-        '~': '\\textasciitilde{}',
-        '^': '\\textasciicircum{}',
-    }
+    # Función recursiva para procesar nodos
+    def process_node(node):
+        if isinstance(node, str):
+            # Escapar caracteres especiales de LaTeX
+            text = str(node)
+            replacements = {
+                '\\': '\\textbackslash{}',
+                '&': '\\&',
+                '%': '\\%',
+                '$': '\\$',
+                '#': '\\#',
+                '_': '\\_',
+                '{': '\\{',
+                '}': '\\}',
+                '~': '\\textasciitilde{}',
+                '^': '\\textasciicircum{}',
+            }
+            for old, new in replacements.items():
+                text = text.replace(old, new)
+            return text
+        
+        result = ""
+        tag_name = node.name
+        
+        # Negritas
+        if tag_name in ['strong', 'b']:
+            result += "\\textbf{"
+            for child in node.children:
+                result += process_node(child)
+            result += "}"
+        
+        # Cursivas
+        elif tag_name in ['em', 'i']:
+            result += "\\textit{"
+            for child in node.children:
+                result += process_node(child)
+            result += "}"
+        
+        # Subrayado
+        elif tag_name == 'u':
+            result += "\\underline{"
+            for child in node.children:
+                result += process_node(child)
+            result += "}"
+        
+        # Divs (usado para centrado principalmente)
+        elif tag_name == 'div':
+            style = node.get('style', '')
+            
+            if 'text-align:center' in style or 'text-align: center' in style:
+                result += "\\begin{center}\n"
+                for child in node.children:
+                    result += process_node(child)
+                result += "\n\\end{center}\n\n"
+            elif 'text-align:right' in style or 'text-align: right' in style:
+                result += "\\begin{flushright}\n"
+                for child in node.children:
+                    result += process_node(child)
+                result += "\n\\end{flushright}\n\n"
+            else:
+                # Div normal, solo procesar hijos
+                for child in node.children:
+                    result += process_node(child)
+        
+        # Párrafos
+        elif tag_name == 'p':
+            style = node.get('style', '')
+            align = node.get('align', '')
+            
+            if 'text-align:center' in style or 'text-align: center' in style or align == 'center':
+                result += "\\begin{center}\n"
+                for child in node.children:
+                    result += process_node(child)
+                result += "\n\\end{center}\n\n"
+            elif 'text-align:right' in style or 'text-align: right' in style or align == 'right':
+                result += "\\begin{flushright}\n"
+                for child in node.children:
+                    result += process_node(child)
+                result += "\n\\end{flushright}\n\n"
+            else:
+                for child in node.children:
+                    result += process_node(child)
+                result += "\n\n"
+        
+        # Listas ordenadas
+        elif tag_name == 'ol':
+            result += "\\begin{enumerate}\n"
+            for child in node.children:
+                result += process_node(child)
+            result += "\\end{enumerate}\n"
+        
+        # Listas no ordenadas
+        elif tag_name == 'ul':
+            result += "\\begin{itemize}\n"
+            for child in node.children:
+                result += process_node(child)
+            result += "\\end{itemize}\n"
+        
+        # Items de lista
+        elif tag_name == 'li':
+            result += "\\item "
+            for child in node.children:
+                result += process_node(child)
+            result += "\n"
+        
+        # Saltos de línea
+        elif tag_name == 'br':
+            result += "\\\\\n"
+        
+        # Encabezados
+        elif tag_name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+            level = int(tag_name[1])
+            if level <= 3:
+                result += "\\textbf{\\large "
+            else:
+                result += "\\textbf{"
+            for child in node.children:
+                result += process_node(child)
+            result += "}\n\n"
+        
+        # Imágenes
+        elif tag_name == 'img':
+            src = node.get('src', '')
+            alt = node.get('alt', 'imagen')
+            
+            # Si es imagen base64, extraer y guardar
+            if src.startswith('data:image') and temp_dir:
+                try:
+                    import base64
+                    import os
+                    
+                    # Extraer tipo y datos
+                    data_part = src.split(',', 1)
+                    if len(data_part) == 2:
+                        image_counter[0] += 1
+                        image_data = base64.b64decode(data_part[1])
+                        
+                        # Determinar extensión
+                        if 'png' in data_part[0]:
+                            ext = 'png'
+                        elif 'jpeg' in data_part[0] or 'jpg' in data_part[0]:
+                            ext = 'jpg'
+                        else:
+                            ext = 'png'
+                        
+                        # Guardar imagen
+                        img_filename = f"img_{image_counter[0]}.{ext}"
+                        img_path = os.path.join(temp_dir, img_filename)
+                        with open(img_path, 'wb') as f:
+                            f.write(image_data)
+                        
+                        # Agregar a LaTeX
+                        result += f"\n\\begin{{center}}\n\\includegraphics[max width=0.8\\textwidth, max height=0.6\\textheight, keepaspectratio]{{{img_filename}}}\n\\end{{center}}\n"
+                except Exception as e:
+                    result += f"[Error al procesar imagen: {alt}]"
+            elif src.startswith('http'):
+                result += f"[Imagen externa: {alt}]"
+            else:
+                result += f"[Imagen: {src}]"
+        
+        # Ecuaciones - CKEditor usa span class="equation"
+        elif tag_name == 'span':
+            classes = node.get('class', [])
+            if 'equation' in classes:
+                # Extraer ecuación LaTeX
+                equation_text = node.get_text()
+                # Limpiar \( y \) si existen
+                equation_text = equation_text.replace('\\(', '').replace('\\)', '')
+                # Usar modo matemático
+                result += f"${equation_text}$"
+            else:
+                # Span normal, procesar hijos
+                for child in node.children:
+                    result += process_node(child)
+        
+        # Tablas
+        elif tag_name == 'table':
+            result += "\\begin{tabular}{|"
+            first_row = node.find('tr')
+            if first_row:
+                cols = len(first_row.find_all(['td', 'th']))
+                result += "l|" * cols
+            result += "}\n\\hline\n"
+            
+            for child in node.children:
+                result += process_node(child)
+            
+            result += "\\end{tabular}\n\n"
+        
+        elif tag_name == 'tr':
+            cells = []
+            for cell in node.find_all(['td', 'th']):
+                cell_content = ""
+                for child in cell.children:
+                    cell_content += process_node(child)
+                cells.append(cell_content)
+            result += " & ".join(cells) + " \\\\\n\\hline\n"
+        
+        # Otros elementos - procesar hijos
+        else:
+            for child in node.children:
+                result += process_node(child)
+        
+        return result
     
-    for old, new in replacements.items():
-        text = text.replace(old, new)
+    # Procesar el documento completo
+    latex_text = ""
+    for child in soup.children:
+        latex_text += process_node(child)
     
-    # Convertir saltos de línea dobles en párrafos LaTeX
-    text = text.replace('\n\n', '\n\n\\par ')
-    
+    return latex_text.strip()
     return text
 
 
@@ -1755,6 +1945,7 @@ def generar_practica_word(request, practica_id):
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{tcolorbox}
+\usepackage{adjustbox}
 
 % Configuración de página
 \geometry{a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
@@ -1920,7 +2111,7 @@ def generar_practica_word(request, practica_id):
 \hline
 """
             for comp in competencias:
-                latex_content += f"{html_to_latex(comp.descripcion)} \\\\\n\\hline\n"
+                latex_content += f"{html_to_latex(comp.descripcion, temp_dir)} \\\\\n\\hline\n"
             latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay competencias definidas para esta práctica.\n\n"
@@ -1961,7 +2152,7 @@ def generar_practica_word(request, practica_id):
 \hline
 """
             for obj in objetivos:
-                latex_content += html_to_latex(obj.descripcion) + r" \\" + "\n\\hline\n"
+                latex_content += html_to_latex(obj.descripcion, temp_dir) + r" \\" + "\n\\hline\n"
             latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay objetivos definidos.\n\n"
@@ -1980,7 +2171,7 @@ def generar_practica_word(request, practica_id):
 \hline
 """
             for fund in fundamentos:
-                latex_content += html_to_latex(fund.contenido) + r" \\" + "\n\\hline\n"
+                latex_content += html_to_latex(fund.contenido, temp_dir) + r" \\" + "\n\\hline\n"
             latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay fundamento teórico definido.\n\n"
@@ -2094,7 +2285,7 @@ def generar_practica_word(request, practica_id):
 \hline
 """
             for proc in procedimientos:
-                latex_content += html_to_latex(proc.descripcion) + r" \\" + "\n\\hline\n"
+                latex_content += html_to_latex(proc.descripcion, temp_dir) + r" \\" + "\n\\hline\n"
             latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay procedimiento definido.\n\n"
@@ -2114,10 +2305,10 @@ def generar_practica_word(request, practica_id):
 """
             for calc in calculos:
                 if calc.formula:
-                    latex_content += f"\\textbf{{Fórmula:}} {html_to_latex(calc.formula)}\n\n"
+                    latex_content += f"\\textbf{{Fórmula:}} {html_to_latex(calc.formula, temp_dir)}\n\n"
                 
                 if calc.procedimiento_calculo:
-                    latex_content += html_to_latex(calc.procedimiento_calculo) + r" \\" + "\n\\hline\n"
+                    latex_content += html_to_latex(calc.procedimiento_calculo, temp_dir) + r" \\" + "\n\\hline\n"
             latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay cálculos y resultados definidos.\n\n"
@@ -2136,7 +2327,7 @@ def generar_practica_word(request, practica_id):
 \hline
 """
             for pregunta in cuestionario:
-                latex_content += html_to_latex(pregunta.pregunta) + r" \\" + "\n\\hline\n"
+                latex_content += html_to_latex(pregunta.pregunta, temp_dir) + r" \\" + "\n\\hline\n"
             latex_content += r"\end{longtable}" + "\n\n"
         else:
             latex_content += "No hay cuestionario definido.\n\n"
