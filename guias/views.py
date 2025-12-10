@@ -1809,27 +1809,23 @@ def generar_practica_word(request, practica_id):
 % ============================================================
 \section{DATOS GENERALES}
 
-\begin{tabular}{|>{\columncolor{emigris}}p{5cm}|p{10cm}|}
+\begin{tabular}{|p{5cm}|p{10cm}|}
 \hline
 \textbf{CARRERA} & """ + (asignatura.carrera.get_nombre_display() if (asignatura and asignatura.carrera) else 'N/A') + r""" \\
 \hline
 \textbf{SEMESTRE} & """ + str(asignatura.semestre if (asignatura and asignatura.semestre) else 'N/A') + r""" \\
 \hline
-\textbf{ASIGNATURA} & """ + (asignatura.nombre if asignatura else 'N/A') + r""" \\
+\textbf{ASIGNATURA} & """ + (asignatura.nombre.upper().replace('_', ' ') if asignatura else 'N/A') + r""" \\
 \hline
 """
         
         # Determinar qué mostrar como "Contenido Analítico"
+        # Usar siempre el nombre del contenido analítico (no la unidad ni la práctica)
         contenido_analitico_text = contenido.nombre
-        if contenido.descripcion and not contenido.descripcion.startswith("Práctica de laboratorio:"):
-            contenido_analitico_text = contenido.descripcion
-        elif contenido.nombre == practica.nombre or contenido.nombre in ['TITULOOOO', 'titulo', 'Título']:
-            # Si el contenido tiene el mismo nombre que la práctica, mostrar la unidad didáctica
-            contenido_analitico_text = f"{unidad.nombre}" if unidad else contenido.nombre
         
-        latex_content += r"""\textbf{CONTENIDO ANALÍTICO} & """ + html_to_latex(contenido_analitico_text) + r""" \\
+        latex_content += r"""\textbf{CONTENIDO ANALÍTICO} & """ + html_to_latex(contenido_analitico_text.upper()) + r""" \\
 \hline
-\textbf{UNIDAD DIDÁCTICA} & """ + html_to_latex(unidad.nombre if unidad else 'N/A') + r""" \\
+\textbf{UNIDAD DIDÁCTICA} & """ + html_to_latex(unidad.nombre.upper() if unidad else 'N/A') + r""" \\
 \hline
 \textbf{DOCENTE} & \rule{8cm}{0.4pt} \\
 \hline
@@ -1946,8 +1942,6 @@ def generar_practica_word(request, practica_id):
         
         if fundamentos.exists():
             for fund in fundamentos:
-                if fund.titulo:
-                    latex_content += f"\\subsection{{{html_to_latex(fund.titulo)}}}\n\n"
                 latex_content += html_to_latex(fund.contenido) + "\n\n"
         else:
             latex_content += "No hay fundamento teórico definido.\n\n"
@@ -2057,12 +2051,8 @@ def generar_practica_word(request, practica_id):
         procedimientos = Procedimientos.objects.filter(contenido_analitico=contenido).order_by('numero_paso', 'orden')
         
         if procedimientos.exists():
-            latex_content += r"\begin{enumerate}[leftmargin=*]" + "\n"
             for proc in procedimientos:
-                if proc.titulo_paso:
-                    latex_content += f"\\item \\textbf{{{html_to_latex(proc.titulo_paso)}}}\n\n"
                 latex_content += f"{html_to_latex(proc.descripcion)}\n\n"
-            latex_content += r"\end{enumerate}" + "\n\n"
         else:
             latex_content += "No hay procedimiento definido.\n\n"
         
@@ -2077,9 +2067,6 @@ def generar_practica_word(request, practica_id):
         
         if calculos.exists():
             for calc in calculos:
-                if calc.titulo:
-                    latex_content += f"\\subsection{{{html_to_latex(calc.titulo)}}}\n\n"
-                
                 if calc.formula:
                     latex_content += f"\\textbf{{Fórmula:}} {html_to_latex(calc.formula)}\n\n"
                 
@@ -2098,10 +2085,8 @@ def generar_practica_word(request, practica_id):
         cuestionario = Cuestionario.objects.filter(contenido_analitico=contenido).order_by('numero_pregunta', 'orden')
         
         if cuestionario.exists():
-            latex_content += r"\begin{enumerate}[leftmargin=*]" + "\n"
             for pregunta in cuestionario:
-                latex_content += f"\\item {html_to_latex(pregunta.pregunta)}\n\n"
-            latex_content += r"\end{enumerate}" + "\n\n"
+                latex_content += f"{html_to_latex(pregunta.pregunta)}\n\n"
         else:
             latex_content += "No hay cuestionario definido.\n\n"
         
