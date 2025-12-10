@@ -1887,8 +1887,11 @@ def generar_practica_word(request, practica_id):
 
 """
         
-        # Mostrar TODOS los objetivos como criterios de desempeño
-        criterios = ObjetivoPractica.objects.filter(contenido_analitico=contenido).order_by('orden')
+        # Mostrar SOLO objetivos con tipo 'desempeno'
+        criterios = ObjetivoPractica.objects.filter(
+            contenido_analitico=contenido,
+            tipo_objetivo='desempeno'
+        ).order_by('orden')
         
         if criterios.exists():
             latex_content += r"\begin{enumerate}[leftmargin=*]" + "\n"
@@ -1905,7 +1908,12 @@ def generar_practica_word(request, practica_id):
 
 """
         
-        objetivos = ObjetivoPractica.objects.filter(contenido_analitico=contenido).order_by('orden')
+        # Mostrar objetivos que NO sean de desempeño (general, específico, aprendizaje)
+        objetivos = ObjetivoPractica.objects.filter(
+            contenido_analitico=contenido
+        ).exclude(
+            tipo_objetivo='desempeno'
+        ).order_by('orden')
         
         if objetivos.exists():
             latex_content += r"\begin{itemize}[leftmargin=*]" + "\n"

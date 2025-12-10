@@ -875,11 +875,12 @@ def agregar_datos_malla_view(request):
                                     orden=grupo_index + 1
                                 )
                             
-                            # Crear objetivo de práctica si existe
+                            # Crear objetivo de práctica si existe (como criterio de desempeño)
                             if campos_grupo['objetivo_practica'].strip():
                                 ObjetivoPractica.objects.create(
                                     contenido_analitico=contenido,
                                     descripcion=campos_grupo['objetivo_practica'],
+                                    tipo_objetivo='desempeno',  # Marcado como criterio de desempeño
                                     orden=grupo_index + 1
                                 )
                             
