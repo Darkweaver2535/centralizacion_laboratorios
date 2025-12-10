@@ -150,7 +150,8 @@ def visualizacion_view(request):
             'contenido_analitico__unidad_didactica__asignatura'
         ).prefetch_related(
             'contenido_analitico__competencias',
-            'contenido_analitico__objetivos_practica'
+            'contenido_analitico__objetivos_practica',
+            'contenido_analitico__titulos'
         ).order_by('-id', 'contenido_analitico__unidad_didactica__asignatura__carrera', 
                    'contenido_analitico__unidad_didactica__asignatura__semestre', 
                    'orden'))

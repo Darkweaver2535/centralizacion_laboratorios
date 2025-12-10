@@ -326,6 +326,14 @@ class ContenidoAnalitico(models.Model):
     nombre = models.CharField(max_length=300, unique=True, verbose_name="Contenido Analítico")
     descripcion = models.TextField(blank=True, verbose_name="Descripción detallada")
     unidad_didactica = models.ForeignKey(UnidadDidactica, on_delete=models.CASCADE, related_name='contenidos_analiticos')
+    criterio_desempeno = models.ForeignKey(
+        CriterioDesempeno, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='contenidos_analiticos',
+        verbose_name="Criterio de Desempeño"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

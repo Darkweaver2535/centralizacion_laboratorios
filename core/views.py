@@ -758,17 +758,40 @@ def agregar_datos_malla_view(request):
                         messages.error(request, f"🚨 ERROR: Unidad didáctica con ID {unidad_didactica_id} no encontrada.")
                         return redirect('core:agregar_datos_malla')
                     
-                    # 6. CREAR NUEVA PRÁCTICA INDEPENDIENTE
-                    # Obtener el título de la práctica (será el nombre del nuevo contenido analítico)
-                    titulo_practica = request.POST.get('titulo_0_0', '').strip()
+                    # 6. OBTENER O CREAR CONTENIDO ANALÍTICO
+                    # Primero verificar si se seleccionó un contenido analítico existente
+                    contenidos_seleccionados = request.POST.getlist('contenidos_analiticos[]')
                     
-                    if titulo_practica:
-                        # Crear un nuevo ContenidoAnalitico con el título como nombre
-                        contenido = ContenidoAnalitico.objects.create(
-                            nombre=titulo_practica,
-                            descripcion=f"Práctica de laboratorio: {titulo_practica}",
-                            unidad_didactica=unidad_didactica
-                        )
+                    if contenidos_seleccionados and contenidos_seleccionados[0]:
+                        # Usar el contenido analítico seleccionado del dropdown
+                        try:
+                            contenido_id = contenidos_seleccionados[0]
+                            contenido = ContenidoAnalitico.objects.get(id=contenido_id)
+                        except ContenidoAnalitico.DoesNotExist:
+                            messages.error(request, f"🚨 ERROR: Contenido analítico con ID {contenido_id} no encontrado.")
+                            return redirect('core:agregar_datos_malla')
+                    else:
+                        # Si no hay contenido seleccionado, crear uno nuevo con el título
+                        titulo_practica = request.POST.get('titulo_0_0', '').strip()
+                        if titulo_practica:
+                            contenido = ContenidoAnalitico.objects.create(
+                                nombre=titulo_practica,
+                                descripcion=f"Práctica de laboratorio: {titulo_practica}",
+                                unidad_didactica=unidad_didactica
+                            )
+                        else:
+                            messages.error(request, "🚨 ERROR: Debe seleccionar un contenido analítico o proporcionar un título.")
+                            return redirect('core:agregar_datos_malla')
+                    
+                    if contenido:
+                        # Actualizar el criterio de desempeño si se seleccionó uno
+                        if criterio_id:
+                            try:
+                                criterio = CriterioDesempeno.objects.get(id=criterio_id)
+                                contenido.criterio_desempeno = criterio
+                                contenido.save()
+                            except CriterioDesempeno.DoesNotExist:
+                                pass
                         
                         # REGISTRO DE AUDITORÍA: Guardar información completa de la creación
                         try:

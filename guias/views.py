@@ -1878,8 +1878,7 @@ def generar_practica_word(request, practica_id):
         if competencias.exists():
             latex_content += r"\begin{itemize}[leftmargin=*]" + "\n"
             for comp in competencias:
-                tipo_comp = comp.get_tipo_competencia_display() if hasattr(comp, 'tipo_competencia') else "Competencia"
-                latex_content += f"\\item \\textbf{{{tipo_comp}}}: {html_to_latex(comp.descripcion)}\n"
+                latex_content += f"\\item {html_to_latex(comp.descripcion)}\n"
             latex_content += r"\end{itemize}" + "\n\n"
         else:
             latex_content += "No hay competencias definidas para esta práctica.\n\n"
@@ -1891,17 +1890,11 @@ def generar_practica_word(request, practica_id):
 
 """
         
-        # Mostrar SOLO objetivos con tipo 'desempeno'
-        criterios = ObjetivoPractica.objects.filter(
-            contenido_analitico=contenido,
-            tipo_objetivo='desempeno'
-        ).order_by('orden')
-        
-        if criterios.exists():
-            latex_content += r"\begin{enumerate}[leftmargin=*]" + "\n"
-            for criterio in criterios:
-                latex_content += f"\\item {html_to_latex(criterio.descripcion)}\n"
-            latex_content += r"\end{enumerate}" + "\n\n"
+        # Mostrar SOLO el Criterio de Desempeño seleccionado del dropdown (si existe)
+        if contenido.criterio_desempeno:
+            latex_content += html_to_latex(contenido.criterio_desempeno.nombre) + "\n\n"
+            if contenido.criterio_desempeno.descripcion:
+                latex_content += html_to_latex(contenido.criterio_desempeno.descripcion) + "\n\n"
         else:
             latex_content += "No hay criterios de desempeño definidos.\n\n"
         
@@ -1912,22 +1905,14 @@ def generar_practica_word(request, practica_id):
 
 """
         
-        # Mostrar objetivos que NO sean de desempeño (general, específico, aprendizaje)
+        # Mostrar TODOS los objetivos (incluyendo desempeño) sin tipo ni numeración
         objetivos = ObjetivoPractica.objects.filter(
             contenido_analitico=contenido
-        ).exclude(
-            tipo_objetivo='desempeno'
         ).order_by('orden')
         
         if objetivos.exists():
-            latex_content += r"\begin{itemize}[leftmargin=*]" + "\n"
             for obj in objetivos:
-                tipo_display = obj.get_tipo_objetivo_display() if hasattr(obj, 'tipo_objetivo') else ""
-                if tipo_display:
-                    latex_content += f"\\item \\textbf{{{tipo_display}}}: {html_to_latex(obj.descripcion)}\n"
-                else:
-                    latex_content += f"\\item {html_to_latex(obj.descripcion)}\n"
-            latex_content += r"\end{itemize}" + "\n\n"
+                latex_content += html_to_latex(obj.descripcion) + "\n\n"
         else:
             latex_content += "No hay objetivos definidos.\n\n"
         

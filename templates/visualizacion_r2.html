@@ -359,7 +359,7 @@
                             {% elif categoria == 'guias' and items %}
                                 {% for practica in items %}
                                 <tr class="guia-row">
-                                    <td><strong>{{ practica.nombre|default:"Sin título" }}</strong></td>
+                                    <td><strong>{% if practica.contenido_analitico.titulos.first %}{{ practica.contenido_analitico.titulos.first.texto }}{% else %}{{ practica.nombre|default:"Sin título" }}{% endif %}</strong></td>
                                     <td>{{ practica.contenido_analitico.unidad_didactica.asignatura.carrera|default:"N/A" }}</td>
                                     <td>{{ practica.contenido_analitico.unidad_didactica.asignatura.nombre|default:"N/A" }}</td>
                                     <td>{% if practica.contenido_analitico.unidad_didactica.asignatura.semestre %}{{ practica.contenido_analitico.unidad_didactica.asignatura.semestre }}°{% else %}N/A{% endif %}</td>
@@ -378,8 +378,8 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <button class="btn btn-primary btn-sm" onclick="generarGuiaWord({{ practica.id }}, '{{ practica.nombre|escapejs }}')">
-                                            <i class="fas fa-file-word"></i> Generar Guía Word
+                                        <button class="btn btn-primary btn-sm" onclick="generarGuiaWord({{ practica.id }}, '{% if practica.contenido_analitico.titulos.first %}{{ practica.contenido_analitico.titulos.first.texto|escapejs }}{% else %}{{ practica.nombre|escapejs }}{% endif %}')">
+                                            <i class="fas fa-file-pdf"></i> Generar PDF
                                         </button>
                                     </td>
                                 </tr>
@@ -1961,9 +1961,9 @@ function mostrarError(mensaje) {
 
 // === FUNCIONES PARA GUÍAS DE LABORATORIO ===
 
-// Función para generar Word de la guía completa (optimizada para DOCX)
+// Función para generar PDF de la guía completa (optimizada para LaTeX)
 function generarGuiaWord(practicaId, tituloPractica) {
-    console.log(`🔄 Generando Word para práctica ID: ${practicaId}, Título: ${tituloPractica}`);
+    console.log(`🔄 Generando PDF para práctica ID: ${practicaId}, Título: ${tituloPractica}`);
     
     // Mostrar notificación de carga simple
     const toast = document.createElement('div');
@@ -1983,11 +1983,11 @@ function generarGuiaWord(practicaId, tituloPractica) {
     `;
     toast.innerHTML = `
         <i class="fas fa-spinner fa-spin"></i> 
-        Generando Word: "${tituloPractica}"...
+        Generando PDF: "${tituloPractica}"...
     `;
     document.body.appendChild(toast);
     
-    // Realizar petición directa para generar Word
+    // Realizar petición directa para generar PDF
     fetch(`/guias/practica/${practicaId}/generar-word/`, {
         method: 'GET',
         headers: {
@@ -1999,8 +1999,8 @@ function generarGuiaWord(practicaId, tituloPractica) {
         console.log('📄 Respuesta recibida:', response.status, response.statusText);
         
         if (response.ok) {
-            // Asumir que siempre será DOCX
-            return response.blob().then(blob => ({ blob, extension: 'docx' }));
+            // Asumir que siempre será PDF
+            return response.blob().then(blob => ({ blob, extension: 'pdf' }));
         } else {
             // Intentar leer el error como JSON
             return response.json().then(errorData => {
@@ -2011,7 +2011,7 @@ function generarGuiaWord(practicaId, tituloPractica) {
         }
     })
     .then(({ blob, extension }) => {
-        console.log(`✅ Archivo Word recibido, tamaño:`, blob.size, 'bytes');
+        console.log(`✅ Archivo PDF recibido, tamaño:`, blob.size, 'bytes');
         
         // Remover toast de carga
         const loadingToast = document.getElementById('wordLoadingToast');
@@ -2024,17 +2024,17 @@ function generarGuiaWord(practicaId, tituloPractica) {
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `Guia_${tituloPractica.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}.docx`;
+        a.download = `Guia_${tituloPractica.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}.pdf`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         
         // Mostrar notificación de éxito
-        mostrarNotificacionSimple('✅ Guía Word descargada exitosamente', 'success', 3000);
+        mostrarNotificacionSimple('✅ Guía PDF descargada exitosamente', 'success', 3000);
     })
     .catch(error => {
-        console.error('❌ Error generando Word:', error);
+        console.error('❌ Error generando PDF:', error);
         
         // Remover toast de carga
         const loadingToast = document.getElementById('wordLoadingToast');
