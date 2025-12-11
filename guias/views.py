@@ -2098,8 +2098,8 @@ def generar_practica_word(request, practica_id):
 \usepackage{adjustbox}
 \usepackage{seqsplit}
 
-% Configuración de página
-\geometry{a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+% Configuración de página con espacio para encabezado grande
+\geometry{a4paper, left=2.5cm, right=2.5cm, top=3.5cm, bottom=2.5cm, headheight=2cm, headsep=0.5cm}
 
 % Permitir corte de palabras largas
 \sloppy
@@ -2123,12 +2123,30 @@ def generar_practica_word(request, practica_id):
 \titleformat{\subsection}
   {\normalfont\large\bfseries\color{emiazul}}{\thesubsection}{1em}{}
 
-% Encabezado y pie de página (no aplicar a la portada)
+% Encabezado personalizado con logo, título y datos en formato tabla
 \fancypagestyle{contenido}{
   \fancyhf{}
-  \fancyhead[L]{\small\textbf{EMI - """ + (asignatura.carrera.nombre if (asignatura and asignatura.carrera) else 'N/A') + r"""}}
-  \fancyhead[R]{\small\textbf{Práctica """ + str(practica.orden if practica.orden else 1) + r"""}}
+  \fancyhead[L]{%
+    \begin{tabular}{|p{3cm}|p{7.5cm}|p{4cm}|}
+      \hline
+      \centering
+      \raisebox{-0.5\height}{\includegraphics[width=2.5cm,keepaspectratio]{emi_logo.png}} &
+      \centering
+      \begin{tabular}{c}
+        \textbf{GUÍA DE LABORATORIO} \\
+        \small\textbf{""" + html_to_latex(asignatura.nombre.upper()) + r"""}
+      \end{tabular} &
+      \small
+      \begin{tabular}{ll}
+        \textbf{Código:} & GL-""" + str(practica.id).zfill(3) + r""" \\
+        \textbf{Versión:} & 1 \\
+        & \\
+      \end{tabular} \\
+      \hline
+    \end{tabular}%
+  }
   \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}
 }
 
 \begin{document}
@@ -2140,7 +2158,7 @@ def generar_practica_word(request, practica_id):
 
 % Logo EMI centrado
 \begin{center}
-\includegraphics[width=14.3cm,height=19.6cm,keepaspectratio]{emi_logo.png}
+\includegraphics[width=11.3cm,height=16.6cm,keepaspectratio]{emi_logo.png}
 \end{center}
 
 \vfill
