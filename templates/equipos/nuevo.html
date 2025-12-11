@@ -1,0 +1,1293 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Equipo - Sistema de Laboratorios EMI{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-color: #1e3a8a;
+        --primary-dark: #1e2b4f;
+        --secondary-color: #3730a3;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --info-color: #0891b2;
+        --dark-color: #1f2937;
+        --light-color: #f8fafc;
+        --white: #ffffff;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        
+        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --radius-xl: 1rem;
+        --radius-2xl: 1.5rem;
+        
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding: 30px;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border-radius: 15px;
+        box-shadow: var(--shadow-xl);
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .page-header p {
+        margin: 8px 0 0 0;
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    .sede-selector {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        color: white;
+        box-shadow: var(--shadow-lg);
+        border: 3px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .sede-selector h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 15px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .sede-selector p {
+        margin: 0 0 20px 0;
+        opacity: 0.9;
+        font-size: 1rem;
+    }
+
+    .sede-selector select {
+        width: 100%;
+        padding: 15px 20px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        background: white;
+        color: var(--dark-color);
+        box-shadow: var(--shadow-md);
+    }
+
+    .progress-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--gray-200);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--success-color) 0%, var(--info-color) 100%);
+        width: 0%;
+        transition: width 0.5s ease;
+        border-radius: 4px;
+    }
+
+    .progress-text {
+        text-align: center;
+        color: var(--gray-600);
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 25px;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+        transition: var(--transition);
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    .form-section.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .form-section:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+    
+    .form-section h3 {
+        color: var(--primary-color);
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin: 0 0 25px 0;
+        border-bottom: 3px solid var(--primary-color);
+        padding-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .form-section h3 i {
+        font-size: 1.4rem;
+        color: var(--info-color);
+    }
+
+    .section-description {
+        background: var(--gray-50);
+        border-left: 4px solid var(--info-color);
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        border-radius: 0 8px 8px 0;
+        color: var(--gray-700);
+        font-style: italic;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .form-group label.required::after {
+        content: "*";
+        color: var(--danger-color);
+        font-weight: bold;
+        margin-left: 4px;
+    }
+    
+    .form-group label::before {
+        content: "";
+        width: 4px;
+        height: 16px;
+        background: var(--info-color);
+        border-radius: 2px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid var(--gray-300);
+        border-radius: 10px;
+        font-size: 0.95rem;
+        transition: var(--transition);
+        background: white;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .form-control:hover {
+        border-color: var(--gray-400);
+    }
+
+    .form-control[readonly] {
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border-color: var(--gray-300);
+    }
+    
+    .dynamic-field {
+        position: relative;
+    }
+    
+    .loading-indicator {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: none;
+        color: var(--primary-color);
+        font-size: 0.875rem;
+    }
+    
+    .loading-indicator.show {
+        display: block;
+    }
+
+    .data-info {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border: 2px solid #bfdbfe;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 10px;
+        font-size: 0.875rem;
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .data-info i {
+        color: var(--info-color);
+        font-size: 1rem;
+    }
+
+    #info-excel-asignatura {
+        background: var(--gray-50);
+        border: 2px dashed var(--gray-300);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    #info-excel-asignatura .form-control {
+        background: var(--gray-100);
+        border-color: var(--gray-300);
+        color: var(--gray-700);
+        font-weight: 600;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 15px 0;
+    }
+    
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--gray-300);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    
+    .form-check-input:checked {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .form-check label {
+        cursor: pointer;
+        color: var(--gray-700);
+        font-weight: 500;
+        margin: 0;
+    }
+    
+    .btn {
+        padding: 14px 28px;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: var(--transition);
+        font-size: 0.95rem;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .btn-secondary {
+        background: var(--gray-600);
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: var(--gray-700);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+        color: white;
+        font-size: 1.1rem;
+        padding: 16px 32px;
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-xl);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .description-text {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+        margin-top: 8px;
+        font-style: italic;
+        line-height: 1.4;
+        padding: 8px 12px;
+        background: var(--gray-50);
+        border-radius: 6px;
+        border-left: 3px solid var(--info-color);
+    }
+    
+    .text-danger {
+        color: var(--danger-color) !important;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .text-danger::before {
+        content: "⚠";
+        font-size: 1rem;
+    }
+    
+    .current-file-info {
+        margin-top: 10px;
+        padding: 10px;
+        background: var(--success-color);
+        color: white;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .current-file-info i {
+        color: white;
+    }
+
+    .form-footer {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+        margin-top: 30px;
+    }
+
+    .form-footer .d-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    @media (max-width: 1024px) {
+        .form-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .page-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding: 15px;
+        }
+        
+        .form-section {
+            padding: 20px;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .page-header {
+            padding: 20px;
+        }
+        
+        .form-section h3 {
+            font-size: 1.25rem;
+        }
+
+        .form-footer .d-flex {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .form-section {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .form-section:nth-child(2) { animation-delay: 0.1s; }
+    .form-section:nth-child(3) { animation-delay: 0.2s; }
+    .form-section:nth-child(4) { animation-delay: 0.3s; }
+    .form-section:nth-child(5) { animation-delay: 0.4s; }
+    .form-section:nth-child(6) { animation-delay: 0.5s; }
+    .form-section:nth-child(7) { animation-delay: 0.6s; }
+    .form-section:nth-child(8) { animation-delay: 0.7s; }
+
+    .d-flex { display: flex; }
+    .justify-content-between { justify-content: space-between; }
+    .align-items-center { align-items: center; }
+    .mb-4 { margin-bottom: 1.5rem; }
+    .mb-3 { margin-bottom: 1rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-3 { margin-top: 1rem; }
+    .text-muted { color: var(--gray-500) !important; }
+    .text-center { text-align: center; }
+</style>
+
+<div class="container-fluid">
+    <!-- Header principal -->
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-plus-circle"></i> Registro de Nuevo Equipo</h1>
+            <p>Sistema completo de ingreso con 24 campos y datos de malla curricular</p>
+        </div>
+        <a href="{% url 'equipos:lista' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al Listado
+        </a>
+    </div>
+
+    <!-- Selector de Sede -->
+    <div class="sede-selector">
+        <h2><i class="fas fa-building"></i> Selección de Sede</h2>
+        <p>Antes de iniciar el registro, seleccione la sede donde se realizará este registro de equipo(s):</p>
+        <select id="sede-selector" class="form-control">
+            <option value="">Seleccione una sede...</option>
+            <option value="la_paz">Sede La Paz</option>
+            <option value="cochabamba">Sede Cochabamba</option>
+            <option value="santa_cruz">Sede Santa Cruz</option>
+            <option value="oruro">Sede Oruro</option>
+            <option value="potosi">Sede Potosí</option>
+            <option value="tarija">Sede Tarija</option>
+            <option value="trinidad">Sede Trinidad</option>
+            <option value="sucre">Sede Sucre</option>
+        </select>
+    </div>
+
+    <!-- Barra de progreso -->
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-text" id="progress-text">Complete los campos para continuar (0% completado)</div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="equipoForm">
+        {% csrf_token %}
+        
+        <!-- Información Académica -->
+        <div class="form-section">
+            <h3><i class="fas fa-university"></i> Información Académica</h3>
+            <div class="section-description">
+                Complete la información académica donde se utilizará el equipo. Todos los campos son obligatorios.
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.unidad_academica.label_tag }}
+                    {{ form.unidad_academica }}
+                    {% if form.unidad_academica.errors %}
+                        <div class="text-danger">{{ form.unidad_academica.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group dynamic-field">
+                    {{ form.carrera.label_tag }}
+                    {{ form.carrera }}
+                    <div class="loading-indicator">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando carreras...
+                    </div>
+                    {% if form.carrera.errors %}
+                        <div class="text-danger">{{ form.carrera.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.semestre.label_tag }}
+                    {{ form.semestre }}
+                    {% if form.semestre.errors %}
+                        <div class="text-danger">{{ form.semestre.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group dynamic-field">
+                    {{ form.asignatura.label_tag }}
+                    {{ form.asignatura }}
+                    <div class="loading-indicator">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando asignaturas...
+                    </div>
+                    {% if form.asignatura.errors %}
+                        <div class="text-danger">{{ form.asignatura.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Información adicional del Excel -->
+            <div id="info-excel-asignatura" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-code"></i> Código de Competencia</label>
+                        <input type="text" id="codigo-competencia-info" class="form-control" readonly>
+                        <div class="data-info">
+                            <i class="fas fa-file-excel"></i>
+                            Código de competencia según Excel de malla curricular
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Sigla Curricular</label>
+                        <input type="text" id="sigla-curricular-info" class="form-control" readonly>
+                        <div class="data-info">
+                            <i class="fas fa-file-excel"></i>
+                            Sigla curricular según Excel de malla curricular
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.carga_horaria_semanal.label_tag }}
+                    {{ form.carga_horaria_semanal }}
+                    {% if form.carga_horaria_semanal.errors %}
+                        <div class="text-danger">{{ form.carga_horaria_semanal.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.carga_horaria_semestral.label_tag }}
+                    {{ form.carga_horaria_semestral }}
+                    {% if form.carga_horaria_semestral.errors %}
+                        <div class="text-danger">{{ form.carga_horaria_semestral.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos Curriculares del Excel -->
+        <div class="form-section">
+            <h3><i class="fas fa-book-open"></i> Datos Curriculares (Excel Malla Curricular)</h3>
+            <div class="section-description">
+                Seleccione los criterios de desempeño, unidades didácticas y contenidos analíticos que corresponden a este equipo según la malla curricular.
+            </div>
+            <div class="form-row">
+                <div class="form-group dynamic-field">
+                    {{ form.criterio_desempeno.label_tag }}
+                    {{ form.criterio_desempeno }}
+                    <div class="loading-indicator">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando criterios...
+                    </div>
+                    {% if form.criterio_desempeno.errors %}
+                        <div class="text-danger">{{ form.criterio_desempeno.errors.0 }}</div>
+                    {% endif %}
+                    <div class="description-text" id="criterio-descripcion"></div>
+                </div>
+                <div class="form-group dynamic-field">
+                    {{ form.unidad_didactica.label_tag }}
+                    {{ form.unidad_didactica }}
+                    <div class="loading-indicator">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando unidades...
+                    </div>
+                    {% if form.unidad_didactica.errors %}
+                        <div class="text-danger">{{ form.unidad_didactica.errors.0 }}</div>
+                    {% endif %}
+                    <div class="description-text" id="unidad-descripcion"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group dynamic-field full-width">
+                    {{ form.contenido_analitico.label_tag }}
+                    {{ form.contenido_analitico }}
+                    <div class="loading-indicator">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando contenidos...
+                    </div>
+                    {% if form.contenido_analitico.errors %}
+                        <div class="text-danger">{{ form.contenido_analitico.errors.0 }}</div>
+                    {% endif %}
+                    <div class="description-text" id="contenido-descripcion"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Equipo -->
+        <div class="form-section">
+            <h3><i class="fas fa-cogs"></i> Información del Equipo</h3>
+            <div class="section-description">
+                Ingrese los datos técnicos y características del equipo.
+            </div>
+            <div class="form-row">
+                <div class="form-group full-width">
+                    {{ form.equipo_existente.label_tag }}
+                    {{ form.equipo_existente }}
+                    {% if form.equipo_existente.errors %}
+                        <div class="text-danger">{{ form.equipo_existente.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.marca.label_tag }}
+                    {{ form.marca }}
+                    {% if form.marca.errors %}
+                        <div class="text-danger">{{ form.marca.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.modelo.label_tag }}
+                    {{ form.modelo }}
+                    {% if form.modelo.errors %}
+                        <div class="text-danger">{{ form.modelo.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.estado.label_tag }}
+                    {{ form.estado }}
+                    {% if form.estado.errors %}
+                        <div class="text-danger">{{ form.estado.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.numero_unidades.label_tag }}
+                    {{ form.numero_unidades }}
+                    {% if form.numero_unidades.errors %}
+                        <div class="text-danger">{{ form.numero_unidades.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <div class="form-check">
+                        {{ form.es_activo_fijo }}
+                        {{ form.es_activo_fijo.label_tag }}
+                    </div>
+                    {% if form.es_activo_fijo.errors %}
+                        <div class="text-danger">{{ form.es_activo_fijo.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ubicación y Laboratorio -->
+        <div class="form-section">
+            <h3><i class="fas fa-map-marker-alt"></i> Ubicación y Laboratorio</h3>
+            <div class="section-description">
+                Especifique la ubicación física del equipo en la institución.
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.laboratorio.label_tag }}
+                    {{ form.laboratorio }}
+                    {% if form.laboratorio.errors %}
+                        <div class="text-danger">{{ form.laboratorio.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.seccion_area.label_tag }}
+                    {{ form.seccion_area }}
+                    {% if form.seccion_area.errors %}
+                        <div class="text-danger">{{ form.seccion_area.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.identificador_aula.label_tag }}
+                    {{ form.identificador_aula }}
+                    {% if form.identificador_aula.errors %}
+                        <div class="text-danger">{{ form.identificador_aula.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.responsable_excel.label_tag }}
+                    {{ form.responsable_excel }}
+                    {% if form.responsable_excel.errors %}
+                        <div class="text-danger">{{ form.responsable_excel.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Guías y Prácticas -->
+        <div class="form-section">
+            <h3><i class="fas fa-file-alt"></i> Guías y Prácticas</h3>
+            <div class="section-description">
+                Asocie el equipo con las guías de laboratorio y prácticas correspondientes.
+            </div>
+            <div class="form-row">
+                <div class="form-group dynamic-field">
+                    {{ form.guia_laboratorio.label_tag }}
+                    {{ form.guia_laboratorio }}
+                    <div class="loading-indicator">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando guías...
+                    </div>
+                    {% if form.guia_laboratorio.errors %}
+                        <div class="text-danger">{{ form.guia_laboratorio.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group dynamic-field">
+                    {{ form.practica.label_tag }}
+                    {{ form.practica }}
+                    <div class="loading-indicator">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando prácticas...
+                    </div>
+                    {% if form.practica.errors %}
+                        <div class="text-danger">{{ form.practica.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Equipos Requeridos -->
+        <div class="form-section">
+            <h3><i class="fas fa-list-ul"></i> Equipos Requeridos</h3>
+            <div class="section-description">
+                Información sobre equipos adicionales necesarios para las prácticas.
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.equipo_requerido.label_tag }}
+                    {{ form.equipo_requerido }}
+                    {% if form.equipo_requerido.errors %}
+                        <div class="text-danger">{{ form.equipo_requerido.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.numero_equipos_requeridos.label_tag }}
+                    {{ form.numero_equipos_requeridos }}
+                    {% if form.numero_equipos_requeridos.errors %}
+                        <div class="text-danger">{{ form.numero_equipos_requeridos.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Fotografías -->
+        <div class="form-section">
+            <h3><i class="fas fa-camera"></i> Fotografías</h3>
+            <div class="section-description">
+                Suba fotografías del equipo para documentación visual.
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.fotografia_frontal.label_tag }}
+                    {{ form.fotografia_frontal }}
+                    {% if form.fotografia_frontal.errors %}
+                        <div class="text-danger">{{ form.fotografia_frontal.errors.0 }}</div>
+                    {% endif %}
+                    <div class="description-text">Fotografía frontal completa del equipo</div>
+                </div>
+                <div class="form-group">
+                    {{ form.fotografia_placa.label_tag }}
+                    {{ form.fotografia_placa }}
+                    {% if form.fotografia_placa.errors %}
+                        <div class="text-danger">{{ form.fotografia_placa.errors.0 }}</div>
+                    {% endif %}
+                    <div class="description-text">Fotografía de la placa de características técnicas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="form-section">
+            <h3><i class="fas fa-sticky-note"></i> Observaciones</h3>
+            <div class="section-description">
+                Notas adicionales, comentarios especiales o información relevante sobre el equipo.
+            </div>
+            <div class="form-group">
+                {{ form.observaciones.label_tag }}
+                {{ form.observaciones }}
+                {% if form.observaciones.errors %}
+                    <div class="text-danger">{{ form.observaciones.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Footer con botones -->
+        <div class="form-footer">
+            <div class="d-flex">
+                <a href="{% url 'equipos:lista' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> Registrar Equipo
+                </button>
+            </div>
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    Al registrar el equipo, se guardará toda la información en el sistema con las 24 columnas completas.
+                </small>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    console.log('🎯 Formulario de nuevo equipo inicializado correctamente');
+    
+    let formProgress = 0;
+    const totalFields = $('input, select, textarea').length;
+    
+    // Actualizar progreso del formulario
+    function updateProgress() {
+        const filledFields = $('input:not([type="file"]), select, textarea').filter(function() {
+            return $(this).val() !== '';
+        }).length;
+        
+        formProgress = Math.round((filledFields / totalFields) * 100);
+        $('#progress-fill').css('width', formProgress + '%');
+        $('#progress-text').text(`Progreso del formulario: ${formProgress}% completado (${filledFields}/${totalFields} campos)`);
+    }
+
+    // Validación de sede
+    $('#sede-selector').change(function() {
+        const sede = $(this).val();
+        if (sede) {
+            $('.form-section').addClass('active');
+            updateProgress();
+        } else {
+            $('.form-section').removeClass('active');
+        }
+    });
+
+    // Actualizar progreso en cambios de campos
+    $('input, select, textarea').on('change input', function() {
+        updateProgress();
+    });
+    
+    // Función para mostrar/ocultar indicador de carga
+    function toggleLoading(fieldId, show) {
+        const field = $(fieldId);
+        const indicator = field.closest('.dynamic-field').find('.loading-indicator');
+        if (show) {
+            indicator.addClass('show');
+        } else {
+            indicator.removeClass('show');
+        }
+    }
+
+    // Cargar carreras cuando cambia la unidad académica
+    $('#id_unidad_academica').change(function() {
+        const unidadId = $(this).val();
+        const carreraSelect = $('#id_carrera');
+        
+        console.log('Unidad académica seleccionada:', unidadId);
+        
+        if (unidadId) {
+            toggleLoading('#id_carrera', true);
+            
+            $.get('{% url "equipos:cargar_carreras_ajax" %}', {
+                'unidad_academica_id': unidadId
+            }).done(function(data) {
+                console.log('Carreras recibidas:', data);
+                carreraSelect.empty().append('<option value="">---------</option>');
+                
+                $.each(data.carreras, function(index, carrera) {
+                    carreraSelect.append(
+                        $('<option></option>').attr('value', carrera.id).text(carrera.text)
+                    );
+                });
+                
+                // Limpiar campos dependientes
+                $('#id_asignatura').empty().append('<option value="">---------</option>');
+                limpiarDatosCurriculares();
+                updateProgress();
+                
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('Error al cargar carreras:', textStatus, errorThrown);
+                alert('Error al cargar las carreras');
+            }).always(function() {
+                toggleLoading('#id_carrera', false);
+            });
+        } else {
+            carreraSelect.empty().append('<option value="">---------</option>');
+            $('#id_asignatura').empty().append('<option value="">---------</option>');
+            limpiarDatosCurriculares();
+        }
+    });
+
+    // Cargar asignaturas cuando cambia la carrera
+    $('#id_carrera').change(function() {
+        const carreraId = $(this).val();
+        const asignaturaSelect = $('#id_asignatura');
+        
+        console.log('Carrera seleccionada:', carreraId);
+        
+        if (carreraId) {
+            toggleLoading('#id_asignatura', true);
+            
+            $.get('{% url "equipos:cargar_asignaturas_ajax" %}', {
+                'carrera_id': carreraId
+            }).done(function(data) {
+                console.log('Asignaturas recibidas:', data);
+                asignaturaSelect.empty().append('<option value="">---------</option>');
+                
+                $.each(data.asignaturas, function(index, asignatura) {
+                    const option = $('<option></option>')
+                        .attr('value', asignatura.id)
+                        .text(asignatura.text)
+                        .data('codigo_competencia', asignatura.codigo_competencia)
+                        .data('sigla_curricular', asignatura.sigla_curricular)
+                        .data('carga_horaria_semanal', asignatura.carga_horaria_semanal)
+                        .data('carga_horaria_semestral', asignatura.carga_horaria_semestral);
+                    asignaturaSelect.append(option);
+                });
+                
+                // Limpiar datos curriculares
+                limpiarDatosCurriculares();
+                updateProgress();
+                
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('Error al cargar asignaturas:', textStatus, errorThrown);
+                alert('Error al cargar las asignaturas');
+            }).always(function() {
+                toggleLoading('#id_asignatura', false);
+            });
+        } else {
+            asignaturaSelect.empty().append('<option value="">---------</option>');
+            limpiarDatosCurriculares();
+        }
+    });
+
+    // Cargar datos curriculares cuando cambia la asignatura
+    $('#id_asignatura').change(function() {
+        const asignaturaId = $(this).val();
+        const selectedOption = $(this).find('option:selected');
+        
+        if (asignaturaId) {
+            // Mostrar información del Excel
+            const codigoCompetencia = selectedOption.data('codigo_competencia');
+            const siglaCurricular = selectedOption.data('sigla_curricular');
+            const cargaSemanal = selectedOption.data('carga_horaria_semanal');
+            const cargaSemestral = selectedOption.data('carga_horaria_semestral');
+            
+            $('#codigo-competencia-info').val(codigoCompetencia || 'No disponible');
+            $('#sigla-curricular-info').val(siglaCurricular || 'No disponible');
+            
+            // Actualizar campos de carga horaria si están disponibles
+            if (cargaSemanal) {
+                $('#id_carga_horaria_semanal').val(cargaSemanal);
+            }
+            if (cargaSemestral) {
+                $('#id_carga_horaria_semestral').val(cargaSemestral);
+            }
+            
+            // Mostrar la sección de información del Excel con animación
+            $('#info-excel-asignatura').fadeIn(400);
+            
+            cargarCriteriosDesempeno(asignaturaId);
+            cargarUnidadesDidacticas(asignaturaId);
+            cargarGuiasLaboratorio(asignaturaId);
+        } else {
+            // Ocultar información del Excel
+            $('#info-excel-asignatura').fadeOut(300);
+            $('#codigo-competencia-info').val('');
+            $('#sigla-curricular-info').val('');
+            
+            limpiarDatosCurriculares();
+        }
+    });
+
+    // Cargar contenidos analíticos cuando cambia la unidad didáctica
+    $('#id_unidad_didactica').change(function() {
+        const unidadId = $(this).val();
+        
+        if (unidadId) {
+            cargarContenidosAnaliticos(unidadId);
+        } else {
+            $('#id_contenido_analitico').empty().append('<option value="">---------</option>');
+            $('#contenido-descripcion').text('');
+        }
+    });
+
+    // Cargar prácticas cuando cambia la guía de laboratorio
+    $('#id_guia_laboratorio').change(function() {
+        const guiaId = $(this).val();
+        
+        if (guiaId) {
+            cargarPracticas(guiaId);
+        } else {
+            $('#id_practica').empty().append('<option value="">---------</option>');
+        }
+    });
+
+    // Funciones auxiliares
+    function cargarCriteriosDesempeno(asignaturaId) {
+        toggleLoading('#id_criterio_desempeno', true);
+        
+        $.get('{% url "equipos:cargar_criterios_ajax" %}', {
+            'asignatura_id': asignaturaId
+        }).done(function(data) {
+            const select = $('#id_criterio_desempeno');
+            select.empty().append('<option value="">---------</option>');
+            select.prop('disabled', false);
+            
+            $.each(data.criterios, function(index, criterio) {
+                select.append(
+                    $('<option></option>')
+                        .attr('value', criterio.id)
+                        .text(criterio.text)
+                        .data('descripcion', criterio.descripcion)
+                );
+            });
+            
+        }).fail(function() {
+            alert('Error al cargar los criterios de desempeño');
+        }).always(function() {
+            toggleLoading('#id_criterio_desempeno', false);
+        });
+    }
+
+    function cargarUnidadesDidacticas(asignaturaId) {
+        toggleLoading('#id_unidad_didactica', true);
+        
+        $.get('{% url "equipos:cargar_unidades_didacticas_ajax" %}', {
+            'asignatura_id': asignaturaId
+        }).done(function(data) {
+            const select = $('#id_unidad_didactica');
+            select.empty().append('<option value="">---------</option>');
+            select.prop('disabled', false);
+            
+            $.each(data.unidades_didacticas, function(index, unidad) {
+                select.append(
+                    $('<option></option>')
+                        .attr('value', unidad.id)
+                        .text(unidad.text)
+                        .data('descripcion', unidad.descripcion)
+                );
+            });
+            
+        }).fail(function() {
+            alert('Error al cargar las unidades didácticas');
+        }).always(function() {
+            toggleLoading('#id_unidad_didactica', false);
+        });
+    }
+
+    function cargarContenidosAnaliticos(unidadId) {
+        toggleLoading('#id_contenido_analitico', true);
+        
+        $.get('{% url "equipos:cargar_contenidos_ajax" %}', {
+            'unidad_didactica_id': unidadId
+        }).done(function(data) {
+            const select = $('#id_contenido_analitico');
+            select.empty().append('<option value="">---------</option>');
+            select.prop('disabled', false);
+            
+            $.each(data.contenidos_analiticos, function(index, contenido) {
+                select.append(
+                    $('<option></option>')
+                        .attr('value', contenido.id)
+                        .text(contenido.text)
+                        .data('descripcion', contenido.descripcion)
+                );
+            });
+            
+        }).fail(function() {
+            alert('Error al cargar los contenidos analíticos');
+        }).always(function() {
+            toggleLoading('#id_contenido_analitico', false);
+        });
+    }
+
+    function cargarGuiasLaboratorio(asignaturaId) {
+        toggleLoading('#id_guia_laboratorio', true);
+        
+        $.get('{% url "equipos:cargar_guias_ajax" %}', {
+            'asignatura_id': asignaturaId
+        }).done(function(data) {
+            const select = $('#id_guia_laboratorio');
+            select.empty().append('<option value="">---------</option>');
+            select.prop('disabled', false);
+            
+            $.each(data.guias_laboratorio, function(index, guia) {
+                select.append(
+                    $('<option></option>').attr('value', guia.id).text(guia.text)
+                );
+            });
+            
+        }).fail(function() {
+            alert('Error al cargar las guías de laboratorio');
+        }).always(function() {
+            toggleLoading('#id_guia_laboratorio', false);
+        });
+    }
+
+    function cargarPracticas(guiaId) {
+        toggleLoading('#id_practica', true);
+        
+        $.get('{% url "equipos:cargar_practicas_ajax" %}', {
+            'guia_laboratorio_id': guiaId
+        }).done(function(data) {
+            const select = $('#id_practica');
+            select.empty().append('<option value="">---------</option>');
+            select.prop('disabled', false);
+            
+            $.each(data.practicas, function(index, practica) {
+                select.append(
+                    $('<option></option>').attr('value', practica.id).text(practica.text)
+                );
+            });
+            
+        }).fail(function() {
+            alert('Error al cargar las prácticas');
+        }).always(function() {
+            toggleLoading('#id_practica', false);
+        });
+    }
+
+    function limpiarDatosCurriculares() {
+        $('#id_criterio_desempeno').empty().append('<option value="">---------</option>').prop('disabled', true);
+        $('#id_unidad_didactica').empty().append('<option value="">---------</option>').prop('disabled', true);
+        $('#id_contenido_analitico').empty().append('<option value="">---------</option>').prop('disabled', true);
+        $('#id_guia_laboratorio').empty().append('<option value="">---------</option>').prop('disabled', true);
+        $('#id_practica').empty().append('<option value="">---------</option>').prop('disabled', true);
+        
+        $('#criterio-descripcion').text('');
+        $('#unidad-descripcion').text('');
+        $('#contenido-descripcion').text('');
+        
+        // Limpiar información del Excel
+        $('#info-excel-asignatura').hide();
+        $('#codigo-competencia-info').val('');
+        $('#sigla-curricular-info').val('');
+    }
+
+    // Mostrar descripciones cuando se seleccionen opciones
+    $('#id_criterio_desempeno').change(function() {
+        const descripcion = $(this).find('option:selected').data('descripcion');
+        $('#criterio-descripcion').text(descripcion || '');
+    });
+
+    $('#id_unidad_didactica').change(function() {
+        const descripcion = $(this).find('option:selected').data('descripcion');
+        $('#unidad-descripcion').text(descripcion || '');
+    });
+
+    $('#id_contenido_analitico').change(function() {
+        const descripcion = $(this).find('option:selected').data('descripcion');
+        $('#contenido-descripcion').text(descripcion || '');
+    });
+
+    // Validación antes de envío
+    $('#equipoForm').on('submit', function(e) {
+        const sede = $('#sede-selector').val();
+        if (!sede) {
+            e.preventDefault();
+            alert('Por favor seleccione una sede antes de continuar.');
+            $('#sede-selector').focus();
+            return false;
+        }
+
+        const submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Registrando...');
+        submitBtn.prop('disabled', true);
+    });
+
+    // Inicializar progreso
+    updateProgress();
+
+    console.log('✅ Todas las funcionalidades del formulario de nuevo equipo inicializadas');
+});
+</script>
+{% endblock %}

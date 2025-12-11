@@ -1,0 +1,838 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Insumos - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Gestión de Insumos{% endblock %}
+
+{% block page_description %}Control de inventario y administración de insumos de laboratorio{% endblock %}
+{% block header_content %}{% endblock %}
+{% block content %}
+<div class="insumos-container">
+    <!-- Panel de Estadísticas -->
+    <div class="stats-panel">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="fas fa-vial"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="total-insumos">{{ stats.total }}</h3>
+                    <p>Total Insumos</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #06d6a0 0%, #118ab2 100%);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="insumos-disponibles">{{ stats.disponibles }}</h3>
+                    <p>Disponibles</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="insumos-bajo-stock">{{ stats.bajo_stock }}</h3>
+                    <p>Bajo Stock</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="insumos-agotados">{{ stats.agotados }}</h3>
+                    <p>Agotados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Filtros y Acciones -->
+    <div class="filters-panel">
+        <div class="filters-header">
+            <h3><i class="fas fa-filter"></i> Filtros de Búsqueda</h3>
+            <div class="header-actions">
+                <a href="{% url 'insumos:nuevo' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Insumo
+                </a>
+                <button id="exportExcel" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
+                </button>
+                <button id="reorderBtn" class="btn btn-info">
+                    <i class="fas fa-sort"></i> Reordenar
+                </button>
+            </div>
+        </div>
+        
+        <form method="get" id="filtrosForm" class="filters-form">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="unidad_academica">Unidad Académica:</label>
+                    <select name="unidad_academica" id="unidad_academica" class="form-control">
+                        <option value="">Todas las unidades</option>
+                        {% for unidad in unidades_academicas %}
+                            <option value="{{ unidad.id }}" {% if request.GET.unidad_academica == unidad.id|stringformat:"s" %}selected{% endif %}>
+                                {{ unidad.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="laboratorio">Laboratorio:</label>
+                    <select name="laboratorio" id="laboratorio" class="form-control">
+                        <option value="">Todos los laboratorios</option>
+                        {% for lab in laboratorios %}
+                            <option value="{{ lab.id }}" {% if request.GET.laboratorio == lab.id|stringformat:"s" %}selected{% endif %}>
+                                {{ lab.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="categoria">Categoría:</label>
+                    <select name="categoria" id="categoria" class="form-control">
+                        <option value="">Todas las categorías</option>
+                        <option value="reactivo" {% if request.GET.categoria == 'reactivo' %}selected{% endif %}>Reactivo</option>
+                        <option value="material" {% if request.GET.categoria == 'material' %}selected{% endif %}>Material</option>
+                        <option value="equipo_menor" {% if request.GET.categoria == 'equipo_menor' %}selected{% endif %}>Equipo Menor</option>
+                        <option value="consumible" {% if request.GET.categoria == 'consumible' %}selected{% endif %}>Consumible</option>
+                        <option value="herramienta" {% if request.GET.categoria == 'herramienta' %}selected{% endif %}>Herramienta</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="estado">Estado:</label>
+                    <select name="estado" id="estado" class="form-control">
+                        <option value="">Todos los estados</option>
+                        <option value="nuevo" {% if request.GET.estado == 'nuevo' %}selected{% endif %}>Nuevo</option>
+                        <option value="bueno" {% if request.GET.estado == 'bueno' %}selected{% endif %}>Bueno</option>
+                        <option value="regular" {% if request.GET.estado == 'regular' %}selected{% endif %}>Regular</option>
+                        <option value="malo" {% if request.GET.estado == 'malo' %}selected{% endif %}>Malo</option>
+                        <option value="vencido" {% if request.GET.estado == 'vencido' %}selected{% endif %}>Vencido</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="carrera">Carrera:</label>
+                    <select name="carrera" id="carrera" class="form-control">
+                        <option value="">Todas las carreras</option>
+                        {% for carrera in carreras %}
+                            <option value="{{ carrera.id }}" {% if request.GET.carrera == carrera.id|stringformat:"s" %}selected{% endif %}>
+                                {{ carrera.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="nombre_elemento">Buscar por nombre:</label>
+                    <input type="text" 
+                           name="nombre_elemento" 
+                           id="nombre_elemento" 
+                           class="form-control"
+                           placeholder="Nombre del elemento..." 
+                           value="{{ request.GET.nombre_elemento }}">
+                </div>
+            </div>
+            
+            <div class="filters-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <a href="{% url 'insumos:lista' %}" class="btn btn-secondary">
+                    <i class="fas fa-eraser"></i> Limpiar Filtros
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Insumos -->
+    <div class="table-panel">
+        <div class="table-header">
+            <h3><i class="fas fa-table"></i> Lista de Insumos ({{ insumos.count }} elementos)</h3>
+            <div class="table-actions">
+                <button id="toggleColumns" class="btn btn-outline">
+                    <i class="fas fa-columns"></i> Columnas
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table id="insumosTable" class="insumos-table">
+                <thead>
+                    <tr>
+                        <th data-column="unidad_academica">Unidad Académica</th>
+                        <th data-column="laboratorio">Laboratorio</th>
+                        <th data-column="categoria">Categoría</th>
+                        <th data-column="nombre_elemento">Nombre del Elemento</th>
+                        <th data-column="descripcion">Descripción/Características</th>
+                        <th data-column="marca_modelo">Marca/Modelo</th>
+                        <th data-column="codigo_inventario">Código de Inventario</th>
+                        <th data-column="estado">Estado</th>
+                        <th data-column="ubicacion_fisica">Ubicación Física</th>
+                        <th data-column="cantidad">Cantidad</th>
+                        <th data-column="unidad_medida">Unidad de Medida</th>
+                        <th data-column="fecha_ingreso">Fecha de Ingreso/Compra</th>
+                        <th data-column="uso_principal">Uso Principal</th>
+                        <th data-column="carrera">Carrera</th>
+                        <th data-column="asignatura">Asignatura</th>
+                        <th data-column="unidad_tematica">Unidad Temática</th>
+                        <th data-column="condiciones_almacenamiento">Condiciones de Almacenamiento</th>
+                        <th data-column="observaciones">Observaciones</th>
+                        <th data-column="link_fotografia">Link de la Fotografía</th>
+                        <th data-column="acciones" class="no-sort">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for insumo in insumos %}
+                    <tr>
+                        <td>{{ insumo.unidad_academica.nombre|default:'-' }}</td>
+                        <td>{{ insumo.laboratorio.nombre|default:'-' }}</td>
+                        <td>
+                            <span class="badge badge-{{ insumo.categoria }}">
+                                {{ insumo.get_categoria_display }}
+                            </span>
+                        </td>
+                        <td class="nombre-elemento">{{ insumo.nombre_elemento }}</td>
+                        <td class="descripcion">{{ insumo.descripcion_caracteristicas|truncatechars:50|default:'-' }}</td>
+                        <td>{{ insumo.marca_modelo|default:'-' }}</td>
+                        <td class="codigo">{{ insumo.codigo_inventario }}</td>
+                        <td>
+                            <span class="badge estado-{{ insumo.estado }}">
+                                {{ insumo.get_estado_display }}
+                            </span>
+                        </td>
+                        <td>{{ insumo.ubicacion_fisica|default:'-' }}</td>
+                        <td class="cantidad">{{ insumo.cantidad|default:'0' }}</td>
+                        <td>{{ insumo.unidad_medida|default:'-' }}</td>
+                        <td>{{ insumo.fecha_ingreso_compra|date:"d/m/Y"|default:'-' }}</td>
+                        <td>
+                            {% if insumo.uso_principal %}
+                                <span class="badge badge-uso">{{ insumo.get_uso_principal_display }}</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ insumo.carrera.nombre|default:'-' }}</td>
+                        <td>{{ insumo.asignatura.nombre|default:'-' }}</td>
+                        <td>{{ insumo.unidad_tematica.nombre|default:'-' }}</td>
+                        <td>
+                            {% if insumo.condiciones_almacenamiento %}
+                                <span class="badge badge-almacenamiento">{{ insumo.get_condiciones_almacenamiento_display }}</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="observaciones">{{ insumo.observaciones|truncatechars:30|default:'-' }}</td>
+                        <td>
+                            {% if insumo.link_fotografia %}
+                                <a href="{{ insumo.link_fotografia }}" target="_blank" class="btn-link">
+                                    <i class="fas fa-camera"></i>
+                                </a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="acciones">
+                            <div class="action-buttons">
+                                <a href="{% url 'insumos:detalle' insumo.id %}" 
+                                   class="btn btn-sm btn-info" 
+                                   title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'insumos:editar' insumo.id %}" 
+                                   class="btn btn-sm btn-warning" 
+                                   title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-sm btn-danger delete-btn" 
+                                        data-id="{{ insumo.id }}" 
+                                        data-nombre="{{ insumo.nombre_elemento }}"
+                                        title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20" class="no-data">
+                            <div class="no-data-message">
+                                <i class="fas fa-search"></i>
+                                <h4>No se encontraron insumos</h4>
+                                <p>No hay insumos que coincidan con los filtros aplicados.</p>
+                                <a href="{% url 'insumos:nuevo' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Agregar Primer Insumo
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h3>
+            <span class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>¿Está seguro de que desea eliminar el insumo <strong id="deleteItemName"></strong>?</p>
+            <p class="warning-text">Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer">
+            <button id="confirmDelete" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Eliminar
+            </button>
+            <button class="btn btn-secondary modal-close">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Selector de Columnas -->
+<div id="columnsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-columns"></i> Configurar Columnas Visibles</h3>
+            <span class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="columns-grid">
+                <label><input type="checkbox" data-column="unidad_academica" checked> Unidad Académica</label>
+                <label><input type="checkbox" data-column="laboratorio" checked> Laboratorio</label>
+                <label><input type="checkbox" data-column="categoria" checked> Categoría</label>
+                <label><input type="checkbox" data-column="nombre_elemento" checked> Nombre del Elemento</label>
+                <label><input type="checkbox" data-column="descripcion" checked> Descripción/Características</label>
+                <label><input type="checkbox" data-column="marca_modelo"> Marca/Modelo</label>
+                <label><input type="checkbox" data-column="codigo_inventario" checked> Código de Inventario</label>
+                <label><input type="checkbox" data-column="estado" checked> Estado</label>
+                <label><input type="checkbox" data-column="ubicacion_fisica"> Ubicación Física</label>
+                <label><input type="checkbox" data-column="cantidad" checked> Cantidad</label>
+                <label><input type="checkbox" data-column="unidad_medida"> Unidad de Medida</label>
+                <label><input type="checkbox" data-column="fecha_ingreso"> Fecha de Ingreso/Compra</label>
+                <label><input type="checkbox" data-column="uso_principal"> Uso Principal</label>
+                <label><input type="checkbox" data-column="carrera" checked> Carrera</label>
+                <label><input type="checkbox" data-column="asignatura"> Asignatura</label>
+                <label><input type="checkbox" data-column="unidad_tematica"> Unidad Temática</label>
+                <label><input type="checkbox" data-column="condiciones_almacenamiento"> Condiciones de Almacenamiento</label>
+                <label><input type="checkbox" data-column="observaciones"> Observaciones</label>
+                <label><input type="checkbox" data-column="link_fotografia"> Link de la Fotografía</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="applyColumns" class="btn btn-primary">
+                <i class="fas fa-check"></i> Aplicar
+            </button>
+            <button class="btn btn-secondary modal-close">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.insumos-container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+.stats-panel {
+    margin-bottom: 30px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+}
+
+.stat-content h3 {
+    margin: 0 0 5px 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.stat-content p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.filters-panel, .table-panel {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+}
+
+.filters-header, .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.filters-header h3, .table-header h3 {
+    color: #1e3a8a;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-weight: 500;
+    color: #374151;
+    font-size: 14px;
+}
+
+.form-control {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #1e3a8a;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+.filters-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn {
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary { background: #1e3a8a; color: white; }
+.btn-secondary { background: #6b7280; color: white; }
+.btn-success { background: #059669; color: white; }
+.btn-info { background: #0284c7; color: white; }
+.btn-warning { background: #d97706; color: white; }
+.btn-danger { background: #dc2626; color: white; }
+.btn-outline { background: white; color: #374151; border: 1px solid #d1d5db; }
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.table-responsive {
+    overflow-x: auto;
+    max-height: 70vh;
+}
+
+.insumos-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.insumos-table th {
+    background: #f8fafc;
+    color: #374151;
+    font-weight: 600;
+    padding: 12px 8px;
+    text-align: left;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.insumos-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #f3f4f6;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.insumos-table tr:hover {
+    background: #f8fafc;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.badge-reactivo { background: #dbeafe; color: #1e40af; }
+.badge-material { background: #ecfdf5; color: #059669; }
+.badge-equipo_menor { background: #fef3c7; color: #d97706; }
+.badge-consumible { background: #fce7f3; color: #be185d; }
+.badge-herramienta { background: #e0e7ff; color: #4338ca; }
+
+.estado-nuevo { background: #d1fae5; color: #065f46; }
+.estado-bueno { background: #dbeafe; color: #1e40af; }
+.estado-regular { background: #fef3c7; color: #92400e; }
+.estado-malo { background: #fee2e2; color: #991b1b; }
+.estado-vencido { background: #fecaca; color: #7f1d1d; }
+
+.badge-uso { background: #e0f2fe; color: #0277bd; }
+.badge-almacenamiento { background: #f3e8ff; color: #7c3aed; }
+
+.nombre-elemento { font-weight: 500; color: #1f2937; }
+.codigo { font-family: monospace; font-weight: 500; }
+.cantidad { text-align: center; font-weight: 500; }
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-sm {
+    padding: 6px 8px;
+    font-size: 12px;
+}
+
+.acciones {
+    white-space: nowrap;
+    width: 120px;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.no-data-message {
+    color: #6b7280;
+}
+
+.no-data-message i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #d1d5db;
+}
+
+.no-data-message h4 {
+    margin: 0 0 10px 0;
+    color: #374151;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close {
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.modal-close:hover {
+    color: #374151;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 20px 25px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.warning-text {
+    color: #dc2626;
+    font-size: 14px;
+    margin: 10px 0 0 0;
+}
+
+.columns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.columns-grid label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn-link {
+    color: #0284c7;
+    text-decoration: none;
+}
+
+.btn-link:hover {
+    color: #0369a1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .filters-header, .table-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .header-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .insumos-table {
+        font-size: 12px;
+    }
+    
+    .insumos-table th,
+    .insumos-table td {
+        padding: 8px 4px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales
+    let deleteItemId = null;
+    
+    // Modales
+    const deleteModal = document.getElementById('deleteModal');
+    const columnsModal = document.getElementById('columnsModal');
+    
+    // Botones de eliminación
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            deleteItemId = this.dataset.id;
+            document.getElementById('deleteItemName').textContent = this.dataset.nombre;
+            deleteModal.style.display = 'block';
+        });
+    });
+    
+    // Confirmar eliminación
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        if (deleteItemId) {
+            fetch(`/insumos/eliminar/${deleteItemId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error al eliminar el insumo');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el insumo');
+            });
+        }
+        deleteModal.style.display = 'none';
+    });
+    
+    // Cerrar modales
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', function() {
+            deleteModal.style.display = 'none';
+            columnsModal.style.display = 'none';
+        });
+    });
+    
+    // Cerrar modal al hacer clic fuera
+    window.addEventListener('click', function(event) {
+        if (event.target === deleteModal) {
+            deleteModal.style.display = 'none';
+        }
+        if (event.target === columnsModal) {
+            columnsModal.style.display = 'none';
+        }
+    });
+    
+    // Exportar a Excel
+    document.getElementById('exportExcel').addEventListener('click', function() {
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = '/insumos/exportar-excel/?' + params.toString();
+    });
+    
+    // Selector de columnas
+    document.getElementById('toggleColumns').addEventListener('click', function() {
+        columnsModal.style.display = 'block';
+    });
+    
+    // Aplicar selección de columnas
+    document.getElementById('applyColumns').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('#columnsModal input[type="checkbox"]');
+        const table = document.getElementById('insumosTable');
+        
+        checkboxes.forEach(checkbox => {
+            const column = checkbox.dataset.column;
+            const columnIndex = Array.from(table.querySelectorAll('th')).findIndex(th => 
+                th.dataset.column === column
+            );
+            
+            if (columnIndex !== -1) {
+                const isVisible = checkbox.checked;
+                
+                // Mostrar/ocultar header
+                table.querySelectorAll('th')[columnIndex].style.display = isVisible ? '' : 'none';
+                
+                // Mostrar/ocultar celdas
+                table.querySelectorAll('tbody tr').forEach(row => {
+                    const cell = row.children[columnIndex];
+                    if (cell) {
+                        cell.style.display = isVisible ? '' : 'none';
+                    }
+                });
+            }
+        });
+        
+        columnsModal.style.display = 'none';
+    });
+    
+    // Búsqueda en tiempo real
+    document.getElementById('nombre_elemento').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const tableRows = document.querySelectorAll('#insumosTable tbody tr');
+        
+        tableRows.forEach(row => {
+            const nombreCell = row.querySelector('.nombre-elemento');
+            if (nombreCell) {
+                const isVisible = nombreCell.textContent.toLowerCase().includes(searchTerm);
+                row.style.display = isVisible ? '' : 'none';
+            }
+        });
+    });
+    
+    // Reordenamiento
+    document.getElementById('reorderBtn').addEventListener('click', function() {
+        // Implementar lógica de reordenamiento
+        alert('Función de reordenamiento en desarrollo');
+    });
+});
+</script>
+
+{% endblock %}

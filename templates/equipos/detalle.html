@@ -1,0 +1,842 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ equipo.equipo_existente }} - Detalle del Equipo{% endblock %}
+
+{% block page_title %}Detalle del Equipo{% endblock %}
+
+{% block page_description %}{{ equipo.equipo_existente }} - Código: {{ equipo.codigo_inventario }}{% endblock %}
+
+{% block content %}
+<div class="detalle-equipo-container">
+    <!-- Header con acciones -->
+    <div class="detail-header">
+        <div class="header-info">
+            <div class="equipment-title">
+                <h2>{{ equipo.equipo_existente }}</h2>
+                <div class="equipment-meta">
+                    <span class="badge badge-{{ equipo.estado }}">
+                        {{ equipo.get_estado_display }}
+                    </span>
+                    <span class="equipment-code">{{ equipo.codigo_inventario }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'equipos:lista' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Listado
+            </a>
+            <a href="{% url 'equipos:editar' equipo.pk %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <button onclick="imprimirDetalle()" class="btn btn-info">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+    <div class="detail-content">
+        <!-- Columna izquierda: Información principal -->
+        <div class="detail-main">
+            <!-- Información Básica -->
+            <div class="detail-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-info-circle"></i> Información Básica</h3>
+                </div>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Nombre del Equipo</label>
+                            <span>{{ equipo.equipo_existente }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label>Marca</label>
+                            <span>{{ equipo.marca|default:"No especificada" }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label>Modelo</label>
+                            <span>{{ equipo.modelo|default:"No especificado" }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label>Número de Serie</label>
+                            <span>{{ equipo.serie|default:"No disponible" }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label>Código de Inventario</label>
+                            <span class="highlight">{{ equipo.codigo_inventario }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label>Número de Unidades</label>
+                            <span class="badge badge-info">{{ equipo.numero_unidades }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label>Estado</label>
+                            <span class="badge badge-{{ equipo.estado }}">
+                                {{ equipo.get_estado_display }}
+                            </span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label>Fecha de Adquisición</label>
+                            <span>{{ equipo.fecha_adquisicion|date:"d/m/Y"|default:"No registrada" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ubicación Académica -->
+            <div class="detail-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-university"></i> Ubicación Académica</h3>
+                </div>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item full-width">
+                            <label>Unidad Académica</label>
+                            <span>{{ equipo.unidad_academica.get_nombre_display }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label>Carrera</label>
+                            <span>{{ equipo.carrera.get_nombre_display }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label>Semestre</label>
+                            <span>{{ equipo.semestre }}°</span>
+                        </div>
+                        
+                        {% if equipo.asignatura %}
+                        <div class="info-item full-width">
+                            <label>Asignatura</label>
+                            <span>{{ equipo.asignatura.nombre }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if equipo.unidad_tematica %}
+                        <div class="info-item full-width">
+                            <label>Unidad Temática</label>
+                            <span>{{ equipo.unidad_tematica.nombre }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if equipo.guia_laboratorio %}
+                        <div class="info-item full-width">
+                            <label>Guía de Laboratorio</label>
+                            <span>{{ equipo.guia_laboratorio.nombre }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if equipo.practica %}
+                        <div class="info-item full-width">
+                            <label>Práctica</label>
+                            <span>{{ equipo.practica.nombre }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="info-item full-width">
+                            <label>Laboratorio</label>
+                            <span>{{ equipo.laboratorio.get_nombre_display }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Económica -->
+            <div class="detail-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-dollar-sign"></i> Información Económica</h3>
+                </div>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Costo en Dólares</label>
+                            <span class="currency">
+                                {% if equipo.costo_dolares %}
+                                    ${{ equipo.costo_dolares|floatformat:2 }} USD
+                                {% else %}
+                                    No registrado
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label>Costo en Bolivianos</label>
+                            <span class="currency">
+                                {% if equipo.costo_bolivianos %}
+                                    Bs. {{ equipo.costo_bolivianos|floatformat:2 }}
+                                {% else %}
+                                    No registrado
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="info-item full-width">
+                            <label>Valor Total ({{ equipo.numero_unidades|default:1 }} unidades)</label>
+                            <span class="currency highlight">
+                                {% if valor_total_dolares %}
+                                    ${{ valor_total_dolares|floatformat:2 }} USD
+                                {% elif valor_total_bolivianos %}
+                                    Bs. {{ valor_total_bolivianos|floatformat:2 }}
+                                {% else %}
+                                    No calculable
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Características y Observaciones -->
+            {% if equipo.caracteristicas or equipo.observaciones %}
+            <div class="detail-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-clipboard-list"></i> Características y Observaciones</h3>
+                </div>
+                <div class="section-content">
+                    {% if equipo.caracteristicas %}
+                    <div class="text-content">
+                        <h4>Características Técnicas</h4>
+                        <p>{{ equipo.caracteristicas|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if equipo.observaciones %}
+                    <div class="text-content">
+                        <h4>Observaciones</h4>
+                        <p>{{ equipo.observaciones|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historial de Cambios -->
+            {% if historial %}
+            <div class="detail-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-history"></i> Historial de Cambios</h3>
+                </div>
+                <div class="section-content">
+                    <div class="timeline">
+                        {% for cambio in historial %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <strong>{{ cambio.get_tipo_cambio_display }}</strong>
+                                    <span class="timeline-date">{{ cambio.fecha_cambio|date:"d/m/Y H:i" }}</span>
+                                </div>
+                                <div class="timeline-description">
+                                    {{ cambio.descripcion_cambio }}
+                                </div>
+                                {% if cambio.usuario %}
+                                <div class="timeline-user">
+                                    <i class="fas fa-user"></i> {{ cambio.usuario.get_full_name|default:cambio.usuario.username }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna derecha: Imágenes y acciones -->
+        <div class="detail-sidebar">
+            <!-- Imágenes del Equipo -->
+            <div class="detail-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-camera"></i> Fotografías</h3>
+                </div>
+                <div class="section-content">
+                    {% if equipo.fotografia_frontal %}
+                    <div class="image-container">
+                        <h4>Fotografía Frontal</h4>
+                        <img src="{{ equipo.fotografia_frontal.url }}" 
+                             alt="Fotografía frontal de {{ equipo.equipo_existente }}"
+                             class="equipment-image"
+                             onclick="openImageModal(this.src, 'Fotografía Frontal')">
+                    </div>
+                    {% endif %}
+                    
+                    {% if equipo.fotografia_placa_caracteristicas %}
+                    <div class="image-container">
+                        <h4>Placa de Características</h4>
+                        <img src="{{ equipo.fotografia_placa_caracteristicas.url }}" 
+                             alt="Placa de características de {{ equipo.equipo_existente }}"
+                             class="equipment-image"
+                             onclick="openImageModal(this.src, 'Placa de Características')">
+                    </div>
+                    {% endif %}
+                    
+                    {% if not equipo.fotografia_frontal and not equipo.fotografia_placa_caracteristicas %}
+                    <div class="no-images">
+                        <i class="fas fa-camera-slash"></i>
+                        <p>No hay fotografías disponibles</p>
+                        <a href="{% url 'equipos:editar' equipo.pk %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus"></i> Agregar Fotos
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="detail-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-tools"></i> Acciones Rápidas</h3>
+                </div>
+                <div class="section-content">
+                    <div class="quick-actions">
+                        <a href="{% url 'equipos:editar' equipo.pk %}" class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                            <span>Editar Equipo</span>
+                        </a>
+                        
+                        <button onclick="cambiarEstado()" class="action-btn status">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>Cambiar Estado</span>
+                        </button>
+                        
+                        <button onclick="programarMantenimiento()" class="action-btn maintenance">
+                            <i class="fas fa-wrench"></i>
+                            <span>Mantenimiento</span>
+                        </button>
+                        
+                        <button onclick="generarEtiqueta()" class="action-btn label">
+                            <i class="fas fa-qrcode"></i>
+                            <span>Generar Etiqueta</span>
+                        </button>
+                        
+                        <a href="{% url 'equipos:eliminar' equipo.pk %}" class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                            <span>Eliminar</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Sistema -->
+            <div class="detail-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-info"></i> Información del Sistema</h3>
+                </div>
+                <div class="section-content">
+                    <div class="system-info">
+                        <div class="system-item">
+                            <label>Creado:</label>
+                            <span>{{ equipo.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div class="system-item">
+                            <label>Última modificación:</label>
+                            <span>{{ equipo.fecha_modificacion|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        {% if equipo.usuario_creacion %}
+                        <div class="system-item">
+                            <label>Creado por:</label>
+                            <span>{{ equipo.usuario_creacion.get_full_name|default:equipo.usuario_creacion.username }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para vista de imagen -->
+<div id="imageModal" class="modal" onclick="closeImageModal()">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <img id="modalImage" src="" alt="">
+        <div id="modalCaption"></div>
+    </div>
+</div>
+
+<style>
+    .detalle-equipo-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+        padding: 25px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .equipment-title h2 {
+        margin: 0 0 10px 0;
+        color: #1e3a8a;
+        font-size: 28px;
+        font-weight: 600;
+    }
+
+    .equipment-meta {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .equipment-code {
+        background: #f1f5f9;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .detail-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+    }
+
+    .detail-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+
+    .section-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .section-header h3 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-item.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .info-item label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .info-item span {
+        font-size: 14px;
+        color: #374151;
+        font-weight: 500;
+    }
+
+    .highlight {
+        color: #1e3a8a !important;
+        font-weight: 700 !important;
+    }
+
+    .currency {
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: capitalize;
+        display: inline-block;
+    }
+
+    .badge-operativo { background: #dcfce7; color: #166534; }
+    .badge-mantenimiento { background: #fef3c7; color: #92400e; }
+    .badge-reparacion { background: #fee2e2; color: #dc2626; }
+    .badge-inoperativo { background: #f3f4f6; color: #6b7280; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+
+    .text-content {
+        margin-bottom: 20px;
+    }
+
+    .text-content h4 {
+        margin: 0 0 10px 0;
+        color: #374151;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .text-content p {
+        margin: 0;
+        color: #6b7280;
+        line-height: 1.6;
+    }
+
+    /* Timeline */
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e5e7eb;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -37px;
+        top: 6px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #3b82f6;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px #3b82f6;
+    }
+
+    .timeline-content {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 3px solid #3b82f6;
+    }
+
+    .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .timeline-date {
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .timeline-description {
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .timeline-user {
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    /* Sidebar */
+    .image-container {
+        margin-bottom: 20px;
+    }
+
+    .image-container h4 {
+        margin: 0 0 10px 0;
+        color: #374151;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .equipment-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        border: 2px solid #e5e7eb;
+    }
+
+    .equipment-image:hover {
+        transform: scale(1.02);
+        border-color: #3b82f6;
+    }
+
+    .no-images {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6b7280;
+    }
+
+    .no-images i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    .no-images p {
+        margin-bottom: 15px;
+    }
+
+    .quick-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: white;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .action-btn.edit { background: #f59e0b; }
+    .action-btn.status { background: #3b82f6; }
+    .action-btn.maintenance { background: #10b981; }
+    .action-btn.label { background: #6366f1; }
+    .action-btn.delete { background: #ef4444; }
+
+    .action-btn:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+
+    .system-info {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .system-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .system-item:last-child {
+        border-bottom: none;
+    }
+
+    .system-item label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+    }
+
+    .system-item span {
+        font-size: 13px;
+        color: #374151;
+    }
+
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+    }
+
+    .modal-content {
+        margin: auto;
+        display: block;
+        width: 90%;
+        max-width: 800px;
+        position: relative;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .modal-content img {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    #modalCaption {
+        margin: auto;
+        display: block;
+        width: 80%;
+        max-width: 700px;
+        text-align: center;
+        color: #ccc;
+        padding: 10px 0;
+        height: 150px;
+    }
+
+    .btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+
+    .btn-secondary { background: #6b7280; color: white; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-info { background: #3b82f6; color: white; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .detail-content {
+            grid-template-columns: 1fr;
+        }
+        
+        .detail-header {
+            flex-direction: column;
+            gap: 20px;
+            align-items: stretch;
+        }
+        
+        .header-actions {
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .equipment-meta {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .detalle-equipo-container {
+            padding: 15px;
+        }
+    }
+
+    /* Print styles */
+    @media print {
+        .detail-header .header-actions,
+        .quick-actions,
+        .btn {
+            display: none !important;
+        }
+        
+        .detail-content {
+            grid-template-columns: 1fr;
+        }
+        
+        .detail-section {
+            box-shadow: none;
+            border: 1px solid #e5e7eb;
+            break-inside: avoid;
+        }
+    }
+</style>
+
+<script>
+function openImageModal(src, caption) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    const modalCaption = document.getElementById('modalCaption');
+    
+    modal.style.display = 'block';
+    modalImg.src = src;
+    modalCaption.innerHTML = caption;
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').style.display = 'none';
+}
+
+function imprimirDetalle() {
+    window.print();
+}
+
+function cambiarEstado() {
+    // Implementar modal para cambio de estado
+    alert('Función de cambio de estado en desarrollo');
+}
+
+function programarMantenimiento() {
+    // Implementar modal para programar mantenimiento
+    alert('Función de programación de mantenimiento en desarrollo');
+}
+
+function generarEtiqueta() {
+    // Implementar generación de etiqueta QR
+    alert('Función de generación de etiquetas en desarrollo');
+}
+
+// Cerrar modal con tecla Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeImageModal();
+    }
+});
+</script>
+{% endblock %}

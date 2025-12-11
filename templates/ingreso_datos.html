@@ -1,0 +1,1932 @@
+{% extends 'base.html' %}
+
+{% block title %}Ingreso de Datos - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Ingreso de Datos{% endblock %}
+
+{% block page_description %}Registro estructurado de información de laboratorios y equipos{% endblock %}
+
+{% block extra_head %}
+<!-- jQuery CDN - Cargar antes que Select2 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Verificar que jQuery se cargue correctamente -->
+<script>
+// Verificar jQuery cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DEBUG: DOM cargado, verificando jQuery...');
+    
+    // Verificar que las funciones globales existen
+    if (typeof window.checkJQuery === 'function') {
+        window.checkJQuery();
+    }
+});
+
+// También verificar cuando la página se carga completamente
+window.addEventListener('load', function() {
+    console.log('DEBUG: Página cargada completamente, verificando jQuery...');
+    
+    if (typeof window.checkJQuery === 'function') {
+        window.checkJQuery();
+    }
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="ingreso-container">
+    <div class="progress-bar">
+        <div class="progress-step active" data-step="1">
+            <span class="step-number">1</span>
+            <span class="step-title">Unidad Académica</span>
+        </div>
+        <div class="progress-step" data-step="2">
+            <span class="step-number">2</span>
+            <span class="step-title">Información Académica</span>
+        </div>
+        <div class="progress-step" data-step="3">
+            <span class="step-number">3</span>
+            <span class="step-title">Laboratorio</span>
+        </div>
+        <div class="progress-step" data-step="4">
+            <span class="step-number">4</span>
+            <span class="step-title">Ensayos y Equipos</span>
+        </div>
+        <div class="progress-step" data-step="5">
+            <span class="step-number">5</span>
+            <span class="step-title">Confirmación</span>
+        </div>
+    </div>
+
+    <form id="ingresoForm" method="post" action="{% url 'ingreso_datos' %}">
+        {% csrf_token %}
+        
+        <!-- Paso 1: Unidad Académica -->
+        <div class="form-step active" data-step="1">
+            <div class="card">
+                <h3>Seleccionar Unidad Académica</h3>
+                <p class="step-description">Seleccione la unidad académica donde se encuentra el laboratorio:</p>
+                
+                <div class="form-group">
+                    <label for="unidad_academica">Unidad Académica *</label>
+                    {{ unidad_form.unidad_academica }}
+                    <div class="error-message" id="error-unidad_academica"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary next-step" data-step="1">Siguiente</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paso 2: Información Académica -->
+        <div class="form-step" data-step="2">
+            <div class="card">
+                <h3>Información Académica</h3>
+                <p class="step-description">Complete la información académica relacionada:</p>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="semestre">Semestre *</label>
+                        <select name="semestre" id="semestre" required class="form-control" onchange="updateMaterias()">
+                            <option value="">Seleccione un semestre</option>
+                            {% for i in "1234567890" %}
+                                <option value="{{ forloop.counter }}">{{ forloop.counter }}° Semestre</option>
+                            {% endfor %}
+                        </select>
+                        <div class="error-message" id="error-semestre"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="carrera">Carrera *</label>
+                        {{ info_form.carrera }}
+                        <div class="error-message" id="error-carrera"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="materia">Materia *</label>
+                    <select name="materia" id="materia" required class="form-control">
+                        <option value="">Seleccione primero el semestre</option>
+                    </select>
+                    <div class="error-message" id="error-materia"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary prev-step" data-step="2">Anterior</button>
+                    <button type="button" class="btn btn-primary next-step" data-step="2">Siguiente</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paso 3: Laboratorio -->
+        <div class="form-step" data-step="3">
+            <div class="card">
+                <h3>Seleccionar Laboratorio</h3>
+                <p class="step-description">Seleccione el laboratorio asociado a la materia:</p>
+                
+                <div class="form-group">
+                    <label for="laboratorio">Laboratorio *</label>
+                    {{ lab_form.laboratorio }}
+                    <div class="error-message" id="error-laboratorio"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary prev-step" data-step="3">Anterior</button>
+                    <button type="button" class="btn btn-primary next-step" data-step="3">Siguiente</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paso 4: Ensayos y Equipos -->
+        <div class="form-step" data-step="4">
+            <div class="card">
+                <h3>Ensayos y Equipos</h3>
+                <p class="step-description">Seleccione los ensayos, cantidad de estudiantes y equipos necesarios:</p>
+                
+                <div class="error-message" id="error-ensayos"></div>
+                
+                <div class="ensayos-container">
+                    <div class="ensayo-item">
+                        <div class="ensayo-header">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="ensayo_1">Ensayo 1 *</label>
+                                    <select id="ensayo_1" name="ensayos[]" required class="form-control">
+                                        <option value="">Seleccione un ensayo</option>
+                                        <option value="ensayo_traccion">Ensayo de Tracción</option>
+                                        <option value="ensayo_compresion">Ensayo de Compresión</option>
+                                        <option value="ensayo_dureza">Ensayo de Dureza</option>
+                                        <option value="ensayo_impacto">Ensayo de Impacto</option>
+                                        <option value="ensayo_ph">Ensayo de pH</option>
+                                        <option value="ensayo_conductividad">Ensayo de Conductividad Eléctrica</option>
+                                        <option value="ensayo_densidad">Ensayo de Densidad</option>
+                                        <option value="ensayo_viscosidad">Ensayo de Viscosidad</option>
+                                        <option value="ensayo_microscopia">Ensayo de Microscopía</option>
+                                        <option value="ensayo_espectroscopia">Ensayo de Espectroscopía</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="estudiantes_1">Cantidad de Estudiantes *</label>
+                                    <input type="number" id="estudiantes_1" name="estudiantes[]" min="1" value="1" 
+                                           class="form-control" onchange="updateRecomendaciones(1)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="equipos-section">
+                            <h4>Equipos para este ensayo:</h4>
+                            <div class="equipos-container" data-ensayo="1">
+                                <div class="equipo-item">
+                                    <div class="equipo-selection">
+                                        <div class="form-group">
+                                            <label>Tipo de Equipo *</label>
+                                            <select name="equipos[1][]" required class="form-control equipo-tipo-select" 
+                                                    data-ensayo="1" data-equipo="1">
+                                                <option value="">Seleccione un equipo</option>
+                                                <!-- Los tipos de equipo se cargarán dinámicamente -->
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-group equipos-individuales-group" style="display: none;">
+                                            <label>Equipos Específicos</label>
+                                            <div class="equipos-individuales-container"></div>
+                                        </div>
+                                        
+                                        <div class="recomendacion-container" style="display: none;">
+                                            <div class="recomendacion-info"></div>
+                                        </div>
+                                        
+                                        <button type="button" class="btn btn-danger remove-equipo">×</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary add-equipo" data-ensayo="1">+ Agregar Equipo</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-secondary add-ensayo">+ Agregar Ensayo</button>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary prev-step" data-step="4">Anterior</button>
+                    <button type="button" class="btn btn-primary next-step" data-step="4">Siguiente</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paso 5: Confirmación -->
+        <div class="form-step" data-step="5">
+            <div class="card">
+                <h3>Confirmación de Datos</h3>
+                <p class="step-description">Revise la información antes de enviar:</p>
+                
+                <div class="resumen-datos">
+                    <!-- Tabla de Información General -->
+                    <div class="tabla-excel">
+                        <h4>Información General</h4>
+                        <table class="excel-table">
+                            <thead>
+                                <tr>
+                                    <th>Campo</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Unidad Académica</strong></td>
+                                    <td id="tabla-unidad">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Semestre</strong></td>
+                                    <td id="tabla-semestre">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Carrera</strong></td>
+                                    <td id="tabla-carrera">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Materia</strong></td>
+                                    <td id="tabla-materia">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Laboratorio</strong></td>
+                                    <td id="tabla-laboratorio">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Tabla de Ensayos y Equipos -->
+                    <div class="tabla-excel">
+                        <h4>Ensayos y Equipos</h4>
+                        <table class="excel-table" id="tabla-ensayos">
+                            <thead>
+                                <tr>
+                                    <th>N°</th>
+                                    <th>Ensayo</th>
+                                    <th>Cantidad de Estudiantes</th>
+                                    <th>Tipo de Equipo</th>
+                                    <th>Equipos Seleccionados</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llenará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary prev-step" data-step="5">Anterior</button>
+                    <button type="submit" class="btn btn-success">Guardar Información</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>    
+    <style>
+    .ingreso-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .progress-bar {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .progress-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        position: relative;
+    }
+
+    .progress-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 15px;
+        right: -50%;
+        width: 100%;
+        height: 2px;
+        background: #e5e7eb;
+        z-index: 1;
+    }
+
+    .progress-step.active:not(:last-child)::after {
+        background: #1e3a8a;
+    }
+
+    .progress-step.completed:not(:last-child)::after {
+        background: #059669;
+    }
+
+    .step-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        position: relative;
+        z-index: 2;
+    }
+
+    .progress-step.active .step-number {
+        background: #1e3a8a;
+        color: white;
+    }
+
+    .progress-step.completed .step-number {
+        background: #059669;
+        color: white;
+    }
+
+    .step-title {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 5px;
+        text-align: center;
+    }
+
+    .progress-step.active .step-title {
+        color: #1e3a8a;
+        font-weight: 600;
+    }
+
+    .progress-step.completed .step-title {
+        color: #059669;
+        font-weight: 600;
+    }
+
+    .form-step {
+        display: none;
+    }
+
+    .form-step.active {
+        display: block;
+    }
+
+    .step-description {
+        color: #6b7280;
+        margin-bottom: 25px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #374151;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 2px solid #e5e7eb;
+        border-radius: 5px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #1e3a8a;
+    }
+
+    .form-control.error {
+        border-color: #dc2626;
+    }
+
+    .error-message {
+        color: #dc2626;
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
+    }
+
+    .error-message.show {
+        display: block;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: #1e3a8a;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #1e40af;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #4b5563;
+    }
+
+    .btn-success {
+        background: #059669;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #047857;
+    }
+
+    .btn-danger {
+        background: #dc2626;
+        color: white;
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+
+    .btn-danger:hover {
+        background: #b91c1c;
+    }
+
+    .ensayos-container {
+        margin-bottom: 20px;
+    }
+
+    .ensayo-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+        background: #f9fafb;
+    }
+
+    .ensayo-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .equipos-section h4 {
+        color: #374151;
+        margin: 15px 0 10px 0;
+        font-size: 16px;
+    }
+
+    .equipo-item {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+        position: relative;
+    }
+
+    .equipo-selection {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .equipos-individuales-container {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 5px;
+        padding: 10px;
+        background: #f9fafb;
+    }
+
+    .equipo-individual-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .equipo-individual-item:last-child {
+        border-bottom: none;
+    }
+
+    .equipo-individual-item label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: normal;
+        cursor: pointer;
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .recomendacion-container {
+        margin-top: 10px;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .recomendacion-info {
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .recomendacion-info.suficiente {
+        background: #f0f9ff;
+        border-color: #3b82f6;
+        color: #1e40af;
+    }
+
+    .recomendacion-info.insuficiente {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
+    }
+
+    .resumen-datos {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    /* Estilos para las tablas tipo Excel */
+    .tabla-excel {
+        margin-bottom: 25px;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .tabla-excel h4 {
+        color: #1e3a8a;
+        margin: 0 0 15px 0;
+        padding: 15px 20px;
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .excel-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .excel-table th {
+        background: #f1f5f9;
+        color: #334155;
+        font-weight: 600;
+        padding: 12px 15px;
+        text-align: left;
+        border: 1px solid #e2e8f0;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .excel-table td {
+        padding: 12px 15px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        vertical-align: top;
+    }
+
+    .excel-table tbody tr:nth-child(even) {
+        background: #f8fafc;
+    }
+
+    .excel-table tbody tr:hover {
+        background: #f1f5f9;
+    }
+
+    .excel-table td:first-child {
+        font-weight: 500;
+        color: #475569;
+        background: #f8fafc;
+        width: 200px;
+    }
+
+    /* Estilos específicos para la tabla de ensayos */
+    #tabla-ensayos th:nth-child(1) { width: 60px; } /* N° */
+    #tabla-ensayos th:nth-child(2) { width: 25%; } /* Ensayo */
+    #tabla-ensayos th:nth-child(3) { width: 150px; } /* Cantidad Estudiantes */
+    #tabla-ensayos th:nth-child(4) { width: 20%; } /* Tipo Equipo */
+    #tabla-ensayos th:nth-child(5) { width: 35%; } /* Equipos Seleccionados */
+
+    #tabla-ensayos td:nth-child(1) {
+        text-align: center;
+        font-weight: 600;
+        color: #1e3a8a;
+        background: #f1f5f9;
+    }
+
+    #tabla-ensayos td:nth-child(3) {
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .equipos-seleccionados {
+        max-height: 100px;
+        overflow-y: auto;
+        padding: 5px;
+    }
+
+    .equipo-seleccionado {
+        display: block;
+        padding: 3px 8px;
+        margin: 2px 0;
+        background: #e0f2fe;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+    }
+
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .equipos-list h5 {
+        margin-bottom: 10px;
+        color: #495057;
+        font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .progress-bar {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .progress-step:not(:last-child)::after {
+            display: none;
+        }
+        
+        .ingreso-container {
+            max-width: 100%;
+            padding: 10px;
+        }
+
+        .excel-table {
+            font-size: 12px;
+        }
+
+        .excel-table th,
+        .excel-table td {
+            padding: 8px 10px;
+        }
+
+        .tabla-excel h4 {
+            font-size: 14px;
+            padding: 10px 15px;
+        }
+
+        /* Hacer tabla responsive */
+        .excel-table {
+            min-width: 100%;
+            overflow-x: auto;
+            display: block;
+            white-space: nowrap;
+        }
+
+        .excel-table thead,
+        .excel-table tbody,
+        .excel-table tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+    }
+</style>
+
+<script>
+// Sistema de callbacks para jQuery - definido globalmente
+window.jqueryReady = window.jqueryReady || false;
+window.select2Ready = window.select2Ready || false;
+window.jqueryCallbacks = window.jqueryCallbacks || [];
+
+// Función para ejecutar cuando jQuery esté disponible
+function whenJQueryReady(callback) {
+    if (window.jqueryReady && typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+        callback();
+    } else {
+        window.jqueryCallbacks.push(callback);
+    }
+}
+
+// Función para ejecutar todos los callbacks pendientes
+function executeJQueryCallbacks() {
+    console.log('DEBUG: Ejecutando callbacks de jQuery, cantidad:', window.jqueryCallbacks.length);
+    while (window.jqueryCallbacks.length > 0) {
+        const callback = window.jqueryCallbacks.shift();
+        try {
+            callback();
+        } catch (error) {
+            console.error('Error ejecutando callback jQuery:', error);
+        }
+    }
+}
+
+// Función para verificar jQuery y Select2
+function checkJQuery() {
+    console.log('DEBUG: Verificando jQuery...');
+    console.log('DEBUG: jQuery disponible:', typeof window.jQuery !== 'undefined');
+    console.log('DEBUG: $ disponible:', typeof window.$ !== 'undefined');
+    console.log('DEBUG: Select2 disponible:', typeof window.jQuery !== 'undefined' && typeof window.jQuery.fn.select2 !== 'undefined');
+    
+    if (typeof window.jQuery !== 'undefined' && typeof window.$ !== 'undefined') {
+        console.log('DEBUG: jQuery cargado correctamente');
+        window.jqueryReady = true;
+        
+        // Verificar si Select2 está disponible
+        if (typeof window.jQuery.fn.select2 !== 'undefined') {
+            console.log('DEBUG: Select2 también está disponible');
+            window.select2Ready = true;
+        } else {
+            console.log('DEBUG: Select2 no está disponible, usando fallback básico');
+            window.select2Ready = false;
+        }
+        
+        window.dispatchEvent(new CustomEvent('jqueryLoaded'));
+        executeJQueryCallbacks();
+        return true;
+    }
+    return false;
+}
+
+// Hacer las funciones disponibles globalmente
+window.checkJQuery = checkJQuery;
+window.whenJQueryReady = whenJQueryReady;
+window.executeJQueryCallbacks = executeJQueryCallbacks;
+
+// Verificar jQuery inmediatamente
+if (!checkJQuery()) {
+    // Si no está disponible, intentar cargarlo dinámicamente
+    console.log('DEBUG: Intentando cargar jQuery dinámicamente...');
+    
+    const script = document.createElement('script');
+    script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js';
+    script.onload = function() {
+        console.log('DEBUG: jQuery cargado dinámicamente');
+        setTimeout(() => {
+            checkJQuery();
+        }, 100);
+    };
+    script.onerror = function() {
+        console.error('ERROR: No se pudo cargar jQuery dinámicamente');
+        window.jqueryReady = false;
+    };
+    document.head.appendChild(script);
+}
+
+// Función para configurar Select2 en un elemento específico
+function configurarSelect2ParaTipo(selectElement) {
+    console.log('DEBUG: Configurando Select2 para elemento:', selectElement);
+    console.log('DEBUG: Elemento select HTML:', selectElement.outerHTML);
+    
+    // Usar el sistema de callbacks para esperar a que jQuery esté disponible
+    whenJQueryReady(function() {
+        console.log('DEBUG: jQuery disponible, verificando Select2...');
+        console.log('DEBUG: Select2 disponible:', window.select2Ready);
+        
+        const unidadAcademicaSelect = document.querySelector('select[name="unidad_academica"]');
+        const unidadAcademica = unidadAcademicaSelect ? unidadAcademicaSelect.value : '';
+        
+        console.log('DEBUG: Unidad académica para configurar:', unidadAcademica);
+        
+        if (!unidadAcademica) {
+            console.log('DEBUG: No hay unidad académica, deshabilitando select');
+            // Si no hay unidad académica, deshabilitar el select
+            if (window.select2Ready) {
+                $(selectElement).prop('disabled', true);
+            } else {
+                selectElement.disabled = true;
+            }
+            selectElement.innerHTML = '<option value="">Seleccione primero una unidad académica</option>';
+            return;
+        }
+        
+        // Verificar si Select2 está disponible
+        if (window.select2Ready && typeof $.fn.select2 !== 'undefined') {
+            console.log('DEBUG: Configurando con Select2...');
+            
+            const $select = $(selectElement);
+            
+            // Destruir Select2 anterior si existe
+            if ($select.hasClass('select2-hidden-accessible')) {
+                $select.select2('destroy');
+            }
+            
+            // Limpiar y habilitar
+            $select.empty().append('<option value="">Seleccione un equipo</option>');
+            $select.prop('disabled', false);
+            
+            // Configurar Select2 con búsqueda AJAX
+            $select.select2({
+                placeholder: 'Buscar tipo de equipo...',
+                allowClear: true,
+                width: '100%',
+                minimumInputLength: 2,
+                ajax: {
+                    url: '/visualizacion/equipos/',
+                    type: 'POST',
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            action: 'get_tipos_equipo',
+                            unidad_academica: unidadAcademica,
+                            search: params.term || '',
+                            limit: 50,
+                            offset: (params.page - 1) * 50 || 0,
+                            csrfmiddlewaretoken: document.querySelector('[name=csrfmiddlewaretoken]').value
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        
+                        return {
+                            results: data.tipos_equipo.map(tipo => ({
+                                id: tipo.nombre,
+                                text: tipo.display_name
+                            })),
+                            pagination: {
+                                more: data.has_more
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                language: {
+                    inputTooShort: function () {
+                        return 'Por favor ingrese al menos 2 caracteres';
+                    },
+                    searching: function () {
+                        return 'Buscando...';
+                    },
+                    noResults: function () {
+                        return 'No se encontraron resultados';
+                    },
+                    loadingMore: function () {
+                        return 'Cargando más resultados...';
+                    }
+                }
+            });
+            
+            // Event listener para cambios
+            $select.on('change', function() {
+                loadEquiposIndividuales(this);
+            });
+            
+            console.log('DEBUG: Select2 configurado exitosamente');
+        } else {
+            console.log('DEBUG: Select2 no disponible, usando configuración básica...');
+            
+            // Usar fallback básico sin Select2
+            configurarSelectBasico(selectElement, unidadAcademica);
+        }
+    });
+}
+
+// Función para configurar select básico sin Select2
+function configurarSelectBasico(selectElement, unidadAcademica) {
+    console.log('DEBUG: Configurando select básico para:', selectElement);
+    console.log('DEBUG: Unidad académica:', unidadAcademica);
+    console.log('DEBUG: Elemento select:', selectElement.outerHTML);
+    
+    // Limpiar y habilitar
+    selectElement.innerHTML = '<option value="">Cargando tipos de equipo...</option>';
+    selectElement.disabled = false;
+    
+    // Verificar que el token CSRF existe
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfToken) {
+        console.error('ERROR: No se encontró el token CSRF');
+        selectElement.innerHTML = '<option value="">Error: No se encontró token CSRF</option>';
+        selectElement.disabled = true;
+        return;
+    }
+    
+    console.log('DEBUG: Token CSRF encontrado:', csrfToken.value);
+    
+    // Hacer petición AJAX para obtener tipos de equipo
+    const requestBody = `action=get_tipos_equipo&unidad_academica=${unidadAcademica}&limit=200&offset=0`;
+    console.log('DEBUG: Request body:', requestBody);
+    
+    fetch('/visualizacion/equipos/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken.value
+        },
+        body: requestBody
+    })
+    .then(response => {
+        console.log('DEBUG: Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('DEBUG: Response data:', data);
+        console.log('DEBUG: Tipos de equipo recibidos:', data.tipos_equipo?.length || 0);
+        
+        selectElement.innerHTML = '<option value="">Seleccione un equipo</option>';
+        
+        if (data.tipos_equipo && data.tipos_equipo.length > 0) {
+            data.tipos_equipo.forEach(tipo => {
+                const option = document.createElement('option');
+                option.value = tipo.nombre;
+                option.textContent = tipo.display_name;
+                selectElement.appendChild(option);
+            });
+            
+            // Agregar mensaje si hay más tipos disponibles
+            if (data.has_more) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = `--- Mostrando ${data.tipos_equipo.length} de ${data.total} tipos ---`;
+                option.disabled = true;
+                option.style.fontStyle = 'italic';
+                selectElement.appendChild(option);
+            }
+            
+            console.log('DEBUG: Select poblado con', data.tipos_equipo.length, 'tipos de equipo');
+        } else {
+            console.log('DEBUG: No se recibieron tipos de equipo');
+            selectElement.innerHTML = '<option value="">No hay tipos de equipo disponibles</option>';
+        }
+        
+        // Agregar event listener básico
+        selectElement.addEventListener('change', function() {
+            loadEquiposIndividuales(this);
+        });
+        
+        console.log('DEBUG: Select básico configurado exitosamente');
+    })
+    .catch(error => {
+        console.error('Error al cargar tipos de equipo:', error);
+        selectElement.innerHTML = '<option value="">Error al cargar tipos de equipo</option>';
+        selectElement.disabled = true;
+    });
+}
+
+// Función para cargar tipos de equipo dinámicamente con Select2
+function loadTiposEquipo() {
+    console.log('DEBUG: Iniciando carga de tipos de equipo...');
+    
+    // Usar el sistema de callbacks para esperar a que jQuery esté disponible
+    whenJQueryReady(function() {
+        console.log('DEBUG: jQuery disponible, cargando tipos de equipo...');
+        console.log('DEBUG: Select2 disponible:', window.select2Ready);
+        
+        const unidadAcademica = document.querySelector('select[name="unidad_academica"]').value;
+        
+        if (!unidadAcademica) {
+            // Limpiar todos los tipos de equipo si no hay unidad académica seleccionada
+            document.querySelectorAll('.equipo-tipo-select').forEach(select => {
+                if (window.select2Ready && typeof $.fn.select2 !== 'undefined') {
+                    $(select).empty().append('<option value="">Seleccione un equipo</option>');
+                    if ($(select).hasClass('select2-hidden-accessible')) {
+                        $(select).select2('destroy');
+                    }
+                    $(select).prop('disabled', true);
+                } else {
+                    select.innerHTML = '<option value="">Seleccione un equipo</option>';
+                    select.disabled = true;
+                }
+            });
+            return;
+        }
+        
+        // Configurar Select2 o fallback básico para todos los selects de tipo de equipo
+        document.querySelectorAll('.equipo-tipo-select').forEach(select => {
+            configurarSelect2ParaTipo(select);
+        });
+        
+        console.log('DEBUG: Tipos de equipo cargados');
+    });
+    
+    // Si jQuery no está disponible, usar fallback
+    if (!window.jqueryReady) {
+        console.log('DEBUG: jQuery no disponible, usando fallback...');
+        // Pequeño delay para darle tiempo a jQuery a cargar
+        setTimeout(function() {
+            if (!window.jqueryReady) {
+                console.log('DEBUG: jQuery sigue no disponible, usando fallback básico');
+                loadTiposEquipoBasico();
+            }
+        }, 1000);
+    }
+}
+
+// Función de fallback básico (sin Select2) para cuando jQuery no esté disponible
+function loadTiposEquipoBasico() {
+    const unidadAcademica = document.querySelector('select[name="unidad_academica"]').value;
+    
+    if (!unidadAcademica) {
+        // Limpiar todos los tipos de equipo si no hay unidad académica seleccionada
+        document.querySelectorAll('.equipo-tipo-select').forEach(select => {
+            select.innerHTML = '<option value="">Seleccione un equipo</option>';
+            select.disabled = true;
+        });
+        return;
+    }
+    
+    // Hacer petición AJAX para obtener tipos de equipo (solo los primeros 100)
+    fetch('/visualizacion/equipos/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: `action=get_tipos_equipo&unidad_academica=${unidadAcademica}&limit=100&offset=0`
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Actualizar todos los selects de tipo de equipo
+        document.querySelectorAll('.equipo-tipo-select').forEach(select => {
+            select.innerHTML = '<option value="">Seleccione un equipo</option>';
+            select.disabled = false;
+            
+            data.tipos_equipo.forEach(tipo => {
+                const option = document.createElement('option');
+                option.value = tipo.nombre;
+                option.textContent = tipo.display_name;
+                select.appendChild(option);
+            });
+            
+            // Agregar message si hay más tipos disponibles
+            if (data.has_more) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = `--- Mostrando ${data.tipos_equipo.length} de ${data.total} tipos ---`;
+                option.disabled = true;
+                option.style.fontStyle = 'italic';
+                select.appendChild(option);
+            }
+            
+            // Agregar event listener básico
+            select.addEventListener('change', function() {
+                loadEquiposIndividuales(this);
+            });
+        });
+    })
+    .catch(error => {
+        console.error('Error al cargar tipos de equipo:', error);
+        // Mostrar mensaje de error
+        document.querySelectorAll('.equipo-tipo-select').forEach(select => {
+            select.innerHTML = '<option value="">Error al cargar tipos de equipo</option>';
+            select.disabled = true;
+        });
+    });
+}
+
+// Función para generar opciones de equipos (para uso en HTML dinámico)
+function generateEquipoOptions() {
+    return '<option value="">Seleccione un equipo</option>';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const steps = document.querySelectorAll('.form-step');
+    const progressSteps = document.querySelectorAll('.progress-step');
+    let currentStep = 1;
+    let ensayoCount = 1;
+    let equipoCount = 1;
+
+    console.log('Script cargado correctamente');
+
+    // Función para actualizar materias según el semestre
+    window.updateMaterias = function() {
+        const semestreSelect = document.getElementById('semestre');
+        const materiaSelect = document.getElementById('materia');
+        const semestre = semestreSelect.value;
+        
+        materiaSelect.innerHTML = '<option value="">Cargando materias...</option>';
+        
+        if (semestre) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch('{% url "ingreso_datos" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `action=get_materias&semestre=${semestre}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
+                data.materias.forEach(materia => {
+                    const option = document.createElement('option');
+                    option.value = materia[0];
+                    option.textContent = materia[1];
+                    materiaSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar materias:', error);
+                materiaSelect.innerHTML = '<option value="">Error al cargar materias</option>';
+            });
+        } else {
+            materiaSelect.innerHTML = '<option value="">Seleccione primero el semestre</option>';
+        }
+    };
+
+    // Función para cargar equipos individuales
+    window.loadEquiposIndividuales = function(selectElement) {
+        const tipoEquipo = selectElement.value;
+        const equipoItem = selectElement.closest('.equipo-item');
+        const equiposIndividualesGroup = equipoItem.querySelector('.equipos-individuales-group');
+        const equiposIndividualesContainer = equipoItem.querySelector('.equipos-individuales-container');
+        const recomendacionContainer = equipoItem.querySelector('.recomendacion-container');
+        
+        // FORCE RESET: Limpiar todo inmediatamente
+        equiposIndividualesContainer.innerHTML = '';
+        equiposIndividualesGroup.style.display = 'none';
+        recomendacionContainer.style.display = 'none';
+        
+        if (tipoEquipo) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Obtener la unidad académica seleccionada
+            const unidadAcademica = document.querySelector('[name="unidad_academica"]').value;
+            
+            // Verificar que tenemos unidad académmica
+            if (!unidadAcademica) {
+                console.error('ERROR: No se ha seleccionado unidad académica');
+                equiposIndividualesContainer.innerHTML = '<p style="color: red;">ERROR: Debe seleccionar una unidad académica</p>';
+                return;
+            }
+            
+            console.log(`DEBUG: Cargando equipos para ${tipoEquipo} en ${unidadAcademica}`);
+            
+            fetch('/visualizacion/equipos/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `action=get_equipos_individuales&tipo_equipo=${tipoEquipo}&unidad_academica=${unidadAcademica}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('DEBUG: Response data:', data);
+                console.log('DEBUG: Equipos recibidos:', data.equipos.length);
+                
+                // FORCE CLEAR: Limpiar completamente el contenedor
+                equiposIndividualesContainer.innerHTML = '';
+                
+                // Mostrar equipos operativos disponibles
+                if (data.equipos && data.equipos.length > 0) {
+                    console.log('DEBUG: Mostrando equipos:', data.equipos);
+                    const equiposListDiv = document.createElement('div');
+                    equiposListDiv.className = 'equipos-list';
+                    equiposListDiv.innerHTML = '<h5>Equipos Operativos Disponibles:</h5>';
+                    
+                    data.equipos.forEach(equipo => {
+                        const equipoDiv = document.createElement('div');
+                        equipoDiv.className = 'equipo-individual-item';
+                        
+                        equipoDiv.innerHTML = `
+                            <label>
+                                <input type="checkbox" name="equipos_individuales[${selectElement.dataset.ensayo}][]" value="${equipo.id}">
+                                ${equipo.display_name}
+                            </label>
+                        `;
+                        
+                        equiposListDiv.appendChild(equipoDiv);
+                    });
+                    
+                    equiposIndividualesContainer.appendChild(equiposListDiv);
+                } else {
+                    console.log('DEBUG: No hay equipos disponibles');
+                    equiposIndividualesContainer.innerHTML = '<p style="color: #6b7280; font-style: italic;">No hay equipos operativos disponibles</p>';
+                }
+                
+                equiposIndividualesGroup.style.display = 'block';
+                
+                // Mostrar recomendación
+                updateRecomendacionEquipo(selectElement, data.capacidad_estudiantes, data.estadisticas.operativos);
+            })
+            .catch(error => {
+                console.error('Error al cargar equipos individuales:', error);
+                equiposIndividualesGroup.style.display = 'none';
+                recomendacionContainer.style.display = 'none';
+            });
+        } else {
+            equiposIndividualesGroup.style.display = 'none';
+            recomendacionContainer.style.display = 'none';
+        }
+    };
+
+    // Función para actualizar recomendación de equipo
+    function updateRecomendacionEquipo(selectElement, capacidadEstudiantes, totalDisponibles) {
+        const ensayoItem = selectElement.closest('.ensayo-item');
+        const estudiantesInput = ensayoItem.querySelector('input[name="estudiantes[]"]');
+        const cantidadEstudiantes = parseInt(estudiantesInput.value) || 1;
+        const tipoEquipo = selectElement.value;
+        
+        if (tipoEquipo) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Obtener la unidad académica seleccionada
+            const unidadAcademica = document.querySelector('[name="unidad_academica"]').value;
+            
+            fetch('/visualizacion/equipos/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `action=get_recomendacion&tipo_equipo=${tipoEquipo}&cantidad_estudiantes=${cantidadEstudiantes}&unidad_academica=${unidadAcademica}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                const recomendacionContainer = selectElement.closest('.ensayo-item').querySelector('.recomendacion-container');
+                const recomendacionInfo = recomendacionContainer.querySelector('.recomendacion-info');
+                
+                if (data.mensaje) {
+                    recomendacionInfo.textContent = data.mensaje;
+                    recomendacionInfo.className = `recomendacion-info ${data.estado}`;
+                    recomendacionContainer.style.display = 'block';
+                } else {
+                    recomendacionContainer.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error al obtener recomendación:', error);
+            });
+        }
+    }
+
+    // Función para actualizar todas las recomendaciones de un ensayo
+    window.updateRecomendaciones = function(ensayoId) {
+        const ensayoItem = document.querySelector(`.ensayo-item:nth-child(${ensayoId})`);
+        const equipoSelects = ensayoItem.querySelectorAll('.equipo-tipo-select');
+        
+        equipoSelects.forEach(select => {
+            if (select.value) {
+                configurarSelect2ParaTipo(select);
+            }
+        });
+    };
+
+    // Función para mostrar errores
+    function showErrors(errors) {
+        document.querySelectorAll('.error-message').forEach(el => {
+            el.classList.remove('show');
+            el.textContent = '';
+        });
+        
+        document.querySelectorAll('.form-control').forEach(el => {
+            el.classList.remove('error');
+        });
+
+        // Mostrar nuevos errores
+        for (const [field, messages] of Object.entries(errors)) {
+            const errorEl = document.getElementById(`error-${field}`);
+            const fieldEl = document.getElementById(`id_${field}`) || document.querySelector(`[name="${field}"]`);
+            
+            if (errorEl && fieldEl) {
+                errorEl.textContent = messages[0];
+                errorEl.classList.add('show');
+                fieldEl.classList.add('error');
+            }
+        }
+    }
+
+    // Función para validar paso via AJAX
+    function validateStep(step) {
+        const form = document.getElementById('ingresoForm');
+        const formData = new FormData(form);
+        formData.append('step', step);
+
+        // Obtener el token CSRF
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        return fetch('{% url "ingreso_datos" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.valid) {
+                showErrors(data.errors);
+                return false;
+            }
+            return true;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al validar el formulario');
+            return false;
+        });
+    }
+
+    // Función para mostrar paso
+    function showStep(step) {
+        console.log('Cambiando a paso:', step);
+        
+        // Remover clases activas
+        steps.forEach(s => s.classList.remove('active'));
+        progressSteps.forEach(s => {
+            s.classList.remove('active');
+            if (s.dataset.step < step) {
+                s.classList.add('completed');
+            } else {
+                s.classList.remove('completed');
+            }
+        });
+        
+        // Activar paso actual
+        const currentStepElement = document.querySelector(`.form-step[data-step="${step}"]`);
+        const currentProgressStep = document.querySelector(`.progress-step[data-step="${step}"]`);
+        
+        if (currentStepElement) {
+            currentStepElement.classList.add('active');
+        }
+        
+        if (currentProgressStep) {
+            currentProgressStep.classList.add('active');
+        }
+        
+        // Limpiar errores
+        document.querySelectorAll('.error-message').forEach(el => {
+            el.classList.remove('show');
+            el.textContent = '';
+        });
+        
+        document.querySelectorAll('.form-control').forEach(el => {
+            el.classList.remove('error');
+        });
+    }
+
+    // Event listeners para botones siguiente
+    document.querySelectorAll('.next-step').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const step = this.dataset.step;
+            console.log('Validando paso:', step);
+            
+            btn.classList.add('loading');
+            btn.disabled = true;
+            
+            try {
+                const isValid = await validateStep(step);
+                if (isValid) {
+                    currentStep++;
+                    showStep(currentStep);
+                    
+                    if (currentStep === 5) {
+                        updateResumen();
+                    }
+                }
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        });
+    });
+
+    // Event listeners para botones anterior
+    document.querySelectorAll('.prev-step').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        });
+    });
+
+    // Agregar ensayo
+    document.querySelector('.add-ensayo').addEventListener('click', function() {
+        ensayoCount++;
+        const ensayoHtml = `
+            <div class="ensayo-item">
+                <div class="ensayo-header">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ensayo_${ensayoCount}">Ensayo ${ensayoCount} *</label>
+                            <select id="ensayo_${ensayoCount}" name="ensayos[]" required class="form-control">
+                                <option value="">Seleccione un ensayo</option>
+                                <option value="ensayo_traccion">Ensayo de Tracción</option>
+                                <option value="ensayo_compresion">Ensayo de Compresión</option>
+                                <option value="ensayo_dureza">Ensayo de Dureza</option>
+                                <option value="ensayo_impacto">Ensayo de Impacto</option>
+                                <option value="ensayo_ph">Ensayo de pH</option>
+                                <option value="ensayo_conductividad">Ensayo de Conductividad Eléctrica</option>
+                                <option value="ensayo_densidad">Ensayo de Densidad</option>
+                                <option value="ensayo_viscosidad">Ensayo de Viscosidad</option>
+                                <option value="ensayo_microscopia">Ensayo de Microscopía</option>
+                                <option value="ensayo_espectroscopia">Ensayo de Espectroscopía</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="estudiantes_${ensayoCount}">Cantidad de Estudiantes *</label>
+                            <input type="number" id="estudiantes_${ensayoCount}" name="estudiantes[]" min="1" value="1" 
+                                   class="form-control" onchange="updateRecomendaciones(${ensayoCount})">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="equipos-section">
+                    <h4>Equipos para este ensayo:</h4>
+                    <div class="equipos-container" data-ensayo="${ensayoCount}">
+                        <div class="equipo-item">
+                            <div class="equipo-selection">
+                                <div class="form-group">
+                                    <label>Tipo de Equipo *</label>
+                                    <select name="equipos[${ensayoCount}][]" required class="form-control equipo-tipo-select" 
+                                            data-ensayo="${ensayoCount}" data-equipo="1">
+                                        ${generateEquipoOptions()}
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group equipos-individuales-group" style="display: none;">
+                                    <label>Equipos Específicos</label>
+                                    <div class="equipos-individuales-container"></div>
+                                </div>
+                                
+                                <div class="recomendacion-container" style="display: none;">
+                                    <div class="recomendacion-info"></div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-danger remove-equipo">×</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary add-equipo" data-ensayo="${ensayoCount}">+ Agregar Equipo</button>
+                </div>
+            </div>
+        `;
+        document.querySelector('.ensayos-container').insertAdjacentHTML('beforeend', ensayoHtml);
+        
+        // Configurar Select2 para el nuevo elemento
+        const nuevoEnsayo = document.querySelector('.ensayos-container').lastElementChild;
+        const nuevoSelect = nuevoEnsayo.querySelector('.equipo-tipo-select');
+        
+        // Verificar si hay una unidad académica seleccionada
+        const unidadAcademica = document.querySelector('select[name="unidad_academica"]').value;
+        
+        if (unidadAcademica) {
+            // Configurar el nuevo select con los tipos de equipo de la unidad académica
+            configurarSelect2ParaTipo(nuevoSelect);
+        } else {
+            // Si no hay unidad académica, deshabilitar el select
+            nuevoSelect.disabled = true;
+            nuevoSelect.innerHTML = '<option value="">Seleccione primero una unidad académica</option>';
+        }
+    });
+
+    // Agregar equipo
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-equipo')) {
+            const ensayoId = e.target.dataset.ensayo;
+            equipoCount++;
+            
+            console.log('DEBUG: Agregando equipo para ensayo:', ensayoId, 'equipoCount:', equipoCount);
+            
+            const equipoHtml = `
+                <div class="equipo-item">
+                    <div class="equipo-selection">
+                        <div class="form-group">
+                            <label>Tipo de Equipo *</label>
+                            <select name="equipos[${ensayoId}][]" required class="form-control equipo-tipo-select" 
+                                    data-ensayo="${ensayoId}" data-equipo="${equipoCount}">
+                                ${generateEquipoOptions()}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group equipos-individuales-group" style="display: none;">
+                            <label>Equipos Específicos</label>
+                            <div class="equipos-individuales-container"></div>
+                        </div>
+                        
+                        <div class="recomendacion-container" style="display: none;">
+                            <div class="recomendacion-info"></div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-danger remove-equipo">×</button>
+                    </div>
+                </div>
+            `;
+            
+            // Insertar el HTML
+            document.querySelector(`[data-ensayo="${ensayoId}"]`).insertAdjacentHTML('beforeend', equipoHtml);
+            
+            // Configurar Select2 para el nuevo elemento
+            const ensayoContainer = document.querySelector(`[data-ensayo="${ensayoId}"]`);
+            const nuevoSelect = ensayoContainer.querySelector('.equipo-tipo-select:last-of-type');
+            
+            console.log('DEBUG: Nuevo select creado:', nuevoSelect);
+            console.log('DEBUG: Nuevo select HTML:', nuevoSelect.outerHTML);
+            
+            // Verificar si hay una unidad académica seleccionada
+            const unidadAcademicaSelect = document.querySelector('select[name="unidad_academica"]');
+            const unidadAcademica = unidadAcademicaSelect ? unidadAcademicaSelect.value : '';
+            
+            console.log('DEBUG: Unidad académica seleccionada:', unidadAcademica);
+            
+            if (unidadAcademica) {
+                console.log('DEBUG: Configurando nuevo select con unidad académica:', unidadAcademica);
+                // Configurar el nuevo select con los tipos de equipo de la unidad académica
+                configurarSelect2ParaTipo(nuevoSelect);
+            } else {
+                console.log('DEBUG: No hay unidad académica seleccionada, deshabilitando select');
+                // Si no hay unidad académica, deshabilitar el select
+                nuevoSelect.disabled = true;
+                nuevoSelect.innerHTML = '<option value="">Seleccione primero una unidad académica</option>';
+            }
+        }
+    });
+
+    // Remover equipo
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-equipo')) {
+            const equipoItem = e.target.closest('.equipo-item');
+            const equiposContainer = e.target.closest('.equipos-container');
+            
+            if (equiposContainer.children.length > 1) {
+                equipoItem.remove();
+            } else {
+                alert('Debe haber al menos un equipo por ensayo');
+            }
+        }
+    });
+
+    // Actualizar resumen
+    function updateResumen() {
+        console.log('DEBUG: Actualizando resumen...');
+        
+        const unidadTexto = {
+            'la_paz': 'La Paz',
+            'cochabamba': 'Cochabamba',
+            'santa_cruz': 'Santa Cruz',
+            'riberalta': 'Riberalta',
+            'tropico': 'Trópico'
+        };
+
+        const ensayosTexto = {
+            'ensayo_traccion': 'Ensayo de Tracción',
+            'ensayo_compresion': 'Ensayo de Compresión',
+            'ensayo_dureza': 'Ensayo de Dureza',
+            'ensayo_impacto': 'Ensayo de Impacto',
+            'ensayo_ph': 'Ensayo de pH',
+            'ensayo_conductividad': 'Ensayo de Conductividad Eléctrica',
+            'ensayo_densidad': 'Ensayo de Densidad',
+            'ensayo_viscosidad': 'Ensayo de Viscosidad',
+            'ensayo_microscopia': 'Ensayo de Microscopía',
+            'ensayo_espectroscopia': 'Ensayo de Espectroscopía'
+        };
+
+        // Obtener elementos del formulario
+        const unidadSelect = document.querySelector('[name="unidad_academica"]');
+        const semestreSelect = document.querySelector('[name="semestre"]');
+        const carreraSelect = document.querySelector('[name="carrera"]');
+        const materiaSelect = document.querySelector('[name="materia"]');
+        const laboratorioSelect = document.querySelector('[name="laboratorio"]');
+
+        console.log('DEBUG: Elementos del formulario:', {
+            unidad: unidadSelect ? unidadSelect.value : 'No encontrado',
+            semestre: semestreSelect ? semestreSelect.value : 'No encontrado',
+            carrera: carreraSelect ? carreraSelect.value : 'No encontrado',
+            materia: materiaSelect ? materiaSelect.value : 'No encontrado',
+            laboratorio: laboratorioSelect ? laboratorioSelect.value : 'No encontrado'
+        });
+
+        // Llenar tabla de información general
+        const tablaUnidad = document.getElementById('tabla-unidad');
+        const tablaSemestre = document.getElementById('tabla-semestre');
+        const tablaCarrera = document.getElementById('tabla-carrera');
+        const tablaMateria = document.getElementById('tabla-materia');
+        const tablaLaboratorio = document.getElementById('tabla-laboratorio');
+
+        if (tablaUnidad) {
+            tablaUnidad.textContent = unidadSelect && unidadSelect.value ? 
+                (unidadTexto[unidadSelect.value] || unidadSelect.value) : '-';
+        }
+        
+        if (tablaSemestre) {
+            tablaSemestre.textContent = semestreSelect && semestreSelect.selectedOptions[0] ? 
+                semestreSelect.selectedOptions[0].text : '-';
+        }
+        
+        if (tablaCarrera) {
+            tablaCarrera.textContent = carreraSelect && carreraSelect.selectedOptions[0] ? 
+                carreraSelect.selectedOptions[0].text : '-';
+        }
+        
+        if (tablaMateria) {
+            tablaMateria.textContent = materiaSelect && materiaSelect.selectedOptions[0] ? 
+                materiaSelect.selectedOptions[0].text : '-';
+        }
+        
+        if (tablaLaboratorio) {
+            tablaLaboratorio.textContent = laboratorioSelect && laboratorioSelect.selectedOptions[0] ? 
+                laboratorioSelect.selectedOptions[0].text : '-';
+        }
+
+        // Llenar tabla de ensayos y equipos
+        const ensayosSelects = document.querySelectorAll('select[name="ensayos[]"]');
+        const estudiantesInputs = document.querySelectorAll('input[name="estudiantes[]"]');
+        const tablaEnsayosBody = document.querySelector('#tabla-ensayos tbody');
+        
+        console.log('DEBUG: Ensayos encontrados:', ensayosSelects.length);
+        console.log('DEBUG: Estudiantes inputs encontrados:', estudiantesInputs.length);
+        
+        if (tablaEnsayosBody) {
+            tablaEnsayosBody.innerHTML = '';
+
+            ensayosSelects.forEach((select, ensayoIndex) => {
+                console.log(`DEBUG: Procesando ensayo ${ensayoIndex + 1}, valor:`, select.value);
+                
+                if (select.value) {
+                    const estudiantesInput = estudiantesInputs[ensayoIndex];
+                    const cantidadEstudiantes = estudiantesInput ? estudiantesInput.value : 1;
+                    
+                    // Obtener equipos del ensayo actual
+                    const ensayoItem = select.closest('.ensayo-item');
+                    const equipoSelects = ensayoItem ? ensayoItem.querySelectorAll('.equipo-tipo-select') : [];
+                    
+                    console.log(`DEBUG: Equipos encontrados para ensayo ${ensayoIndex + 1}:`, equipoSelects.length);
+                    
+                    if (equipoSelects.length > 0) {
+                        equipoSelects.forEach((equipoSelect, equipoIndex) => {
+                            console.log(`DEBUG: Procesando equipo ${equipoIndex + 1}, valor:`, equipoSelect.value);
+                            
+                            if (equipoSelect.value) {
+                                const row = document.createElement('tr');
+                                
+                                // Obtener equipos individuales seleccionados
+                                const equiposIndividuales = ensayoItem.querySelectorAll(`input[name="equipos_individuales[${ensayoIndex + 1}][]"]:checked`);
+                                let equiposSeleccionadosHtml = '';
+                                
+                                if (equiposIndividuales.length > 0) {
+                                    equiposIndividuales.forEach(checkbox => {
+                                        const label = checkbox.closest('label');
+                                        if (label) {
+                                            equiposSeleccionadosHtml += `<span class="equipo-seleccionado">${label.textContent.trim()}</span>`;
+                                        }
+                                    });
+                                } else {
+                                    equiposSeleccionadosHtml = '<span style="color: #6b7280; font-style: italic;">Sin equipos específicos seleccionados</span>';
+                                }
+                                
+                                // Obtener el texto del equipo seleccionado
+                                const equipoTexto = equipoSelect.selectedOptions[0] ? 
+                                    equipoSelect.selectedOptions[0].text : equipoSelect.value;
+                                
+                                row.innerHTML = `
+                                    <td>${ensayoIndex + 1}</td>
+                                    <td>${ensayosTexto[select.value] || select.value}</td>
+                                    <td>${cantidadEstudiantes}</td>
+                                    <td>${equipoTexto}</td>
+                                    <td>
+                                        <div class="equipos-seleccionados">
+                                            ${equiposSeleccionadosHtml}
+                                        </div>
+                                    </td>
+                                `;
+                                
+                                tablaEnsayosBody.appendChild(row);
+                            }
+                        });
+                    } else {
+                        // Si no hay equipos seleccionados, mostrar fila del ensayo sin equipos
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${ensayoIndex + 1}</td>
+                            <td>${ensayosTexto[select.value] || select.value}</td>
+                            <td>${cantidadEstudiantes}</td>
+                            <td style="color: #6b7280; font-style: italic;">Sin equipos seleccionados</td>
+                            <td style="color: #6b7280; font-style: italic;">-</td>
+                        `;
+                        tablaEnsayosBody.appendChild(row);
+                    }
+                }
+            });
+
+            // Si no hay ensayos, mostrar mensaje
+            if (tablaEnsayosBody.children.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="5" style="text-align: center; color: #6b7280; font-style: italic; padding: 20px;">
+                        No hay ensayos registrados
+                    </td>
+                `;
+                tablaEnsayosBody.appendChild(row);
+            }
+        }
+        
+        console.log('DEBUG: Resumen actualizado completamente');
+    }
+
+    // Función para limpiar todos los equipos individuales
+    function limpiarTodosEquiposIndividuales() {
+        console.log('DEBUG: Limpiando todos los equipos individuales');
+        
+        // Limpiar todos los contenedores de equipos individuales
+        const contenedores = document.querySelectorAll('.equipos-individuales-container');
+        contenedores.forEach(contenedor => {
+            contenedor.innerHTML = '';
+        });
+        
+        // Ocultar todos los grupos de equipos individuales
+        const grupos = document.querySelectorAll('.equipos-individuales-group');
+        grupos.forEach(grupo => {
+            grupo.style.display = 'none';
+        });
+        
+        // Ocultar todos los contenedores de recomendación
+        const recomendaciones = document.querySelectorAll('.recomendacion-container');
+        recomendaciones.forEach(recomendacion => {
+            recomendacion.style.display = 'none';
+        });
+        
+        console.log('DEBUG: Limpieza completada');
+    }
+
+    // Función para cargar carreras por unidad académica
+    function loadCarrerasPorUnidad(unidadAcademica) {
+        console.log('DEBUG: Cargando carreras para unidad académica:', unidadAcademica);
+        
+        const carreraSelect = document.querySelector('[name="carrera"]');
+        if (!carreraSelect) {
+            console.error('ERROR: No se encontró el select de carreras');
+            return;
+        }
+        
+        // Limpiar y mostrar estado de carga
+        carreraSelect.innerHTML = '<option value="">Cargando carreras...</option>';
+        carreraSelect.disabled = true;
+        
+        if (!unidadAcademica) {
+            carreraSelect.innerHTML = '<option value="">Seleccione primero una unidad académica</option>';
+            return;
+        }
+        
+        // Hacer petición AJAX
+        fetch(`/ingreso_datos/carreras/?unidad_academica=${encodeURIComponent(unidadAcademica)}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('DEBUG: Carreras recibidas:', data);
+            
+            if (data.success && data.carreras) {
+                // Limpiar y agregar opción por defecto
+                carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+                
+                // Agregar las carreras
+                data.carreras.forEach(carrera => {
+                    const option = document.createElement('option');
+                    option.value = carrera.id;
+                    option.textContent = carrera.text;
+                    carreraSelect.appendChild(option);
+                });
+                
+                carreraSelect.disabled = false;
+                console.log('DEBUG: Carreras cargadas exitosamente');
+            } else {
+                throw new Error(data.error || 'Formato de respuesta inválido');
+            }
+        })
+        .catch(error => {
+            console.error('ERROR: Cargando carreras:', error);
+            carreraSelect.innerHTML = '<option value="">Error cargando carreras</option>';
+            carreraSelect.disabled = true;
+        });
+    }
+
+    // Función para recargar equipos individuales cuando cambie la unidad académica
+    function recargarEquiposIndividuales() {
+        console.log('DEBUG: Recargando equipos individuales');
+        
+        // Limpiar todo primero
+        limpiarTodosEquiposIndividuales();
+        
+        // Usar el sistema de callbacks para esperar a que jQuery esté disponible
+        whenJQueryReady(function() {
+            console.log('DEBUG: jQuery disponible, recargando equipos individuales...');
+            
+            // Recargar equipos para todos los selects que tengan valor
+            const equipoSelects = document.querySelectorAll('.equipo-tipo-select');
+            equipoSelects.forEach(select => {
+                configurarSelect2ParaTipo(select);
+            });
+            
+            console.log('DEBUG: Equipos individuales recargados con Select2');
+        });
+    }
+
+    // Event listener para cambio de unidad académica
+    document.querySelector('[name="unidad_academica"]').addEventListener('change', function() {
+        const unidadAcademica = this.value;
+        console.log('DEBUG: Unidad académica cambiada a', unidadAcademica);
+        
+        // Cargar carreras para la nueva unidad académica
+        loadCarrerasPorUnidad(unidadAcademica);
+        
+        // Limpiar todos los equipos individuales
+        limpiarTodosEquiposIndividuales();
+        
+        // Cargar tipos de equipo para la nueva unidad académica
+        console.log('DEBUG: Recargando tipos de equipo para nueva unidad académica');
+        loadTiposEquipo();
+    });
+
+    // Inicializar Select2 cuando jQuery esté disponible
+    function inicializarSelect2() {
+        console.log('DEBUG: Inicializando Select2...');
+        
+        // Cargar tipos de equipo inicialmente
+        loadTiposEquipo();
+        
+        // Configurar Select2 para el select inicial
+        const selectInicial = document.querySelector('.equipo-tipo-select');
+        console.log('DEBUG: Select inicial encontrado:', selectInicial);
+        if (selectInicial) {
+            console.log('DEBUG: Configurando select inicial:', selectInicial.outerHTML);
+            configurarSelect2ParaTipo(selectInicial);
+        } else {
+            console.error('ERROR: No se encontró el select inicial de equipos');
+        }
+    }
+    
+    // Usar el sistema de callbacks para esperar a que jQuery esté disponible
+    whenJQueryReady(inicializarSelect2);
+    
+    // Si jQuery no está disponible después de un tiempo, usar fallback
+    setTimeout(function() {
+        if (!window.jqueryReady) {
+            console.log('DEBUG: jQuery no disponible después de esperar, usando fallback');
+            loadTiposEquipoBasico();
+        }
+    }, 2000);
+});
+</script>
+{% endblock %}

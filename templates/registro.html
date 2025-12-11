@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Sistema de Gestión de Laboratorios - EMI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url('{% load static %}{% static "images/fondo.jpg" %}') center/cover no-repeat fixed;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1;
+        }
+
+        .register-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            padding: 25px 30px;
+            width: 100%;
+            max-width: 550px;
+            position: relative;
+            z-index: 2;
+            margin: 10px;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            color: #1e3a8a;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #1e3a8a;
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 6px;
+        }
+
+        .form-group-full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #1e3a8a;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #1e3a8a;
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .btn-register {
+            width: 70%;
+            padding: 12px;
+            background: #1e3a8a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 5px auto 0 auto;
+            display: block;
+        }
+
+        .btn-register:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
+        }
+
+        .error-message {
+            background: #dc2626;
+            color: white;
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            border-left: 4px solid #991b1b;
+        }
+
+        .success-message {
+            background: #059669;
+            color: white;
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            border-left: 4px solid #047857;
+        }
+
+        .field-errors {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(30, 58, 138, 0.1);
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .login-link a {
+            color: #1e3a8a;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .login-link a:hover {
+            color: #1e40af;
+            text-decoration: underline;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(30, 58, 138, 0.2);
+            color: #1e3a8a;
+            font-size: 10px;
+        }
+
+        .help-text {
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            
+            .register-container {
+                padding: 30px 20px;
+            }
+            
+            .title {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% load static %}
+    
+    <div class="register-container">
+        <div class="logo-section">
+            <img src="{% static 'images/emi_logo.png' %}" alt="Logo EMI" class="logo">
+            <div class="title">Registro de Usuario</div>
+            <div class="subtitle">Sistema de Gestión de Laboratorios - EMI</div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.nombres.id_for_label }}">{{ form.nombres.label }}</label>
+                    {{ form.nombres }}
+                    {% if form.nombres.errors %}
+                        <div class="field-errors">{{ form.nombres.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.apellidos.id_for_label }}">{{ form.apellidos.label }}</label>
+                    {{ form.apellidos }}
+                    {% if form.apellidos.errors %}
+                        <div class="field-errors">{{ form.apellidos.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.numero_documento.id_for_label }}">{{ form.numero_documento.label }}</label>
+                    {{ form.numero_documento }}
+                    {% if form.numero_documento.errors %}
+                        <div class="field-errors">{{ form.numero_documento.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.telefono_personal.id_for_label }}">{{ form.telefono_personal.label }}</label>
+                    {{ form.telefono_personal }}
+                    
+                    {% if form.telefono_personal.errors %}
+                        <div class="field-errors">{{ form.telefono_personal.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.correo_institucional.id_for_label }}">{{ form.correo_institucional.label }}</label>
+                {{ form.correo_institucional }}
+                <div class="help-text">Debe ser un correo institucional EMI (@emi.edu.bo)</div>
+                {% if form.correo_institucional.errors %}
+                    <div class="field-errors">{{ form.correo_institucional.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.sede_asignacion.id_for_label }}">{{ form.sede_asignacion.label }}</label>
+                {{ form.sede_asignacion }}
+                {% if form.sede_asignacion.errors %}
+                    <div class="field-errors">{{ form.sede_asignacion.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+                    {{ form.password1 }}
+                    <div class="help-text">Mínimo 8 caracteres</div>
+                    {% if form.password1.errors %}
+                        <div class="field-errors">{{ form.password1.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}
+                        <div class="field-errors">{{ form.password2.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn-register">Registrarse</button>
+            
+            <div class="login-link">
+                ¿Ya tienes cuenta? <a href="{% url 'login:login' %}">Inicia sesión aquí</a>
+            </div>
+        </form>
+
+    </div>
+</body>
+</html>

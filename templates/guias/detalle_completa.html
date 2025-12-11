@@ -1,0 +1,409 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ guia.titulo }} - Detalle Completo{% endblock %}
+
+{% block page_title %}
+<i class="fas fa-file-alt"></i> Detalle de Guía de Laboratorio
+{% endblock %}
+
+{% block page_description %}{{ guia.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header con acciones -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-microscope"></i> {{ guia.titulo }}
+                        </h4>
+                        <div class="btn-group">
+                            <button class="btn btn-success" onclick="generarGuiaPDF({{ guia.id }}, '{{ guia.titulo|escapejs }}')">
+                                <i class="fas fa-file-pdf"></i> Generar PDF Completo
+                            </button>
+                            {% if puede_editar %}
+                                <a href="{% url 'guias:editar' guia.id %}" class="btn btn-warning">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                            {% endif %}
+                            <a href="{% url 'visualizacion:analisis' %}?categoria=guias" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Básica -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Información Curricular</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Unidad Académica:</strong><br>
+                            {{ guia.carrera.unidad_academica.get_nombre_display }}</p>
+                            
+                            <p><strong>Carrera:</strong><br>
+                            {{ guia.carrera.get_nombre_display }}</p>
+                            
+                            <p><strong>Asignatura:</strong><br>
+                            {{ guia.asignatura.get_nombre_display }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Semestre:</strong><br>
+                            {{ guia.semestre }}° Semestre</p>
+                            
+                            <p><strong>Tipo de Práctica:</strong><br>
+                            <span class="badge badge-info">{{ guia.get_tipo_practica_display }}</span></p>
+                            
+                            <p><strong>Duración:</strong><br>
+                            {{ guia.duracion_horas }} horas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unidad Didáctica -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-book"></i> Unidad Didáctica</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ guia.unidad_didactica|default:"No especificada" }}</p>
+                </div>
+            </div>
+
+            <!-- Contenido Analítico -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-list-alt"></i> Contenido Analítico</h5>
+                </div>
+                <div class="card-body">
+                    <div class="content-display">
+                        {{ guia.contenido_analitico|default:"No especificado"|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competencias -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-medal"></i> Competencias</h5>
+                </div>
+                <div class="card-body">
+                    <div class="competencias-display">
+                        {{ guia.competencias|default:"No especificadas"|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Objetivos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-bullseye"></i> Objetivos de la Práctica</h5>
+                </div>
+                <div class="card-body">
+                    <h6><strong>Objetivo General:</strong></h6>
+                    <p>{{ guia.objetivo_general|default:"No especificado" }}</p>
+                    
+                    {% if guia.objetivos_especificos %}
+                    <h6><strong>Objetivos Específicos:</strong></h6>
+                    <div class="objetivos-especificos">
+                        {{ guia.objetivos_especificos|linebreaks }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Procedimientos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-clipboard-list"></i> Procedimientos</h5>
+                </div>
+                <div class="card-body">
+                    {% if guia.preparacion_previa %}
+                    <h6><strong>Preparación Previa:</strong></h6>
+                    <div class="preparacion-previa mb-3">
+                        {{ guia.preparacion_previa|linebreaks }}
+                    </div>
+                    {% endif %}
+                    
+                    <h6><strong>Procedimiento de la Práctica:</strong></h6>
+                    <div class="procedimientos">
+                        {{ guia.procedimientos|default:"No especificado"|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cuestionario -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-question-circle"></i> Cuestionario</h5>
+                </div>
+                <div class="card-body">
+                    <div class="cuestionario-display">
+                        {{ guia.cuestionario|default:"No se ha definido cuestionario"|linebreaks }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="col-lg-4">
+            <!-- Estado de la Guía -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-flag"></i> Estado de la Guía</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        {% if guia.estado_guia == 'publicada' %}
+                            <span class="badge badge-success badge-lg">Publicada</span>
+                        {% elif guia.estado_guia == 'aprobada' %}
+                            <span class="badge badge-primary badge-lg">Aprobada</span>
+                        {% elif guia.estado_guia == 'revision' %}
+                            <span class="badge badge-warning badge-lg">En Revisión</span>
+                        {% else %}
+                            <span class="badge badge-secondary badge-lg">Borrador</span>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <p><strong>Número de Práctica:</strong> {{ guia.numero_practica }}</p>
+                    <p><strong>Código:</strong> {{ guia.codigo_guia|default:"Sin código" }}</p>
+                    <p><strong>Creado:</strong> {{ guia.created_at|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Actualizado:</strong> {{ guia.updated_at|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+
+            <!-- Equipos -->
+            {% if equipos %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-flask"></i> Equipos Requeridos</h5>
+                </div>
+                <div class="card-body">
+                    {% for equipo in equipos %}
+                    <div class="item-requerido">
+                        <strong>{{ equipo.equipo_existente|default:"Sin nombre" }}</strong><br>
+                        <small class="text-muted">
+                            Estado: {{ equipo.get_estado_display }}
+                            {% if equipo.numero_unidades %} | Cantidad: {{ equipo.numero_unidades }}{% endif %}
+                        </small>
+                    </div>
+                    {% if not forloop.last %}<hr class="my-2">{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Materiales -->
+            {% if materiales %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-box"></i> Materiales</h5>
+                </div>
+                <div class="card-body">
+                    {% for material in materiales %}
+                    <div class="item-requerido">
+                        <strong>{{ material.nombre_elemento }}</strong><br>
+                        <small class="text-muted">
+                            Cantidad: {{ material.cantidad }} {{ material.get_unidad_medida_display }}
+                        </small>
+                    </div>
+                    {% if not forloop.last %}<hr class="my-2">{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Herramientas -->
+            {% if herramientas %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-tools"></i> Herramientas</h5>
+                </div>
+                <div class="card-body">
+                    {% for herramienta in herramientas %}
+                    <div class="item-requerido">
+                        <strong>{{ herramienta.nombre_elemento }}</strong><br>
+                        <small class="text-muted">
+                            Cantidad: {{ herramienta.cantidad }} | Estado: {{ herramienta.get_estado_display }}
+                        </small>
+                    </div>
+                    {% if not forloop.last %}<hr class="my-2">{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Bibliografía -->
+            {% if guia.referencia_bibliografica %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-book-open"></i> Bibliografía</h5>
+                </div>
+                <div class="card-body">
+                    <div class="bibliografia-display">
+                        {{ guia.referencia_bibliografica|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para generación de PDF -->
+<div class="modal fade" id="pdfGenerationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-pdf text-danger"></i> 
+                    Generación de Guía de Laboratorio
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.badge-lg {
+    font-size: 1.1em;
+    padding: 0.5rem 1rem;
+}
+
+.content-display, .competencias-display, .objetivos-especificos, 
+.preparacion-previa, .procedimientos, .cuestionario-display, 
+.bibliografia-display {
+    white-space: pre-line;
+    line-height: 1.6;
+}
+
+.item-requerido {
+    padding: 0.5rem 0;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.badge-info {
+    background-color: #17a2b8;
+}
+
+.badge-success {
+    background-color: #28a745;
+}
+
+.badge-primary {
+    background-color: #007bff;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+}
+</style>
+
+<script>
+// Función para generar PDF (reutilizada del template principal)
+function generarGuiaPDF(guiaId, tituloGuia) {
+    const loadingHtml = `
+        <div class="alert alert-info">
+            <i class="fas fa-spinner fa-spin"></i> Generando PDF de la guía: "${tituloGuia}"...
+        </div>
+    `;
+    
+    document.getElementById('modalBody').innerHTML = loadingHtml;
+    $('#pdfGenerationModal').modal('show');
+    
+    fetch(`/guias/${guiaId}/generar-pdf/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('Error al generar el PDF');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `Guia_Laboratorio_${tituloGuia.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        document.getElementById('modalBody').innerHTML = `
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> 
+                PDF generado exitosamente: "${tituloGuia}"
+                <br><small>El archivo se ha descargado automáticamente.</small>
+            </div>
+        `;
+        
+        setTimeout(() => {
+            $('#pdfGenerationModal').modal('hide');
+        }, 3000);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('modalBody').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Error al generar el PDF: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+<div class="modal-details">
+    <div class="detail-section">
+        <h5>Información del Insumo</h5>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Código:</label>
+                <span>{{ insumo.codigo_inventario|default:"Sin código" }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Nombre:</label>
+                <span>{{ insumo.nombre_elemento }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Marca/Modelo:</label>
+                <span>{{ insumo.marca_modelo|default:"N/A" }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Estado:</label>
+                <span>{{ insumo.get_estado_display }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Unidad Académica:</label>
+                <span>{{ insumo.unidad_academica.nombre|default:"N/A" }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Laboratorio:</label>
+                <span>{{ insumo.laboratorio.get_nombre_display|default:"N/A" }}</span>
+            </div>
+            {% if insumo.caracteristicas_tecnicas %}
+            <div class="detail-item full-width">
+                <label>Características Técnicas:</label>
+                <span>{{ insumo.caracteristicas_tecnicas }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="detail-section">
+        <h5>Estado en la Tarea</h5>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Estado de Procesamiento:</label>
+                <span class="status-badge {% if insumo_tarea.procesado %}processed{% else %}pending{% endif %}">
+                    {% if insumo_tarea.procesado %}
+                        <i class="fas fa-check-circle"></i> Procesado
+                    {% else %}
+                        <i class="fas fa-clock"></i> Pendiente
+                    {% endif %}
+                </span>
+            </div>
+            {% if insumo_tarea.procesado and insumo_tarea.fecha_procesado %}
+            <div class="detail-item">
+                <label>Fecha de Procesamiento:</label>
+                <span>{{ insumo_tarea.fecha_procesado|date:"d/m/Y H:i" }}</span>
+            </div>
+            {% endif %}
+            {% if insumo_tarea.unidad_academica_destino %}
+            <div class="detail-item">
+                <label>Unidad Destino:</label>
+                <span>{{ insumo_tarea.unidad_academica_destino.nombre }}</span>
+            </div>
+            {% endif %}
+            {% if insumo_tarea.laboratorio_destino %}
+            <div class="detail-item">
+                <label>Laboratorio Destino:</label>
+                <span>{{ insumo_tarea.laboratorio_destino.get_nombre_display }}</span>
+            </div>
+            {% endif %}
+            {% if insumo_tarea.observaciones_insumo %}
+            <div class="detail-item full-width">
+                <label>Observaciones:</label>
+                <span>{{ insumo_tarea.observaciones_insumo }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .modal-details {
+        font-size: 14px;
+    }
+    
+    .detail-section {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .detail-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .detail-section h5 {
+        margin: 0 0 15px 0;
+        color: #1e3a8a;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .detail-item.full-width {
+        grid-column: span 2;
+    }
+    
+    .detail-item label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 12px;
+    }
+    
+    .detail-item span {
+        color: #64748b;
+        font-size: 13px;
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        width: fit-content;
+    }
+    
+    .status-badge.processed {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+    
+    .status-badge.pending {
+        background: #fef3c7;
+        color: #d97706;
+    }
+</style>

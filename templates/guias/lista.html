@@ -1,0 +1,1403 @@
+{% extends 'base.html' %}
+
+{% block title %}Guías de Laboratorio - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Guías de Laboratorio{% endblock %}
+
+{% block page_description %}Generación y gestión de guías didácticas de laboratorio{% endblock %}
+{% block header_content %}{% endblock %}
+{% block content %}
+<style>
+/* Contenedor principal */
+.guias-container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+/* Header de página */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    padding: 25px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.header-content h2 {
+    margin: 0 0 8px 0;
+    color: #1e3a8a;
+    font-size: 28px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-content p {
+    margin: 0;
+    color: #64748b;
+    font-size: 16px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Secciones */
+.stats-section,
+.filters-section,
+.content-section,
+.pagination-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.section-header h3 {
+    margin: 0;
+    color: #1e3a8a;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Panel de estadísticas */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.stat-card.success {
+    background: linear-gradient(135deg, #06d6a0 0%, #118ab2 100%);
+    color: white;
+}
+
+.stat-card.warning {
+    background: linear-gradient(135deg, #ffd166 0%, #f77f00 100%);
+    color: white;
+}
+
+.stat-card.danger {
+    background: linear-gradient(135deg, #ef476f 0%, #ffd166 100%);
+    color: white;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.stat-content h3 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+}
+
+.stat-content p {
+    margin: 5px 0 0 0;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+/* Formulario de filtros */
+.filters-form {
+    margin-top: 20px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+}
+
+.form-control {
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Botones */
+.btn {
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-outline {
+    background: transparent;
+    color: #6b7280;
+    border: 2px solid #e5e7eb;
+}
+
+.btn-outline:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+/* Opciones de vista */
+.view-options {
+    display: flex;
+    gap: 5px;
+}
+
+.view-btn {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #6b7280;
+}
+
+.view-btn:hover,
+.view-btn.active {
+    border-color: #3b82f6;
+    background: #3b82f6;
+    color: white;
+}
+
+/* Grid de guías */
+.guias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.guias-grid.list-view {
+    grid-template-columns: 1fr;
+}
+
+.guias-grid.list-view .guia-card {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+}
+
+.guias-grid.list-view .card-header {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.guias-grid.list-view .card-body {
+    flex: 2;
+    margin: 0 20px;
+}
+
+.guias-grid.list-view .card-actions {
+    flex: 0;
+    margin-top: 0;
+}
+
+/* Tarjetas de guías */
+.guia-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.guia-card:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.card-title h4 {
+    color: #1e3a8a;
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.card-subtitle {
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.semester-1 { background: #dbeafe; color: #1e40af; }
+.semester-2 { background: #dcfce7; color: #16a34a; }
+.semester-3 { background: #fed7d7; color: #dc2626; }
+.semester-4 { background: #fef3c7; color: #d97706; }
+.semester-5 { background: #e0e7ff; color: #6366f1; }
+.semester-6 { background: #fce7f3; color: #db2777; }
+.semester-7 { background: #f0fdfa; color: #059669; }
+.semester-8 { background: #fef2f2; color: #ef4444; }
+
+.card-body {
+    margin-bottom: 15px;
+}
+
+.info-grid {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #4b5563;
+}
+
+.info-item i {
+    width: 16px;
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+.file-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.file-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.file-btn.word {
+    background: #e0f2fe;
+    color: #0277bd;
+}
+
+.file-btn.word:hover {
+    background: #b3e5fc;
+}
+
+.file-btn.pdf {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.file-btn.pdf:hover {
+    background: #ffcdd2;
+}
+
+.no-files {
+    color: #9ca3af;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.card-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.action-btn.view {
+    background: #e0f2fe;
+    color: #0277bd;
+}
+
+.action-btn.view:hover {
+    background: #b3e5fc;
+}
+
+.action-btn.delete {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.action-btn.delete:hover {
+    background: #ffcdd2;
+}
+
+/* Estado vacío */
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.empty-icon {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    background: #f3f4f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    color: #9ca3af;
+}
+
+.empty-state h3 {
+    color: #374151;
+    margin-bottom: 10px;
+    font-size: 24px;
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+/* Paginación */
+.pagination-section {
+    text-align: center;
+}
+
+.pagination {
+    display: inline-flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 5px;
+}
+
+.page-item {
+    margin: 0;
+}
+
+.page-link {
+    padding: 12px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #6b7280;
+    background: #f8f9fa;
+    border: 2px solid #e5e7eb;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.page-link:hover {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+}
+
+.page-item.active .page-link {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .guias-container {
+        padding: 15px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 20px;
+        align-items: stretch;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .guias-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .guia-card {
+        padding: 15px;
+    }
+    
+    .card-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+}
+</style>
+
+<div class="guias-container">
+    <!-- Header Principal -->
+    <div class="page-header">
+        <div class="header-content">
+            <h2><i class="fas fa-book"></i> Guías de Laboratorio</h2>
+            <p>Gestión completa de guías didácticas y material de laboratorio</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'guias:nueva' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nueva Guía
+            </a>
+        </div>
+    </div>
+
+    <!-- Panel de Estadísticas -->
+    <div class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-card primary">
+                <div class="stat-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ total_guias }}</h3>
+                    <p>Total Guías</p>
+                </div>
+            </div>
+            
+            <div class="stat-card success">
+                <div class="stat-icon">
+                    <i class="fas fa-file-word"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ guias_con_word }}</h3>
+                    <p>Con Documento Word</p>
+                </div>
+            </div>
+            
+            <div class="stat-card warning">
+                <div class="stat-icon">
+                    <i class="fas fa-file-pdf"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ guias_con_pdf }}</h3>
+                    <p>Con Documento PDF</p>
+                </div>
+            </div>
+            
+            <div class="stat-card danger">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ guias_este_mes }}</h3>
+                    <p>Este Mes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Filtros -->
+    <div class="filters-section">
+        <div class="section-header">
+            <h3><i class="fas fa-filter"></i> Filtros de Búsqueda</h3>
+            <div class="header-actions">
+                <button type="button" class="btn btn-outline" onclick="limpiarFiltros()">
+                    <i class="fas fa-undo"></i> Limpiar
+                </button>
+            </div>
+        </div>
+        
+        <form method="GET" id="filtrosForm" class="filters-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="carrera">Carrera</label>
+                    <select name="carrera" id="carrera" class="form-control" onchange="aplicarFiltros()">
+                        <option value="">Todas las carreras</option>
+                        {% for carrera in carreras %}
+                            <option value="{{ carrera.id }}" {% if request.GET.carrera == carrera.id|stringformat:"s" %}selected{% endif %}>
+                                {{ carrera.get_nombre_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="semestre">Semestre</label>
+                    <select name="semestre" id="semestre" class="form-control" onchange="aplicarFiltros()">
+                        <option value="">Todos los semestres</option>
+                        {% for semestre in semestres %}
+                            <option value="{{ semestre.0 }}" {% if request.GET.semestre == semestre.0 %}selected{% endif %}>
+                                {{ semestre.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="buscar">Búsqueda</label>
+                    <input type="text" 
+                           name="buscar" 
+                           id="buscar"
+                           class="form-control"
+                           placeholder="Buscar por título, asignatura..." 
+                           value="{{ request.GET.buscar }}" 
+                           onkeyup="aplicarFiltros()">
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Guías -->
+    <div class="content-section">
+        <div class="section-header">
+            <h3><i class="fas fa-list"></i> Lista de Guías ({{ guias|length }})</h3>
+            <div class="view-options">
+                <button class="view-btn active" data-view="grid" title="Vista en grilla">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button class="view-btn" data-view="list" title="Vista en lista">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+
+        {% if guias %}
+            <div class="guias-grid" id="guiasContainer">
+                {% for guia in guias %}
+                    <div class="guia-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <h4>{{ guia.titulo }}</h4>
+                                <span class="card-subtitle">{{ guia.carrera.get_nombre_display }}</span>
+                            </div>
+                            <div class="card-status">
+                                <span class="status-badge semester-{{ guia.semestre }}">
+                                    {{ guia.get_semestre_display }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <i class="fas fa-book-open"></i>
+                                    <span>{{ guia.asignatura.nombre }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-list-ol"></i>
+                                    <span>Unidad {{ guia.unidad_didactica }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-user"></i>
+                                    <span>{{ guia.usuario_creador.get_full_name|default:guia.usuario_creador.username }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>{{ guia.created_at|date:"d/m/Y H:i" }}</span>
+                                </div>
+                            </div>
+
+                            <div class="file-actions">
+                                {% if guia.archivo_word %}
+                                    <a href="{{ guia.archivo_word.url }}" class="file-btn word" target="_blank">
+                                        <i class="fas fa-file-word"></i> Word
+                                    </a>
+                                {% endif %}
+                                {% if guia.archivo_pdf %}
+                                    <a href="{{ guia.archivo_pdf.url }}" class="file-btn pdf" target="_blank">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </a>
+                                {% endif %}
+                                {% if not guia.archivo_word and not guia.archivo_pdf %}
+                                    <span class="no-files">Sin archivos</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <a href="{% url 'guias:detalle' guia.id %}" class="action-btn view" title="Ver detalle">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'guias:eliminar' guia.id %}" class="action-btn delete" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <h3>No hay guías disponibles</h3>
+                <p>Comienza creando tu primera guía de laboratorio</p>
+                <a href="{% url 'guias:nueva' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Crear Primera Guía
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination-section">
+        <nav aria-label="Navegación de guías">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}{% if request.GET.carrera %}&carrera={{ request.GET.carrera }}{% endif %}{% if request.GET.semestre %}&semestre={{ request.GET.semestre }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i> Primera
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}{% if request.GET.carrera %}&carrera={{ request.GET.carrera }}{% endif %}{% if request.GET.semestre %}&semestre={{ request.GET.semestre }}{% endif %}">
+                            <i class="fas fa-angle-left"></i> Anterior
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}{% if request.GET.carrera %}&carrera={{ request.GET.carrera }}{% endif %}{% if request.GET.semestre %}&semestre={{ request.GET.semestre }}{% endif %}">
+                            Siguiente <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}{% if request.GET.carrera %}&carrera={{ request.GET.carrera }}{% endif %}{% if request.GET.semestre %}&semestre={{ request.GET.semestre }}{% endif %}">
+                            Última <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function aplicarFiltros() {
+    document.getElementById('filtrosForm').submit();
+}
+
+function limpiarFiltros() {
+    const form = document.getElementById('filtrosForm');
+    const inputs = form.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        if (input.type === 'text') {
+            input.value = '';
+        } else {
+            input.selectedIndex = 0;
+        }
+    });
+    form.submit();
+}
+
+// Cambiar vista entre grid y lista
+document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const container = document.getElementById('guiasContainer');
+        if (this.dataset.view === 'list') {
+            container.classList.add('list-view');
+            container.style.gridTemplateColumns = '1fr';
+        } else {
+            container.classList.remove('list-view');
+            container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(350px, 1fr))';
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Contenedor principal */
+.guias-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header de página */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    padding: 25px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.header-content h2 {
+    margin: 0 0 8px 0;
+    color: #1e3a8a;
+    font-size: 28px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-content p {
+    margin: 0;
+    color: #64748b;
+    font-size: 16px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Secciones */
+.stats-section,
+.filters-section,
+.content-section,
+.pagination-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.section-header h3 {
+    margin: 0;
+    color: #1e3a8a;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Panel de estadísticas */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.stat-card.success {
+    background: linear-gradient(135deg, #06d6a0 0%, #118ab2 100%);
+    color: white;
+}
+
+.stat-card.warning {
+    background: linear-gradient(135deg, #ffd166 0%, #f77f00 100%);
+    color: white;
+}
+
+.stat-card.danger {
+    background: linear-gradient(135deg, #ef476f 0%, #ffd166 100%);
+    color: white;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.stat-content h3 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+}
+
+.stat-content p {
+    margin: 5px 0 0 0;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+/* Formulario de filtros */
+.filters-form {
+    margin-top: 20px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+}
+
+.form-control {
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Botones */
+.btn {
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-outline {
+    background: transparent;
+    color: #6b7280;
+    border: 2px solid #e5e7eb;
+}
+
+.btn-outline:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+/* Opciones de vista */
+.view-options {
+    display: flex;
+    gap: 5px;
+}
+
+.view-btn {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #6b7280;
+}
+
+.view-btn:hover,
+.view-btn.active {
+    border-color: #3b82f6;
+    background: #3b82f6;
+    color: white;
+}
+
+/* Grid de guías */
+.guias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.guias-grid.list-view {
+    grid-template-columns: 1fr;
+}
+
+.guias-grid.list-view .guia-card {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+}
+
+.guias-grid.list-view .card-header {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.guias-grid.list-view .card-body {
+    flex: 2;
+    margin: 0 20px;
+}
+
+.guias-grid.list-view .card-actions {
+    flex: 0;
+    margin-top: 0;
+}
+
+/* Tarjetas de guías */
+.guia-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.guia-card:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.card-title h4 {
+    color: #1e3a8a;
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.card-subtitle {
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.semester-1 { background: #dbeafe; color: #1e40af; }
+.semester-2 { background: #dcfce7; color: #16a34a; }
+.semester-3 { background: #fed7d7; color: #dc2626; }
+.semester-4 { background: #fef3c7; color: #d97706; }
+.semester-5 { background: #e0e7ff; color: #6366f1; }
+.semester-6 { background: #fce7f3; color: #db2777; }
+.semester-7 { background: #f0fdfa; color: #059669; }
+.semester-8 { background: #fef2f2; color: #ef4444; }
+
+.card-body {
+    margin-bottom: 15px;
+}
+
+.info-grid {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #4b5563;
+}
+
+.info-item i {
+    width: 16px;
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+.file-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.file-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.file-btn.word {
+    background: #e0f2fe;
+    color: #0277bd;
+}
+
+.file-btn.word:hover {
+    background: #b3e5fc;
+}
+
+.file-btn.pdf {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.file-btn.pdf:hover {
+    background: #ffcdd2;
+}
+
+.no-files {
+    color: #9ca3af;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.card-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.action-btn.view {
+    background: #e0f2fe;
+    color: #0277bd;
+}
+
+.action-btn.view:hover {
+    background: #b3e5fc;
+}
+
+.action-btn.delete {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.action-btn.delete:hover {
+    background: #ffcdd2;
+}
+
+/* Estado vacío */
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.empty-icon {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    background: #f3f4f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    color: #9ca3af;
+}
+
+.empty-state h3 {
+    color: #374151;
+    margin-bottom: 10px;
+    font-size: 24px;
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+/* Paginación */
+.pagination-section {
+    text-align: center;
+}
+
+.pagination {
+    display: inline-flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 5px;
+}
+
+.page-item {
+    margin: 0;
+}
+
+.page-link {
+    padding: 12px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #6b7280;
+    background: #f8f9fa;
+    border: 2px solid #e5e7eb;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.page-link:hover {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+}
+
+.page-item.active .page-link {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .guias-container {
+        padding: 15px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 20px;
+        align-items: stretch;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .guias-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .guia-card {
+        padding: 15px;
+    }
+    
+    .card-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,915 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Insumos - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Gestión de Insumos{% endblock %}
+
+{% block page_description %}Control de inventario y administración de insumos de laboratorio{% endblock %}
+
+{% block content %}
+<div class="insumos-container">
+    <!-- Panel de Estadísticas -->
+    <div class="stats-panel">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="fas fa-vial"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="total-insumos">{{ stats.total }}</h3>
+                    <p>Total Insumos</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #06d6a0 0%, #118ab2 100%);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="insumos-disponibles">{{ stats.disponibles }}</h3>
+                    <p>Disponibles</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="insumos-bajo-stock">{{ stats.bajo_stock }}</h3>
+                    <p>Bajo Stock</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="insumos-agotados">{{ stats.agotados }}</h3>
+                    <p>Agotados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Filtros -->
+    <div class="filters-panel">
+        <div class="filter-header">
+            <h3><i class="fas fa-filter"></i> Filtros de Búsqueda</h3>
+            <div class="filter-actions">
+                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
+                    <i class="fas fa-undo"></i> Limpiar
+                </button>
+                <a href="{% url 'insumos:nuevo' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Insumo
+                </a>
+                <button type="button" class="btn btn-success" onclick="exportarInsumos()">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
+                </button>
+                <button type="button" class="btn btn-warning" onclick="reporteBajoStock()">
+                    <i class="fas fa-exclamation-triangle"></i> Reporte Stock
+                </button>
+            </div>
+        </div>
+        
+        <form method="GET" id="filtrosForm" class="filters-grid">
+            <div class="filter-group">
+                <label>Tipo de Insumo</label>
+                <select name="tipo" class="filter-select" onchange="aplicarFiltros()">
+                    <option value="">Todos los tipos</option>
+                    {% for value, display in tipos_choices %}
+                        <option value="{{ value }}" {% if filtros.tipo == value %}selected{% endif %}>
+                            {{ display }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Estado</label>
+                <select name="estado" class="filter-select" onchange="aplicarFiltros()">
+                    <option value="">Todos los estados</option>
+                    <option value="disponible" {% if filtros.estado == 'disponible' %}selected{% endif %}>Disponible</option>
+                    <option value="bajo_stock" {% if filtros.estado == 'bajo_stock' %}selected{% endif %}>Bajo Stock</option>
+                    <option value="agotado" {% if filtros.estado == 'agotado' %}selected{% endif %}>Agotado</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Proveedor</label>
+                <select name="proveedor" class="filter-select" onchange="aplicarFiltros()">
+                    <option value="">Todos los proveedores</option>
+                    {% for proveedor in proveedores %}
+                        <option value="{{ proveedor.id }}" {% if filtros.proveedor == proveedor.id|stringformat:"s" %}selected{% endif %}>
+                            {{ proveedor.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Ubicación</label>
+                <select name="ubicacion" class="filter-select" onchange="aplicarFiltros()">
+                    <option value="">Todas las ubicaciones</option>
+                    {% for ubicacion in ubicaciones %}
+                        <option value="{{ ubicacion }}" {% if filtros.ubicacion == ubicacion %}selected{% endif %}>
+                            {{ ubicacion }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Vencimiento</label>
+                <select name="vencimiento" class="filter-select" onchange="aplicarFiltros()">
+                    <option value="">Todos</option>
+                    <option value="proximo" {% if filtros.vencimiento == 'proximo' %}selected{% endif %}>Próximo a vencer (30 días)</option>
+                    <option value="vencido" {% if filtros.vencimiento == 'vencido' %}selected{% endif %}>Vencidos</option>
+                </select>
+            </div>
+            
+            <div class="filter-group search-group">
+                <label>Búsqueda General</label>
+                <input type="text" name="busqueda" class="filter-select" placeholder="Buscar por nombre, código, descripción..." 
+                       value="{{ filtros.busqueda }}" onkeyup="buscarEnTiempoReal(this.value)">
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Resultados -->
+    <div class="results-panel">
+        <div class="results-header">
+            <h3>Inventario de Insumos</h3>
+            <div class="results-info">
+                Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }} insumos
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table class="insumos-table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Insumo</th>
+                        <th>Tipo</th>
+                        <th>Stock</th>
+                        <th>Unidad</th>
+                        <th>Ubicación</th>
+                        <th>Proveedor</th>
+                        <th>Vencimiento</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for insumo in page_obj %}
+                    <tr class="{% if insumo.estado_stock == 'agotado' %}row-danger{% elif insumo.estado_stock == 'bajo_stock' %}row-warning{% endif %}">
+                        <td>
+                            <strong>{{ insumo.codigo_interno }}</strong>
+                        </td>
+                        <td>
+                            <div class="insumo-info">
+                                <strong>{{ insumo.nombre }}</strong>
+                                {% if insumo.descripcion %}
+                                    <br><small class="text-muted">{{ insumo.descripcion|truncatechars:50 }}</small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-tipo badge-{{ insumo.tipo }}">
+                                {{ insumo.get_tipo_display }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="stock-info">
+                                <span class="stock-current {% if insumo.estado_stock == 'agotado' %}text-danger{% elif insumo.estado_stock == 'bajo_stock' %}text-warning{% endif %}">
+                                    {{ insumo.cantidad_actual }}
+                                </span>
+                                {% if insumo.cantidad_minima %}
+                                <small class="stock-min">Min: {{ insumo.cantidad_minima }}</small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>{{ insumo.unidad_medida }}</td>
+                        <td>
+                            {% if insumo.ubicacion %}
+                                <span class="ubicacion-badge">{{ insumo.ubicacion }}</span>
+                            {% else %}
+                                <span class="text-muted">Sin ubicar</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if insumo.proveedor %}
+                                {{ insumo.proveedor.nombre }}
+                            {% else %}
+                                <span class="text-muted">Sin proveedor</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if insumo.fecha_vencimiento %}
+                                <span class="fecha-vencimiento {% if insumo.esta_vencido %}text-danger{% elif insumo.proximo_a_vencer %}text-warning{% endif %}">
+                                    {{ insumo.fecha_vencimiento|date:"d/m/Y" }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">No aplica</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-stock badge-{{ insumo.estado_stock }}">
+                                {% if insumo.estado_stock == 'disponible' %}Disponible
+                                {% elif insumo.estado_stock == 'bajo_stock' %}Bajo Stock
+                                {% else %}Agotado{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'insumos:detalle' insumo.pk %}" class="btn-action btn-info" title="Ver Detalle">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'insumos:editar' insumo.pk %}" class="btn-action btn-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button onclick="ajustarStock({{ insumo.pk }})" class="btn-action btn-success" title="Ajustar Stock">
+                                    <i class="fas fa-balance-scale"></i>
+                                </button>
+                                <a href="{% url 'insumos:eliminar' insumo.pk %}" class="btn-action btn-danger" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center empty-state">
+                            <i class="fas fa-search"></i>
+                            <p>No se encontraron insumos con los filtros aplicados</p>
+                            <a href="{% url 'insumos:nuevo' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Agregar Primer Insumo
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if page_obj.has_other_pages %}
+        <div class="pagination-container">
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1" class="page-link">Primera</a>
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="page-link">Anterior</a>
+                {% endif %}
+                
+                <span class="page-info">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+                
+                {% if page_obj.has_next %}
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="page-link">Siguiente</a>
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}" class="page-link">Última</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para Ajuste de Stock -->
+<div id="stockModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Ajustar Stock</h3>
+            <span class="modal-close" onclick="cerrarModalStock()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="stockForm">
+                <div class="form-group">
+                    <label>Insumo:</label>
+                    <span id="insumoNombre"></span>
+                </div>
+                <div class="form-group">
+                    <label>Stock Actual:</label>
+                    <span id="stockActual"></span>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Movimiento:</label>
+                    <select id="tipoMovimiento" class="form-control">
+                        <option value="entrada">Entrada (Suma)</option>
+                        <option value="salida">Salida (Resta)</option>
+                        <option value="ajuste">Ajuste (Establece cantidad exacta)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad:</label>
+                    <input type="number" id="cantidadMovimiento" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Motivo:</label>
+                    <textarea id="motivoMovimiento" class="form-control" rows="3" placeholder="Describe el motivo del movimiento"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalStock()">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="confirmarAjusteStock()">Confirmar Ajuste</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .insumos-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Stats Panel */
+    .stats-panel {
+        margin-bottom: 30px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: transform 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+    }
+
+    .stat-content h3 {
+        margin: 0;
+        font-size: 32px;
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+
+    .stat-content p {
+        margin: 5px 0 0 0;
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Filters Panel */
+    .filters-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .filter-header h3 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .search-group {
+        grid-column: span 2;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-group label {
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    .filter-select {
+        padding: 10px 12px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Results Panel */
+    .results-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .results-header h3 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .results-info {
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    /* Table */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .insumos-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .insumos-table th {
+        background: #f8fafc;
+        padding: 15px 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #374151;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+    }
+
+    .insumos-table td {
+        padding: 15px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 14px;
+    }
+
+    .insumos-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .row-warning {
+        background: #fef3c7 !important;
+    }
+
+    .row-danger {
+        background: #fee2e2 !important;
+    }
+
+    .insumo-info strong {
+        color: #1e3a8a;
+    }
+
+    .text-muted {
+        color: #6b7280;
+    }
+
+    .stock-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stock-current {
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .stock-min {
+        font-size: 11px;
+        color: #6b7280;
+    }
+
+    .text-danger { color: #dc2626; }
+    .text-warning { color: #d97706; }
+
+    .ubicacion-badge {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .fecha-vencimiento {
+        font-weight: 500;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    .badge-tipo.badge-reactivo { background: #dbeafe; color: #1e40af; }
+    .badge-tipo.badge-material { background: #dcfce7; color: #166534; }
+    .badge-tipo.badge-herramienta { background: #fef3c7; color: #92400e; }
+    .badge-tipo.badge-consumible { background: #f3e8ff; color: #7c3aed; }
+
+    .badge-stock.badge-disponible { background: #dcfce7; color: #166534; }
+    .badge-stock.badge-bajo_stock { background: #fef3c7; color: #92400e; }
+    .badge-stock.badge-agotado { background: #fee2e2; color: #dc2626; }
+
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+    }
+
+    .btn-action {
+        padding: 6px 8px;
+        border-radius: 6px;
+        color: white;
+        text-decoration: none;
+        font-size: 12px;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-action.btn-info { background: #3b82f6; }
+    .btn-action.btn-warning { background: #f59e0b; }
+    .btn-action.btn-success { background: #10b981; }
+    .btn-action.btn-danger { background: #ef4444; }
+
+    .btn-action:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+
+    .btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-secondary { background: #6b7280; color: white; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-warning { background: #f59e0b; color: white; }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: #64748b;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state p {
+        margin-bottom: 20px;
+        font-size: 16px;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .modal-close {
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+    }
+
+    .modal-close:hover {
+        color: #000;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .modal-footer {
+        padding: 20px 25px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Pagination */
+    .pagination-container {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .pagination {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .page-link {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        color: #374151;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .page-link:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+    }
+
+    .page-info {
+        padding: 8px 12px;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .filters-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .search-group {
+            grid-column: span 1;
+        }
+        
+        .filter-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+        }
+        
+        .filter-actions {
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .results-header {
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .insumos-container {
+            padding: 15px;
+        }
+    }
+</style>
+
+<script>
+function aplicarFiltros() {
+    document.getElementById('filtrosForm').submit();
+}
+
+function limpiarFiltros() {
+    window.location.href = '{% url "insumos:lista" %}';
+}
+
+let timeoutId;
+function buscarEnTiempoReal(valor) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+        aplicarFiltros();
+    }, 500);
+}
+
+function exportarInsumos() {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '{% url "insumos:exportar" %}?' + params.toString();
+}
+
+function reporteBajoStock() {
+    window.location.href = '{% url "insumos:reporte_stock" %}';
+}
+
+// Modal de ajuste de stock
+let currentInsumoId = null;
+
+function ajustarStock(insumoId) {
+    currentInsumoId = insumoId;
+    
+    // Cargar datos del insumo
+    fetch(`/api/insumos/${insumoId}/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('insumoNombre').textContent = data.nombre;
+            document.getElementById('stockActual').textContent = data.cantidad_actual + ' ' + data.unidad_medida;
+            document.getElementById('cantidadMovimiento').value = '';
+            document.getElementById('motivoMovimiento').value = '';
+            document.getElementById('stockModal').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar datos del insumo');
+        });
+}
+
+function cerrarModalStock() {
+    document.getElementById('stockModal').style.display = 'none';
+    currentInsumoId = null;
+}
+
+function confirmarAjusteStock() {
+    const tipoMovimiento = document.getElementById('tipoMovimiento').value;
+    const cantidad = document.getElementById('cantidadMovimiento').value;
+    const motivo = document.getElementById('motivoMovimiento').value;
+    
+    if (!cantidad || cantidad <= 0) {
+        alert('Por favor ingrese una cantidad válida');
+        return;
+    }
+    
+    if (!motivo.trim()) {
+        alert('Por favor ingrese el motivo del movimiento');
+        return;
+    }
+    
+    const data = {
+        tipo_movimiento: tipoMovimiento,
+        cantidad: parseFloat(cantidad),
+        motivo: motivo,
+        csrfmiddlewaretoken: document.querySelector('[name=csrfmiddlewaretoken]').value
+    };
+    
+    fetch(`/api/insumos/${currentInsumoId}/ajustar-stock/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': data.csrfmiddlewaretoken
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Stock ajustado correctamente');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo ajustar el stock'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al ajustar el stock');
+    });
+    
+    cerrarModalStock();
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    const modal = document.getElementById('stockModal');
+    if (event.target == modal) {
+        cerrarModalStock();
+    }
+}
+
+// Actualizar contadores automáticamente
+document.addEventListener('DOMContentLoaded', function() {
+    // Aquí se puede agregar lógica para actualización en tiempo real si es necesario
+});
+</script>
+{% endblock %}

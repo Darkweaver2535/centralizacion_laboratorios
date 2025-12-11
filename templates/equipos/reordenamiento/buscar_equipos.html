@@ -1,0 +1,494 @@
+{% extends 'base.html' %}
+
+{% block title %}Buscar Equipos - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Buscar Equipos para Reordenamiento{% endblock %}
+
+{% block page_description %}Selecciona equipos para agregar a la tarea de reordenamiento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb y navegación -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'equipos:reordenamiento' %}">Reordenamiento</a></li>
+                    {% if tarea %}
+                        <li class="breadcrumb-item"><a href="{% url 'equipos:detalle_tarea' tarea.pk %}">{{ tarea.titulo|truncatechars:20 }}</a></li>
+                    {% endif %}
+                    <li class="breadcrumb-item active" aria-current="page">Buscar Equipos</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="h3 mb-1 text-primary">
+                                <i class="fas fa-search me-2"></i>Buscar Equipos para Reordenamiento
+                            </h2>
+                            {% if tarea %}
+                                <p class="text-muted mb-0">Tarea: {{ tarea.titulo }}</p>
+                            {% else %}
+                                <p class="text-muted mb-0">Selecciona equipos para agregar a una tarea</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            {% if tarea %}
+                                <a href="{% url 'equipos:detalle_tarea' tarea.pk %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver a Tarea
+                                </a>
+                            {% else %}
+                                <a href="{% url 'equipos:reordenamiento' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+            {% endif %}
+        </div>
+        <div class="d-flex gap-2">
+            {% if tarea %}
+                <a href="{% url 'equipos:detalle_tarea' tarea.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a Tarea
+                </a>
+            {% else %}
+                <a href="{% url 'equipos:reordenamiento' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a Lista
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Panel Principal -->
+        <div class="col-lg-9">
+            <!-- Filtros -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3" id="filtroForm">
+                        {% if tarea %}
+                            <input type="hidden" name="tarea_id" value="{{ tarea.pk }}">
+                        {% endif %}
+                        
+                        <div class="col-md-3">
+                            <label for="unidad_academica" class="form-label">Unidad Académica</label>
+                            <select class="form-select" id="unidad_academica" name="unidad_academica">
+                                <option value="">Todas las unidades</option>
+                                {% for unidad in unidades_academicas %}
+                                    <option value="{{ unidad.id }}" 
+                                            {% if filtros.unidad_academica == unidad.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ unidad.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="carrera" class="form-label">Carrera</label>
+                            <select class="form-select" id="carrera" name="carrera">
+                                <option value="">Todas las carreras</option>
+                                {% for carrera in carreras %}
+                                    <option value="{{ carrera.id }}" 
+                                            {% if filtros.carrera == carrera.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ carrera.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="laboratorio" class="form-label">Laboratorio</label>
+                            <select class="form-select" id="laboratorio" name="laboratorio">
+                                <option value="">Todos los laboratorios</option>
+                                {% for laboratorio in laboratorios %}
+                                    <option value="{{ laboratorio.id }}" 
+                                            {% if filtros.laboratorio == laboratorio.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ laboratorio.get_nombre_display }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="">Todos los estados</option>
+                                {% for key, value in estados %}
+                                    <option value="{{ key }}" 
+                                            {% if filtros.estado == key %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="busqueda" class="form-label">Búsqueda</label>
+                            <input type="text" class="form-control" id="busqueda" name="busqueda" 
+                                   value="{{ filtros.busqueda }}" 
+                                   placeholder="Nombre, marca, modelo o código...">
+                        </div>
+
+                        <div class="col-md-6 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Buscar
+                            </button>
+                            <a href="{% if tarea %}{% url 'equipos:buscar_equipos' %}?tarea_id={{ tarea.pk }}{% else %}{% url 'equipos:buscar_equipos' %}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Limpiar
+                            </a>
+                            <button type="button" class="btn btn-info" id="seleccionarTodos">
+                                <i class="fas fa-check-square me-2"></i>Seleccionar Todos
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de Equipos -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cogs me-2"></i>Equipos Encontrados
+                        {% if equipos.paginator.count %}
+                            ({{ equipos.paginator.count }} equipos)
+                        {% endif %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if equipos %}
+                        <form method="post" action="{% url 'equipos:procesar_tarea' tarea.pk %}" id="seleccionForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="agregar_equipos">
+                            
+                            <div class="row">
+                                {% for equipo in equipos %}
+                                    <div class="col-lg-6 col-xl-4 mb-3">
+                                        <div class="card equipment-card h-100" 
+                                             onclick="toggleEquipoSelection({{ equipo.id }})">
+                                            <div class="card-body">
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input equipo-checkbox" 
+                                                           type="checkbox" 
+                                                           name="equipos_seleccionados" 
+                                                           value="{{ equipo.id }}" 
+                                                           id="equipo_{{ equipo.id }}">
+                                                    <label class="form-check-label font-weight-bold" 
+                                                           for="equipo_{{ equipo.id }}">
+                                                        {{ equipo.equipo_existente|truncatechars:30 }}
+                                                    </label>
+                                                </div>
+
+                                                <div class="small text-muted mb-2">
+                                                    <strong>Código:</strong> {{ equipo.codigo_inventario|default:"Sin código" }}
+                                                    <br>
+                                                    <strong>Marca/Modelo:</strong> {{ equipo.marca|default:"N/A" }} {{ equipo.modelo|default:"" }}
+                                                    <br>
+                                                    <strong>Estado:</strong> 
+                                                    <span class="badge bg-{% if equipo.estado == 'operativo' %}success{% elif equipo.estado == 'mantenimiento' %}warning{% elif equipo.estado == 'reparacion' %}danger{% else %}secondary{% endif %}">
+                                                        {{ equipo.get_estado_display }}
+                                                    </span>
+                                                </div>
+
+                                                <div class="small">
+                                                    <strong>Ubicación:</strong>
+                                                    <br>{{ equipo.unidad_academica.nombre }}
+                                                    <br>{{ equipo.laboratorio.get_nombre_display }}
+                                                    {% if equipo.seccion_area %}
+                                                        <br><strong>Sección:</strong> {{ equipo.seccion_area }}
+                                                    {% endif %}
+                                                    {% if equipo.identificador_aula %}
+                                                        <br><strong>Aula:</strong> {{ equipo.identificador_aula }}
+                                                    {% endif %}
+                                                </div>
+
+                                                {% if equipo.fotografia_frontal %}
+                                                    <div class="mt-2">
+                                                        <img src="{{ equipo.fotografia_frontal.url }}" 
+                                                             class="img-thumbnail" 
+                                                             style="max-height: 60px; max-width: 80px;" 
+                                                             alt="Foto del equipo">
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Paginación -->
+                            {% if equipos.has_other_pages %}
+                                <nav aria-label="Paginación de equipos" class="mt-4">
+                                    <ul class="pagination justify-content-center">
+                                        {% if equipos.has_previous %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">Primera</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ equipos.previous_page_number }}">Anterior</a>
+                                            </li>
+                                        {% endif %}
+
+                                        <li class="page-item active">
+                                            <span class="page-link">
+                                                Página {{ equipos.number }} de {{ equipos.paginator.num_pages }}
+                                            </span>
+                                        </li>
+
+                                        {% if equipos.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ equipos.next_page_number }}">Siguiente</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ equipos.paginator.num_pages }}">Última</a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            {% endif %}
+                        </form>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-600">No se encontraron equipos</h5>
+                            <p class="text-muted">Ajusta los filtros de búsqueda para encontrar equipos.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Lateral - Resumen de Selección -->
+        <div class="col-lg-3">
+            <div class="selection-summary">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-clipboard-check me-2"></i>Equipos Seleccionados
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="text-center">
+                                <div class="h3 mb-0 text-primary" id="contadorSeleccionados">0</div>
+                                <small class="text-muted">equipos seleccionados</small>
+                            </div>
+                        </div>
+
+                        <div id="resumenSeleccion" class="mb-3" style="display: none;">
+                            <div class="small text-muted">
+                                <strong>Selección actual:</strong>
+                                <ul id="listaSeleccionados" class="mt-2">
+                                </ul>
+                            </div>
+                        </div>
+
+                        {% if tarea %}
+                            <!-- Formulario de destino -->
+                            <div class="mb-3">
+                                <label for="unidad_destino" class="form-label small">Unidad Destino</label>
+                                <select class="form-select form-select-sm" id="unidad_destino" name="unidad_destino">
+                                    <option value="">Mantener actual</option>
+                                    {% for unidad in unidades_academicas %}
+                                        <option value="{{ unidad.id }}">{{ unidad.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="laboratorio_destino" class="form-label small">Laboratorio Destino</label>
+                                <select class="form-select form-select-sm" id="laboratorio_destino" name="laboratorio_destino">
+                                    <option value="">Mantener actual</option>
+                                </select>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-success" id="agregarEquipos" disabled>
+                                    <i class="fas fa-plus me-2"></i>Agregar a Tarea
+                                </button>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info small">
+                                Selecciona una tarea para continuar con el proceso.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let equiposSeleccionados = [];
+
+function toggleEquipoSelection(equipoId) {
+    const checkbox = document.getElementById(`equipo_${equipoId}`);
+    const card = checkbox.closest('.equipment-card');
+    
+    checkbox.checked = !checkbox.checked;
+    
+    if (checkbox.checked) {
+        card.classList.add('selected');
+        equiposSeleccionados.push(equipoId);
+    } else {
+        card.classList.remove('selected');
+        equiposSeleccionados = equiposSeleccionados.filter(id => id !== equipoId);
+    }
+    
+    actualizarResumenSeleccion();
+}
+
+function actualizarResumenSeleccion() {
+    const contador = document.getElementById('contadorSeleccionados');
+    const resumen = document.getElementById('resumenSeleccion');
+    const lista = document.getElementById('listaSeleccionados');
+    const botonAgregar = document.getElementById('agregarEquipos');
+    
+    contador.textContent = equiposSeleccionados.length;
+    
+    if (equiposSeleccionados.length > 0) {
+        resumen.style.display = 'block';
+        
+        // Actualizar lista de seleccionados
+        lista.innerHTML = '';
+        equiposSeleccionados.forEach(equipoId => {
+            const checkbox = document.getElementById(`equipo_${equipoId}`);
+            const label = checkbox.nextElementSibling.textContent;
+            const li = document.createElement('li');
+            li.textContent = label;
+            lista.appendChild(li);
+        });
+        
+        if (botonAgregar) {
+            botonAgregar.disabled = false;
+        }
+    } else {
+        resumen.style.display = 'none';
+        if (botonAgregar) {
+            botonAgregar.disabled = true;
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Seleccionar todos
+    document.getElementById('seleccionarTodos').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.equipo-checkbox');
+        const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(checkbox => {
+            const equipoId = parseInt(checkbox.value);
+            const card = checkbox.closest('.equipment-card');
+            
+            if (todosSeleccionados) {
+                checkbox.checked = false;
+                card.classList.remove('selected');
+                equiposSeleccionados = equiposSeleccionados.filter(id => id !== equipoId);
+            } else {
+                checkbox.checked = true;
+                card.classList.add('selected');
+                if (!equiposSeleccionados.includes(equipoId)) {
+                    equiposSeleccionados.push(equipoId);
+                }
+            }
+        });
+        
+        this.innerHTML = todosSeleccionados ? 
+            '<i class="fas fa-check-square me-2"></i>Seleccionar Todos' : 
+            '<i class="fas fa-square me-2"></i>Deseleccionar Todos';
+        
+        actualizarResumenSeleccion();
+    });
+
+    // Actualizar laboratorios cuando cambie la unidad
+    const unidadSelect = document.getElementById('unidad_destino');
+    const laboratorioSelect = document.getElementById('laboratorio_destino');
+    
+    if (unidadSelect && laboratorioSelect) {
+        unidadSelect.addEventListener('change', function() {
+            const unidadId = this.value;
+            
+            // Limpiar laboratorios
+            laboratorioSelect.innerHTML = '<option value="">Mantener actual</option>';
+            
+            if (unidadId) {
+                // Hacer petición AJAX para obtener laboratorios
+                fetch('{% url "equipos:laboratorios_unidad_ajax" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        'unidad_id': unidadId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        data.laboratorios.forEach(lab => {
+                            const option = document.createElement('option');
+                            option.value = lab.id;
+                            option.textContent = lab.nombre;
+                            laboratorioSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+    }
+
+    // Agregar equipos a la tarea
+    const botonAgregar = document.getElementById('agregarEquipos');
+    if (botonAgregar) {
+        botonAgregar.addEventListener('click', function() {
+            if (equiposSeleccionados.length === 0) {
+                alert('Selecciona al menos un equipo.');
+                return;
+            }
+            
+            const form = document.getElementById('seleccionForm');
+            const unidadDestino = document.getElementById('unidad_destino').value;
+            const laboratorioDestino = document.getElementById('laboratorio_destino').value;
+            
+            // Agregar campos de destino al formulario
+            if (unidadDestino) {
+                const inputUnidad = document.createElement('input');
+                inputUnidad.type = 'hidden';
+                inputUnidad.name = 'unidad_destino';
+                inputUnidad.value = unidadDestino;
+                form.appendChild(inputUnidad);
+            }
+            
+            if (laboratorioDestino) {
+                const inputLaboratorio = document.createElement('input');
+                inputLaboratorio.type = 'hidden';
+                inputLaboratorio.name = 'laboratorio_destino';
+                inputLaboratorio.value = laboratorioDestino;
+                form.appendChild(inputLaboratorio);
+            }
+            
+            form.submit();
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+
+{% block title %}Seleccionar Método de Carga - {{ tipo|title }}{% endblock %}
+
+{% block page_title %}Registrar {{ tipo|title }}{% endblock %}
+
+{% block page_description %}Seleccione el método de carga de datos que desea utilizar{% endblock %}
+
+{% block content %}
+<div class="method-selector-container">
+    
+    <!-- Título y descripción -->
+    <div class="selector-header">
+        <h2><i class="fas fa-{% if tipo == 'equipos' %}flask{% elif tipo == 'insumos' %}boxes{% else %}tools{% endif %}"></i> Registrar {{ tipo|title }}</h2>
+        <p class="description">Elija el método más conveniente para registrar los datos en el sistema</p>
+    </div>
+
+    <!-- Opciones de carga -->
+    <div class="method-options">
+        
+        <!-- Opción 1: Carga Manual -->
+        <div class="method-card manual-card">
+            <div class="method-icon">
+                <i class="fas fa-edit"></i>
+            </div>
+            <div class="method-content">
+                <h3>Carga Manual</h3>
+                <p>Registre los datos uno por uno utilizando formularios interactivos</p>
+                <div class="method-features">
+                    <ul>
+                        <li><i class="fas fa-check"></i> Control total sobre cada registro</li>
+                        <li><i class="fas fa-check"></i> Validación inmediata de datos</li>
+                        <li><i class="fas fa-check"></i> Ideal para pocos registros</li>
+                        <li><i class="fas fa-check"></i> Fácil corrección de errores</li>
+                    </ul>
+                </div>
+                <div class="method-actions">
+                    <a href="{% url tipo|add:':nuevo' %}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle"></i> Registro Manual
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opción 2: Carga por Excel/CSV -->
+        <div class="method-card excel-card">
+            <div class="method-icon">
+                <i class="fas fa-file-excel"></i>
+            </div>
+            <div class="method-content">
+                <h3>Importar Excel/CSV</h3>
+                <p>Cargue múltiples registros desde un archivo Excel o CSV</p>
+                <div class="method-features">
+                    <ul>
+                        <li><i class="fas fa-check"></i> Carga masiva de datos</li>
+                        <li><i class="fas fa-check"></i> Ahorra tiempo significativo</li>
+                        <li><i class="fas fa-check"></i> Ideal para muchos registros</li>
+                        <li><i class="fas fa-check"></i> Formato estándar EMI</li>
+                    </ul>
+                </div>
+                <div class="method-actions">
+                    <a href="{% url tipo|add:':importar' %}" class="btn btn-success">
+                        <i class="fas fa-upload"></i> Importar Archivo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notas de Requisitos para Excel/CSV -->
+    <div class="requirements-section">
+        <h4><i class="fas fa-info-circle"></i> Notas de Requisitos para Importación Excel/CSV</h4>
+        
+        <div class="requirements-grid">
+            <div class="requirement-card">
+                <h5><i class="fas fa-file-alt"></i> Formato de Archivo</h5>
+                <ul>
+                    <li>Archivos soportados: <code>.xlsx</code>, <code>.xls</code>, <code>.csv</code></li>
+                    <li>Tamaño máximo: <strong>10 MB</strong></li>
+                    <li>Codificación recomendada: <strong>UTF-8</strong></li>
+                </ul>
+            </div>
+
+            <div class="requirement-card">
+                <h5><i class="fas fa-columns"></i> Estructura de Columnas</h5>
+                {% if tipo == 'equipos' %}
+                <ul>
+                    <li>Debe contener las <strong>24 columnas oficiales</strong></li>
+                    <li>Primera fila debe ser encabezados</li>
+                    <li>Columnas requeridas: Unidad Académica, Carrera, Asignatura, Nombre del Equipo</li>
+                    <li>Estados válidos: Bueno, Regular, Malo</li>
+                </ul>
+                {% elif tipo == 'insumos' %}
+                <ul>
+                    <li>Debe contener las <strong>19 columnas oficiales</strong></li>
+                    <li>Primera fila debe ser encabezados</li>
+                    <li>Columnas requeridas: Unidad Académica, Laboratorio, Nombre del Elemento</li>
+                    <li>Categorías válidas: Reactivos, Materiales, Herramientas</li>
+                </ul>
+                {% endif %}
+            </div>
+
+            <div class="requirement-card">
+                <h5><i class="fas fa-exclamation-triangle"></i> Validaciones</h5>
+                <ul>
+                    <li>No debe tener celdas completamente vacías</li>
+                    <li>Las Unidades Académicas deben existir en el sistema</li>
+                    <li>Las Carreras deben estar asociadas a la Unidad correcta</li>
+                    <li>Los Laboratorios deben estar registrados previamente</li>
+                </ul>
+            </div>
+
+            <div class="requirement-card">
+                <h5><i class="fas fa-download"></i> Plantilla Oficial</h5>
+                <p>Descargue la plantilla oficial para asegurar compatibilidad:</p>
+                <a href="{% url 'core:plantilla_excel' tipo %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-file-download"></i> Descargar Plantilla {{ tipo|title }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consejos adicionales -->
+    <div class="tips-section">
+        <h4><i class="fas fa-lightbulb"></i> Consejos para una Importación Exitosa</h4>
+        <div class="tips-grid">
+            <div class="tip-item">
+                <i class="fas fa-check-circle"></i>
+                <p>Verifique que todos los datos curriculares (Carreras, Asignaturas) estén previamente registrados en el sistema</p>
+            </div>
+            <div class="tip-item">
+                <i class="fas fa-check-circle"></i>
+                <p>Use la plantilla oficial para evitar errores de formato</p>
+            </div>
+            <div class="tip-item">
+                <i class="fas fa-check-circle"></i>
+                <p>Revise los datos antes de importar - las correcciones masivas son más difíciles</p>
+            </div>
+            <div class="tip-item">
+                <i class="fas fa-check-circle"></i>
+                <p>Haga una copia de seguridad antes de importaciones grandes</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+/* Estilos para el selector de método de carga */
+.method-selector-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.selector-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.selector-header h2 {
+    color: #1e3a8a;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.selector-header .description {
+    font-size: 1.1rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.method-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.method-card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.method-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.manual-card:hover {
+    border-color: #3b82f6;
+}
+
+.excel-card:hover {
+    border-color: #10b981;
+}
+
+.method-icon {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.method-icon i {
+    font-size: 3rem;
+    color: #1e3a8a;
+}
+
+.excel-card .method-icon i {
+    color: #10b981;
+}
+
+.method-content h3 {
+    text-align: center;
+    color: #1e3a8a;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.method-content p {
+    text-align: center;
+    color: #64748b;
+    margin-bottom: 20px;
+}
+
+.method-features ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 25px;
+}
+
+.method-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    color: #374151;
+}
+
+.method-features i {
+    color: #10b981;
+    font-size: 14px;
+}
+
+.method-actions {
+    text-align: center;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-2px);
+}
+
+.requirements-section {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.requirements-section h4 {
+    color: #1e3a8a;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.requirements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.requirement-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    border-left: 4px solid #3b82f6;
+}
+
+.requirement-card h5 {
+    color: #1e3a8a;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.requirement-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.requirement-card li {
+    padding: 5px 0;
+    color: #374151;
+}
+
+.requirement-card code {
+    background: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.btn-outline-primary {
+    background: transparent;
+    color: #3b82f6;
+    border: 1px solid #3b82f6;
+}
+
+.btn-outline-primary:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.tips-section {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-radius: 12px;
+    padding: 30px;
+}
+
+.tips-section h4 {
+    color: #1e3a8a;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.tip-item i {
+    color: #10b981;
+    font-size: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.tip-item p {
+    margin: 0;
+    color: #374151;
+    line-height: 1.5;
+}
+</style>
+{% endblock %}

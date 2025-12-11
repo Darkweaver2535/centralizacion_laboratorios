@@ -1,0 +1,4200 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Agregar Datos Completos - Malla Curricular{% endblock %}
+
+{% block extra_head %}
+<!-- MathJax para renderizar ecuaciones matemáticas en CKEditor -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [['$','$'], ['\\(','\\)']],
+            displayMath: [['$$','$$'], ['\\[','\\]']],
+            processEscapes: true
+        },
+        "HTML-CSS": {
+            availableFonts: ["TeX"],
+            scale: 100,
+            styles: {
+                ".MathJax": {
+                    color: "#333 !important"
+                }
+            }
+        }
+    });
+</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS_HTML"></script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============================================================
+       ESTILOS ESPECÍFICOS PARA AGREGAR DATOS MALLA CURRICULAR
+       Namespace: #agregar-datos-malla-page para evitar conflictos
+    ============================================================ */
+    
+    /* Contenedor principal específico para este formulario */
+    #agregar-datos-malla-page .form-wrapper {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+        min-height: calc(100vh - 120px) !important;
+        padding: 40px 20px !important;
+        margin-top: 0px !important;
+        position: relative !important;
+    }
+
+    /* Contenedor del formulario */
+    #agregar-datos-malla-page .form-container {
+        max-width: 1200px !important;
+        margin: 0 auto !important;
+        background: #ffffff !important;
+        border-radius: 20px !important;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15) !important;
+        overflow: hidden !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+
+    /* Header del formulario */
+    #agregar-datos-malla-page .form-header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+        color: white !important;
+        padding: 50px !important;
+        text-align: center !important;
+    }
+
+    #agregar-datos-malla-page .form-title {
+        font-size: 2.5rem !important;
+        font-weight: 700 !important;
+        margin: 0 0 20px 0 !important;
+        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.3) !important;
+        color: white !important;
+    }
+
+    #agregar-datos-malla-page .form-subtitle {
+        font-size: 1.2rem !important;
+        opacity: 0.95 !important;
+        margin: 0 !important;
+        color: white !important;
+    }
+
+    /* Contenido del formulario */
+    #agregar-datos-malla-page .form-content {
+        padding: 60px 50px 10px 50px !important;
+        background: #f8f9fa !important;
+    }
+
+    /* Secciones del formulario */
+    #agregar-datos-malla-page .form-section {
+        background: #ffffff !important;
+        border-radius: 20px !important;
+        margin-bottom: 40px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+        overflow: hidden !important;
+        transition: all 0.4s ease !important;
+        border: 1px solid #e5e7eb !important;
+    }
+
+    #agregar-datos-malla-page .section-header {
+        padding: 30px 40px !important;
+        font-weight: 700 !important;
+        font-size: 1.4rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        color: white !important;
+    }
+
+    #agregar-datos-malla-page .section-header i {
+        margin-right: 15px !important;
+        font-size: 1.5rem !important;
+    }
+
+    #agregar-datos-malla-page .section-body {
+        padding: 40px !important;
+        background: #ffffff !important;
+    }
+
+    /* Headers por tipo de sección con colores institucionales */
+    #agregar-datos-malla-page .academic-section .section-header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+    }
+
+    #agregar-datos-malla-page .subject-section .section-header {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    }
+
+    #agregar-datos-malla-page .criteria-section .section-header {
+        background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%) !important;
+    }
+
+    #agregar-datos-malla-page .units-section .section-header {
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
+    }
+
+    #agregar-datos-malla-page .content-section .section-header {
+        background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%) !important;
+    }
+
+    /* Grid system mejorado con flexbox y gap */
+    #agregar-datos-malla-page .row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 20px !important;
+        margin: 0 !important;
+    }
+
+    #agregar-datos-malla-page .col-2 { flex: 0 0 calc(16.666667% - 16px) !important; }
+    #agregar-datos-malla-page .col-3 { flex: 0 0 calc(25% - 15px) !important; }
+    #agregar-datos-malla-page .col-4 { flex: 0 0 calc(33.333333% - 14px) !important; }
+    #agregar-datos-malla-page .col-6 { flex: 0 0 calc(50% - 10px) !important; }
+    #agregar-datos-malla-page .col-12 { flex: 0 0 100% !important; }
+
+    /* Campos del formulario con alta especificidad */
+    #agregar-datos-malla-page .form-group {
+        margin-bottom: 30px !important;
+    }
+
+    #agregar-datos-malla-page .form-label {
+        display: block !important;
+        font-weight: 600 !important;
+        color: #374151 !important;
+        margin-bottom: 10px !important;
+        font-size: 1.1rem !important;
+    }
+
+    #agregar-datos-malla-page .form-input {
+        width: 100% !important;
+        padding: 18px 20px !important;
+        border: 2px solid #e5e7eb !important;
+        border-radius: 15px !important;
+        font-size: 1.1rem !important;
+        transition: all 0.3s ease !important;
+        background: #ffffff !important;
+        color: #374151 !important;
+        font-family: inherit !important;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+        box-sizing: border-box !important;
+    }
+
+    #agregar-datos-malla-page .form-input:focus {
+        outline: none !important;
+        border-color: #1e3a8a !important;
+        box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1), 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        background: #ffffff !important;
+        transform: translateY(-2px) !important;
+    }
+
+    #agregar-datos-malla-page .form-select {
+        width: 100% !important;
+        padding: 18px 20px !important;
+        border: 2px solid #e5e7eb !important;
+        border-radius: 15px !important;
+        font-size: 1.1rem !important;
+        transition: all 0.3s ease !important;
+        background: #ffffff !important;
+        color: #374151 !important;
+        font-family: inherit !important;
+        cursor: pointer !important;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+        box-sizing: border-box !important;
+    }
+
+    #agregar-datos-malla-page .form-select:focus {
+        outline: none !important;
+        border-color: #1e3a8a !important;
+        box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1), 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        transform: translateY(-2px) !important;
+    }
+
+    /* Elementos dinámicos con namespace específico */
+    #agregar-datos-malla-page .dynamic-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #f3f4f6 100%) !important;
+        border-radius: 15px !important;
+        padding: 30px !important;
+        border: 2px dashed #e5e7eb !important;
+        margin: 25px 0 !important;
+    }
+
+    #agregar-datos-malla-page .dynamic-item {
+        background: #ffffff !important;
+        border: 2px solid #e5e7eb !important;
+        border-radius: 15px !important;
+        padding: 25px !important;
+        margin-bottom: 25px !important;
+        transition: all 0.3s ease !important;
+        position: relative !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    #agregar-datos-malla-page .dynamic-item:last-child {
+        margin-bottom: 0 !important;
+    }
+
+    /* Estilo especial para contenidos analíticos */
+    #agregar-datos-malla-page .contenido-analitico-item {
+        border-left: 4px solid #3b82f6 !important;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+    }
+
+    /* Datos adicionales del contenido analítico */
+    #agregar-datos-malla-page .datos-adicionales {
+        background: linear-gradient(135deg, #f8f9fa 0%, #f1f5f9 100%) !important;
+        border: 2px dashed #cbd5e1 !important;
+        border-radius: 15px !important;
+        padding: 25px !important;
+        margin-top: 20px !important;
+        transition: all 0.4s ease !important;
+    }
+
+    #agregar-datos-malla-page .datos-adicionales h4 {
+        color: #374151 !important;
+        margin-bottom: 25px !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+        font-size: 1.2rem !important;
+    }
+
+    /* Estilos para múltiples grupos de datos adicionales */
+    #agregar-datos-malla-page .grupos-datos-adicionales {
+        border-top: 2px dashed #e5e7eb !important;
+        padding-top: 20px !important;
+        margin-top: 20px !important;
+    }
+
+    #agregar-datos-malla-page .grupos-datos-adicionales h5 {
+        color: #374151 !important;
+        margin-bottom: 15px !important;
+        font-weight: 600 !important;
+        font-size: 1.1rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+    }
+
+    #agregar-datos-malla-page .container-grupos-datos {
+        margin-top: 20px !important;
+    }
+
+    #agregar-datos-malla-page .grupo-datos-adicionales {
+        background: linear-gradient(135deg, #fefefe 0%, #f8fafc 100%) !important;
+        border: 2px solid #e2e8f0 !important;
+        border-radius: 15px !important;
+        padding: 25px !important;
+        margin-bottom: 20px !important;
+        position: relative !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+        transition: all 0.3s ease !important;
+    }
+
+    #agregar-datos-malla-page .grupo-datos-adicionales:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+        transform: translateY(-2px) !important;
+    }
+
+    #agregar-datos-malla-page .grupo-datos-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 20px !important;
+        padding-bottom: 15px !important;
+        border-bottom: 2px dashed #e2e8f0 !important;
+    }
+
+    #agregar-datos-malla-page .grupo-datos-title {
+        color: #1e40af !important;
+        font-weight: 600 !important;
+        font-size: 1.1rem !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin: 0 !important;
+    }
+
+    #agregar-datos-malla-page .btn-eliminar-grupo {
+        background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 20px !important;
+        padding: 8px 15px !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+    }
+
+    #agregar-datos-malla-page .btn-eliminar-grupo:hover {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4) !important;
+    }
+
+    /* Textarea específico con alta especificidad */
+    #agregar-datos-malla-page .form-input[rows] {
+        resize: vertical !important;
+        min-height: auto !important;
+        font-family: inherit !important;
+    }
+
+    /* Input groups mejorados */
+    #agregar-datos-malla-page .input-group {
+        display: flex !important;
+        gap: 15px !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+    }
+
+    #agregar-datos-malla-page .input-group .form-input {
+        flex: 1 !important;
+        min-width: 200px !important;
+    }
+
+    /* Botones con colores institucionales y alta especificidad */
+    #agregar-datos-malla-page .btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 15px 30px !important;
+        border: none !important;
+        border-radius: 30px !important;
+        font-weight: 600 !important;
+        font-size: 1.1rem !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        text-decoration: none !important;
+        font-family: inherit !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+    }
+
+    #agregar-datos-malla-page .btn i {
+        margin-right: 10px !important;
+        font-size: 1.2rem !important;
+    }
+
+    #agregar-datos-malla-page .btn-add {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+        color: white !important;
+        box-shadow: 0 6px 20px rgba(5, 150, 105, 0.3) !important;
+    }
+
+    #agregar-datos-malla-page .btn-add:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 10px 30px rgba(5, 150, 105, 0.4) !important;
+        color: white !important;
+        text-decoration: none !important;
+    }
+
+    #agregar-datos-malla-page .btn-remove {
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
+        color: white !important;
+        padding: 12px 20px !important;
+        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.3) !important;
+    }
+
+    #agregar-datos-malla-page .btn-remove:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4) !important;
+        color: white !important;
+        text-decoration: none !important;
+    }
+
+    #agregar-datos-malla-page .btn-primary {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+        color: white !important;
+        padding: 20px 50px !important;
+        font-size: 1.2rem !important;
+        box-shadow: 0 10px 30px rgba(30, 58, 138, 0.3) !important;
+    }
+
+    #agregar-datos-malla-page .btn-primary:hover {
+        transform: translateY(-4px) !important;
+        box-shadow: 0 15px 40px rgba(30, 58, 138, 0.4) !important;
+        color: white !important;
+        text-decoration: none !important;
+    }
+
+    /* Estilos para badges de recursos seleccionados con textos largos */
+    #agregar-datos-malla-page .badge.bg-primary {
+        min-height: 32px !important;
+        line-height: 1.2 !important;
+        padding: 6px 8px !important;
+    }
+    
+    #agregar-datos-malla-page .badge .fas.fa-times {
+        transition: all 0.2s ease !important;
+        border-radius: 50% !important;
+        width: 18px !important;
+        height: 18px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-left: 6px !important;
+    }
+    
+    #agregar-datos-malla-page .badge .fas.fa-times:hover {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        transform: scale(1.1) !important;
+    }
+
+    /* Estilos para selección múltiple de recursos */
+    #agregar-datos-malla-page .recursos-seleccionados-lista {
+        max-height: 120px !important;
+        overflow-y: auto !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        padding: 8px !important;
+        background: #f9fafb !important;
+        min-height: 40px !important;
+    }
+
+    #agregar-datos-malla-page .recursos-seleccionados-lista .badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 6px 10px !important;
+        margin: 2px !important;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+        color: white !important;
+        border-radius: 20px !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        max-width: 200px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    #agregar-datos-malla-page .recursos-seleccionados-lista .badge i {
+        margin-left: 8px !important;
+        margin-right: 0 !important;
+        font-size: 0.75rem !important;
+        cursor: pointer !important;
+        transition: color 0.2s ease !important;
+    }
+
+    #agregar-datos-malla-page .recursos-seleccionados-lista .badge i:hover {
+        color: #fecaca !important;
+    }
+
+    #agregar-datos-malla-page .otro-recurso-container .input-group {
+        display: flex !important;
+        gap: 5px !important;
+    }
+
+    #agregar-datos-malla-page .otro-recurso-container .form-control {
+        flex: 1 !important;
+        padding: 8px 12px !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 8px !important;
+        font-size: 0.9rem !important;
+    }
+
+    #agregar-datos-malla-page .otro-recurso-container .btn {
+        padding: 8px 15px !important;
+        font-size: 0.9rem !important;
+        white-space: nowrap !important;
+        min-width: auto !important;
+    }
+
+    #agregar-datos-malla-page select[multiple] {
+        min-height: 150px !important;
+        padding: 10px !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 8px !important;
+        background: white !important;
+    }
+
+    #agregar-datos-malla-page select[multiple] option {
+        padding: 8px 12px !important;
+        margin: 2px 0 !important;
+        border-radius: 4px !important;
+        background: white !important;
+        cursor: pointer !important;
+    }
+
+    #agregar-datos-malla-page select[multiple] option:hover {
+        background: #f3f4f6 !important;
+    }
+
+    #agregar-datos-malla-page select[multiple] option:checked {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+        color: white !important;
+    }
+
+    #agregar-datos-malla-page .btn-secondary {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+        color: white !important;
+        padding: 20px 50px !important;
+        font-size: 1.2rem !important;
+        box-shadow: 0 6px 20px rgba(107, 114, 128, 0.3) !important;
+    }
+
+    #agregar-datos-malla-page .btn-secondary:hover {
+        background: linear-gradient(135deg, #4b5563 0%, #374151 100%) !important;
+        transform: translateY(-3px) !important;
+        box-shadow: 0 10px 30px rgba(107, 114, 128, 0.4) !important;
+        color: white !important;
+        text-decoration: none !important;
+    }
+
+    /* Footer de acciones con alta especificidad */
+    #agregar-datos-malla-page .form-footer {
+        background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%) !important;
+        padding: 15px 50px !important;
+        text-align: center !important;
+        border-top: 3px solid #f3f4f6 !important;
+        margin-top: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        gap: 30px !important;
+    }
+
+    #agregar-datos-malla-page .form-footer .btn {
+        margin: 0 !important;
+        padding: 12px 30px !important;
+        white-space: nowrap !important;
+    }
+
+    /* Responsive Design mejorado */
+    @media (max-width: 768px) {
+        #agregar-datos-malla-page .form-wrapper {
+            padding: 20px 10px !important;
+            margin-top: 100px !important;
+        }
+        
+        #agregar-datos-malla-page .form-content {
+            padding: 30px 20px !important;
+        }
+        
+        #agregar-datos-malla-page .form-header {
+            padding: 30px 20px !important;
+        }
+        
+        #agregar-datos-malla-page .form-title {
+            font-size: 2rem !important;
+        }
+        
+        #agregar-datos-malla-page .section-body {
+            padding: 25px 20px !important;
+        }
+        
+        #agregar-datos-malla-page .row {
+            flex-direction: column !important;
+            gap: 15px !important;
+        }
+        
+        #agregar-datos-malla-page .col-2,
+        #agregar-datos-malla-page .col-3,
+        #agregar-datos-malla-page .col-4,
+        #agregar-datos-malla-page .col-6 {
+            flex: 0 0 100% !important;
+        }
+        
+        #agregar-datos-malla-page .form-footer {
+            padding: 30px 20px !important;
+        }
+        
+        #agregar-datos-malla-page .form-footer .btn {
+            display: block !important;
+            width: 100% !important;
+            margin: 10px 0 !important;
+        }
+        
+        #agregar-datos-malla-page .input-group {
+            flex-direction: column !important;
+            gap: 10px !important;
+        }
+        
+        #agregar-datos-malla-page .input-group .form-input {
+            min-width: 100% !important;
+        }
+    }
+
+    /* CKEditor 4 Styles - Diseño Moderno */
+    #agregar-datos-malla-page .ckeditor-field {
+        min-height: 200px !important;
+        width: 100% !important;
+    }
+    
+    /* Contenedor principal de CKEditor */
+    #agregar-datos-malla-page .cke_chrome {
+        border: 2px solid #e1e5e9 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Barra de herramientas */
+    #agregar-datos-malla-page .cke_top {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+        border-bottom: 2px solid #e1e5e9 !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 8px !important;
+    }
+    
+    /* Área de contenido editable */
+    #agregar-datos-malla-page .cke_contents {
+        min-height: 150px !important;
+        background: #ffffff !important;
+    }
+    
+    #agregar-datos-malla-page .cke_wysiwyg_frame,
+    #agregar-datos-malla-page .cke_wysiwyg_div {
+        min-height: 150px !important;
+        padding: 16px !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+    }
+    
+    /* Barra inferior */
+    #agregar-datos-malla-page .cke_bottom {
+        background: #f8fafc !important;
+        border-top: 1px solid #e1e5e9 !important;
+        border-radius: 0 0 12px 12px !important;
+    }
+    
+    /* Botones de la toolbar */
+    #agregar-datos-malla-page .cke_button {
+        border-radius: 6px !important;
+        margin: 2px !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    #agregar-datos-malla-page .cke_button:hover {
+        background: rgba(59, 130, 246, 0.1) !important;
+        border-color: #3b82f6 !important;
+    }
+    
+    #agregar-datos-malla-page .cke_button_on {
+        background: #3b82f6 !important;
+        border-color: #2563eb !important;
+    }
+    
+    #agregar-datos-malla-page .cke_button_on .cke_button_icon {
+        filter: brightness(0) invert(1) !important;
+    }
+    
+    /* Combo boxes y dropdowns */
+    #agregar-datos-malla-page .cke_combo_button {
+        border-radius: 6px !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    #agregar-datos-malla-page .cke_combo_button:hover {
+        background: rgba(59, 130, 246, 0.1) !important;
+    }
+    
+    /* Panel de dropdowns */
+    #agregar-datos-malla-page .cke_panel {
+        border-radius: 8px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        border: 2px solid #e1e5e9 !important;
+    }
+    
+    /* Responsive para CKEditor */
+    @media (max-width: 768px) {
+        #agregar-datos-malla-page .cke_toolbar {
+            flex-wrap: wrap !important;
+        }
+        
+        #agregar-datos-malla-page .cke_contents {
+            min-height: 120px !important;
+        }
+    }
+    
+    /* Widget de CKEditor */
+    #agregar-datos-malla-page .django-ckeditor-widget {
+        width: 100% !important;
+    }
+    
+    #agregar-datos-malla-page .cke_toolbox {
+        background: transparent !important;
+    }
+    
+    #agregar-datos-malla-page .cke_button {
+        background: rgba(255,255,255,0.1) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        color: white !important;
+        margin: 2px !important;
+        border-radius: 4px !important;
+    }
+    
+    #agregar-datos-malla-page .cke_button:hover {
+        background: rgba(255,255,255,0.2) !important;
+        border-color: rgba(255,255,255,0.4) !important;
+    }
+    
+    #agregar-datos-malla-page .cke_button_on {
+        background: rgba(255,255,255,0.3) !important;
+        border-color: rgba(255,255,255,0.5) !important;
+    }
+    
+    #agregar-datos-malla-page .cke_contents {
+        background: white !important;
+        border-radius: 0 0 8px 8px !important;
+        min-height: 150px !important;
+    }
+    
+    @media (max-width: 768px) {
+        #agregar-datos-malla-page .cke_chrome {
+            margin-bottom: 15px !important;
+        }
+        
+        #agregar-datos-malla-page .cke_toolbox {
+            padding: 5px !important;
+        }
+        
+        #agregar-datos-malla-page .cke_button {
+            margin: 1px !important;
+            padding: 3px !important;
+        }
+    }
+
+    /* Estilos para select con botón de agregar */
+    #agregar-datos-malla-page .select-with-add {
+        display: flex !important;
+        gap: 10px !important;
+        align-items: flex-start !important;
+    }
+
+    #agregar-datos-malla-page .select-with-add select {
+        flex: 1 !important;
+        min-height: 120px !important;
+    }
+
+    #agregar-datos-malla-page .btn-add-new {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+        color: white !important;
+        border: none !important;
+        padding: 8px 12px !important;
+        border-radius: 8px !important;
+        font-size: 0.9rem !important;
+        white-space: nowrap !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3) !important;
+        height: fit-content !important;
+        margin-top: 2px !important;
+    }
+
+    #agregar-datos-malla-page .btn-add-new:hover {
+        background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 16px rgba(5, 150, 105, 0.4) !important;
+    }
+
+    #agregar-datos-malla-page .btn-add-new i {
+        margin-right: 6px !important;
+    }
+
+    /* ============================================================
+       ESTILOS PARA SELECTOR UNIFICADO DE RECURSOS
+    ============================================================ */
+    
+    #agregar-datos-malla-page .recursos-selector {
+        border: 2px dashed #e5e7eb !important;
+        border-radius: 12px !important;
+        padding: 20px !important;
+        background: #f9fafb !important;
+        margin-top: 8px !important;
+    }
+    
+    #agregar-datos-malla-page .btn-selector-recursos {
+        width: 100% !important;
+        padding: 12px 16px !important;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    #agregar-datos-malla-page .btn-equipos {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    }
+    
+    #agregar-datos-malla-page .btn-equipos:hover {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    #agregar-datos-malla-page .btn-materiales {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+    }
+    
+    #agregar-datos-malla-page .btn-materiales:hover {
+        background: linear-gradient(135deg, #ec4899 0%, #ef4444 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4) !important;
+    }
+    
+    #agregar-datos-malla-page .btn-herramientas {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+    }
+    
+    #agregar-datos-malla-page .btn-herramientas:hover {
+        background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4) !important;
+    }
+    
+    #agregar-datos-malla-page .recursos-seleccionados {
+        min-height: 60px !important;
+        border: 2px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+        background: white !important;
+    }
+    
+    #agregar-datos-malla-page .recursos-empty {
+        color: #6b7280 !important;
+        font-style: italic !important;
+        text-align: center !important;
+        padding: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-item {
+        display: inline-block !important;
+        background: #dbeafe !important;
+        color: #1e40af !important;
+        padding: 6px 12px !important;
+        margin: 4px !important;
+        border-radius: 20px !important;
+        font-size: 14px !important;
+        border: 1px solid #3b82f6 !important;
+        position: relative !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-item.equipo {
+        background: #fef3c7 !important;
+        color: #92400e !important;
+        border-color: #f59e0b !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-item.material {
+        background: #d1fae5 !important;
+        color: #047857 !important;
+        border-color: #10b981 !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-item.herramienta {
+        background: #fce7f3 !important;
+        color: #be185d !important;
+        border-color: #ec4899 !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-item .remove-btn {
+        margin-left: 8px !important;
+        cursor: pointer !important;
+        font-weight: bold !important;
+        opacity: 0.7 !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-item .remove-btn:hover {
+        opacity: 1 !important;
+    }
+
+    /* Modal para agregar elementos */
+    #agregar-datos-malla-page .modal-agregar {
+        display: none !important;
+        position: fixed !important;
+        z-index: 10000 !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background-color: rgba(0,0,0,0.5) !important;
+    }
+
+    #agregar-datos-malla-page .modal-content-agregar {
+        background-color: white !important;
+        margin: 10% auto !important;
+        padding: 30px !important;
+        border-radius: 15px !important;
+        width: 500px !important;
+        max-width: 90% !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+    }
+
+    #agregar-datos-malla-page .modal-header-agregar {
+        border-bottom: 2px solid #e5e7eb !important;
+        padding-bottom: 15px !important;
+        margin-bottom: 20px !important;
+    }
+
+    #agregar-datos-malla-page .modal-header-agregar h3 {
+        margin: 0 !important;
+        color: #1f2937 !important;
+        font-weight: 600 !important;
+    }
+
+    #agregar-datos-malla-page .close-modal {
+        float: right !important;
+        font-size: 28px !important;
+        font-weight: bold !important;
+        cursor: pointer !important;
+        color: #6b7280 !important;
+        line-height: 1 !important;
+    }
+
+    #agregar-datos-malla-page .close-modal:hover {
+        color: #374151 !important;
+    }
+
+    /* ============================================================
+       ESTILOS PARA MODAL DE SELECCIÓN DE RECURSOS - DISEÑO MODERNO
+    ============================================================ */
+    
+    #agregar-datos-malla-page .modal-recursos-content {
+        background: white !important;
+        border-radius: 16px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+        border: none !important;
+        max-width: 1100px !important;
+        width: 95% !important;
+        max-height: 90vh !important;
+        overflow: hidden !important;
+        position: relative !important;
+        backdrop-filter: blur(10px) !important;
+    }
+    
+    #agregar-datos-malla-page .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        padding: 24px 32px !important;
+        border-radius: 16px 16px 0 0 !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    #agregar-datos-malla-page .modal-header h4 {
+        margin: 0 !important;
+        font-size: 22px !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+    
+    #agregar-datos-malla-page .modal-header .close {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: none !important;
+        color: white !important;
+        font-size: 24px !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    #agregar-datos-malla-page .modal-header .close:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        transform: scale(1.1) !important;
+    }
+    
+    #agregar-datos-malla-page .modal-tabs {
+        display: flex !important;
+        background: #f8fafc !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 0 32px !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+    
+    #agregar-datos-malla-page .tab-btn {
+        flex: 1 !important;
+        padding: 20px 24px !important;
+        background: transparent !important;
+        border: none !important;
+        cursor: pointer !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
+        color: #64748b !important;
+        transition: all 0.3s ease !important;
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        border-radius: 8px 8px 0 0 !important;
+        margin-top: 8px !important;
+    }
+    
+    #agregar-datos-malla-page .tab-btn i {
+        font-size: 16px !important;
+    }
+    
+    #agregar-datos-malla-page .tab-btn.active {
+        color: #3b82f6 !important;
+        background: white !important;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05) !important;
+        border-bottom: 3px solid #3b82f6 !important;
+        margin-top: 0 !important;
+    }
+    
+    #agregar-datos-malla-page .tab-btn:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.7) !important;
+        color: #1e40af !important;
+    }
+    
+    #agregar-datos-malla-page .modal-body {
+        padding: 32px !important;
+        max-height: calc(90vh - 200px) !important;
+        overflow: hidden !important;
+        background: white !important;
+    }
+    
+    #agregar-datos-malla-page .search-bar {
+        display: flex !important;
+        align-items: center !important;
+        gap: 16px !important;
+        margin-bottom: 24px !important;
+        padding: 20px !important;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
+        border-radius: 12px !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    #agregar-datos-malla-page .search-bar i.fa-search {
+        color: #3b82f6 !important;
+        font-size: 18px !important;
+    }
+    
+    #agregar-datos-malla-page #buscar-recursos {
+        flex: 1 !important;
+        border: none !important;
+        background: transparent !important;
+        outline: none !important;
+        font-size: 16px !important;
+        color: #1e293b !important;
+        font-weight: 500 !important;
+    }
+    
+    #agregar-datos-malla-page #buscar-recursos::placeholder {
+        color: #64748b !important;
+        font-weight: 400 !important;
+    }
+    
+    #agregar-datos-malla-page .search-actions {
+        display: flex !important;
+        gap: 12px !important;
+    }
+    
+    #agregar-datos-malla-page .btn-select-all, 
+    #agregar-datos-malla-page .btn-clear-all {
+        padding: 10px 20px !important;
+        border: 2px solid transparent !important;
+        border-radius: 8px !important;
+        background: white !important;
+        color: #374151 !important;
+        cursor: pointer !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    #agregar-datos-malla-page .btn-select-all {
+        border-color: #10b981 !important;
+        color: #059669 !important;
+    }
+    
+    #agregar-datos-malla-page .btn-select-all:hover {
+        background: #10b981 !important;
+        color: white !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3) !important;
+    }
+    
+    #agregar-datos-malla-page .btn-clear-all {
+        border-color: #ef4444 !important;
+        color: #dc2626 !important;
+    }
+    
+    #agregar-datos-malla-page .btn-clear-all:hover {
+        background: #ef4444 !important;
+        color: white !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3) !important;
+    }
+    
+    #agregar-datos-malla-page .tab-content {
+        min-height: 450px !important;
+        background: white !important;
+        border-radius: 12px !important;
+    }
+    
+    #agregar-datos-malla-page .tab-pane {
+        display: none !important;
+    }
+    
+    #agregar-datos-malla-page .tab-pane.active {
+        display: block !important;
+        animation: fadeIn 0.3s ease-in-out !important;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    #agregar-datos-malla-page .loading {
+        text-align: center !important;
+        padding: 60px 20px !important;
+        color: #64748b !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+    }
+    
+    #agregar-datos-malla-page .loading i {
+        margin-right: 12px !important;
+        font-size: 20px !important;
+        color: #3b82f6 !important;
+    }
+    
+    #agregar-datos-malla-page .recursos-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)) !important;
+        gap: 16px !important;
+        max-height: 400px !important;
+        overflow-y: auto !important;
+        padding: 16px 8px !important;
+        scrollbar-width: thin !important;
+        scrollbar-color: #cbd5e1 #f1f5f9 !important;
+    }
+    
+    #agregar-datos-malla-page .recursos-grid::-webkit-scrollbar {
+        width: 8px !important;
+    }
+    
+    #agregar-datos-malla-page .recursos-grid::-webkit-scrollbar-track {
+        background: #f1f5f9 !important;
+        border-radius: 4px !important;
+    }
+    
+    #agregar-datos-malla-page .recursos-grid::-webkit-scrollbar-thumb {
+        background: #cbd5e1 !important;
+        border-radius: 4px !important;
+    }
+    
+    #agregar-datos-malla-page .recursos-grid::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8 !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card {
+        border: 2px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        padding: 20px !important;
+        background: #ffffff !important;
+        cursor: pointer !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 4px !important;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6) !important;
+        opacity: 0 !important;
+        transition: opacity 0.3s ease !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card:hover {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15) !important;
+        transform: translateY(-4px) !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card:hover::before {
+        opacity: 1 !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card.selected {
+        border-color: #10b981 !important;
+        background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%) !important;
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2) !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card.selected::before {
+        background: linear-gradient(90deg, #10b981, #059669) !important;
+        opacity: 1 !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card .checkbox {
+        position: absolute !important;
+        top: 16px !important;
+        right: 16px !important;
+        width: 24px !important;
+        height: 24px !important;
+        border: 2px solid #d1d5db !important;
+        border-radius: 6px !important;
+        background: white !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.3s ease !important;
+        font-size: 12px !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card.selected .checkbox {
+        background: #10b981 !important;
+        border-color: #10b981 !important;
+        color: white !important;
+        transform: scale(1.1) !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card .recurso-nombre {
+        font-weight: 700 !important;
+        color: #1e293b !important;
+        margin-bottom: 12px !important;
+        font-size: 16px !important;
+        line-height: 1.4 !important;
+        padding-right: 40px !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card .recurso-detalles {
+        color: #64748b !important;
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+        background: #f8fafc !important;
+        padding: 12px !important;
+        border-radius: 8px !important;
+        border-left: 4px solid #e2e8f0 !important;
+        margin-top: 8px !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-card.selected .recurso-detalles {
+        background: #f0fdf4 !important;
+        border-left-color: #10b981 !important;
+    }
+    
+    #agregar-datos-malla-page .modal-footer {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+        padding: 24px 32px !important;
+        border-top: 1px solid #e2e8f0 !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        border-radius: 0 0 16px 16px !important;
+    }
+    
+    #agregar-datos-malla-page .selection-summary {
+        color: #64748b !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    
+    #agregar-datos-malla-page .modal-actions {
+        display: flex !important;
+        gap: 16px !important;
+    }
+    
+    #agregar-datos-malla-page .btn {
+        padding: 12px 24px !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
+        cursor: pointer !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        text-decoration: none !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    #agregar-datos-malla-page .btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    #agregar-datos-malla-page .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+        color: white !important;
+    }
+    
+    #agregar-datos-malla-page .btn-primary:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+    }
+    
+    #agregar-datos-malla-page .btn-secondary {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+        color: #64748b !important;
+        border: 2px solid #e2e8f0 !important;
+    }
+    
+    #agregar-datos-malla-page .btn-secondary:hover {
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%) !important;
+        color: #475569 !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 4px 12px rgba(148, 163, 184, 0.3) !important;
+    }
+    
+    /* Estilos base para modal */
+    #modal-recursos {
+        display: none !important;
+        position: fixed !important;
+        z-index: 99999 !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: auto !important;
+        background-color: rgba(0,0,0,0.8) !important;
+        backdrop-filter: blur(5px) !important;
+    }
+    
+    #modal-recursos.visible {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    #modal-recursos .modal-content {
+        background: white !important;
+        border-radius: 12px !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+        border: 1px solid #e5e7eb !important;
+        max-width: 900px !important;
+        width: 90% !important;
+        max-height: 85vh !important;
+        overflow: hidden !important;
+        position: relative !important;
+    }
+    
+    /* Estilos adicionales para las tags de recursos seleccionados */
+    #agregar-datos-malla-page .tipo-recurso {
+        margin-bottom: 12px !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-tag {
+        display: inline-block !important;
+        background: #e0f2fe !important;
+        color: #0277bd !important;
+        padding: 4px 8px !important;
+        border-radius: 12px !important;
+        font-size: 12px !important;
+        margin: 2px 4px 2px 0 !important;
+        border: 1px solid #b3e5fc !important;
+        position: relative !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-tag .fa-times {
+        margin-left: 6px !important;
+        cursor: pointer !important;
+        opacity: 0.7 !important;
+        transition: opacity 0.3s ease !important;
+    }
+    
+    #agregar-datos-malla-page .recurso-tag .fa-times:hover {
+        opacity: 1 !important;
+        color: #d32f2f !important;
+    }
+    
+    #agregar-datos-malla-page .text-muted {
+        color: #6b7280 !important;
+        font-style: italic !important;
+    }
+    
+    /* Estilos para tabs de insumos */
+    #agregar-datos-malla-page .tabs-insumos {
+        display: flex;
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 20px;
+        gap: 5px;
+    }
+    
+    #agregar-datos-malla-page .tab-insumo {
+        flex: 1;
+        padding: 12px 20px;
+        background: #f3f4f6;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        color: #6b7280;
+    }
+    
+    #agregar-datos-malla-page .tab-insumo:hover {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    
+    #agregar-datos-malla-page .tab-insumo.active {
+        background: white;
+        color: #3b82f6;
+        border-bottom-color: #3b82f6;
+    }
+    
+    #agregar-datos-malla-page .tab-content-insumo {
+        display: none;
+    }
+    
+    #agregar-datos-malla-page .tab-content-insumo.active {
+        display: block;
+    }
+    
+    /* ESTILOS PARA CAMPOS DE BÚSQUEDA */
+    /* ============================================================ */
+    .input-group {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border-radius: 6px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        width: 100% !important;
+        display: flex !important;
+    }
+    
+    .input-group:hover {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+    
+    .input-group .input-group-text {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border: none;
+        color: #ffffff;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    
+    .input-group .form-control-sm {
+        border: 1px solid #e2e8f0;
+        border-left: none;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.85rem;
+        background-color: #ffffff;
+        transition: all 0.2s ease;
+        flex-grow: 1;
+        height: auto;
+    }
+    
+    .input-group .form-control-sm:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        border-left: none;
+        background-color: #f8fafc;
+        outline: none;
+    }
+    
+    .input-group:focus-within {
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+    
+    .input-group:focus-within .input-group-text {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    }
+    
+    /* Margen específico para separar buscador de select */
+    .mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
+    
+    /* ============================================================
+       ESTILOS PARA CKEDITOR Y ECUACIONES MATEMÁTICAS
+    ============================================================ */
+    
+    /* Contenedor de ecuaciones MathJax */
+    .equation {
+        display: inline-block;
+        margin: 0 2px;
+        padding: 4px 8px;
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        font-family: 'Times New Roman', serif;
+    }
+    
+    /* Mejora de visualización de MathJax */
+    .MathJax {
+        outline: 0;
+        color: #212529 !important;
+    }
+    
+    .MathJax_Display {
+        margin: 1em 0 !important;
+        text-align: center !important;
+    }
+    
+    /* Estilos para el editor CKEditor mejorado */
+    .cke_chrome {
+        border: 1px solid #d1d5db !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .cke_top {
+        background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%) !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        padding: 6px !important;
+    }
+    
+    .cke_bottom {
+        background: #f9fafb !important;
+        border-top: 1px solid #e5e7eb !important;
+    }
+    
+    /* Botones de la barra de herramientas */
+    .cke_toolbar {
+        margin-bottom: 4px !important;
+    }
+    
+    .cke_button {
+        transition: all 0.2s ease !important;
+    }
+    
+    .cke_button:hover {
+        background-color: #e5e7eb !important;
+    }
+    
+    .cke_button_on {
+        background-color: #dbeafe !important;
+        border-color: #3b82f6 !important;
+    }
+    
+    /* Área de contenido del editor */
+    .cke_contents {
+        border-radius: 0 0 8px 8px !important;
+    }
+    
+    /* Estilos para tablas dentro del editor */
+    .cke_editable table {
+        border-collapse: collapse;
+        margin: 10px 0;
+    }
+    
+    .cke_editable table td,
+    .cke_editable table th {
+        border: 1px solid #d1d5db;
+        padding: 8px;
+    }
+    
+    .cke_editable table th {
+        background-color: #f3f4f6;
+        font-weight: 600;
+    }
+    
+    .input-group .form-control-sm:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-left: none;
+        background-color: #f8fafc;
+        outline: none;
+    }
+    
+    .input-group:focus-within {
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+    
+    .input-group:focus-within .input-group-text {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    /* Estilo para placeholder de búsqueda */
+    .buscar-equipos::placeholder,
+    .buscar-materiales::placeholder,
+    .buscar-herramientas::placeholder,
+    .buscar-reactivos::placeholder {
+        color: #94a3b8;
+        font-style: italic;
+        font-size: 0.85rem;
+    }
+    
+    /* Ajuste de tamaño de fuente para los selects */
+    .equipos-select,
+    .materiales-select,
+    .herramientas-select,
+    .reactivos-select {
+        font-size: 0.875rem !important;
+        line-height: 1.4;
+        padding: 0.5rem;
+    }
+    
+    .equipos-select option,
+    .materiales-select option,
+    .herramientas-select option,
+    .reactivos-select option {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Animación sutil para las opciones filtradas */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-2px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* ============================================================
+       PANEL DE AYUDA FLOTANTE PARA ECUACIONES
+    ============================================================ */
+    .help-panel {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        padding: 20px;
+        max-width: 350px;
+        z-index: 9999;
+        transform: translateY(calc(100% + 40px));
+        transition: transform 0.3s ease;
+    }
+    
+    .help-panel.active {
+        transform: translateY(0);
+    }
+    
+    .help-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #3b82f6;
+    }
+    
+    .help-panel-header h6 {
+        margin: 0;
+        color: #1e3a8a;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    .help-panel-close {
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    
+    .help-panel-close:hover {
+        background-color: #f3f4f6;
+        color: #1f2937;
+    }
+    
+    .help-panel-content {
+        font-size: 0.85rem;
+        color: #4b5563;
+    }
+    
+    .help-panel-content h6 {
+        color: #1e3a8a;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-top: 12px;
+        margin-bottom: 6px;
+    }
+    
+    .help-panel-content code {
+        background-color: #f3f4f6;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.8rem;
+        color: #dc2626;
+    }
+    
+    .help-panel-content ul {
+        margin: 8px 0;
+        padding-left: 20px;
+    }
+    
+    .help-panel-content li {
+        margin-bottom: 6px;
+        line-height: 1.5;
+    }
+    
+    .help-toggle-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        z-index: 9998;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .help-toggle-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+    }
+    
+    .help-toggle-btn.active {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="agregar-datos-malla-page">
+<div class="form-wrapper">
+    <div class="form-container">
+        <!-- Header -->
+        <div class="form-header">
+            <h1 class="form-title">
+                <i class="fas fa-plus-circle"></i>
+                Agregar Datos Completos
+            </h1>
+            <p class="form-subtitle">
+                Complete todos los campos para crear una asignatura con estructura completa de malla curricular
+            </p>
+        </div>
+
+        <!-- Contenido del formulario -->
+        <div class="form-content">
+            <form method="post" id="formulario-completo">
+                {% csrf_token %}
+                
+                <!-- Sección 1: Información Académica -->
+                <div class="form-section academic-section">
+                    <div class="section-header">
+                        <div>
+                            <i class="fas fa-university"></i>
+                            Información Académica
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label class="form-label">Unidad Académica</label>
+                                    <select name="unidad_academica" class="form-select" required>
+                                        <option value="">Seleccione una unidad académica</option>
+                                        {% for unidad in unidades_academicas %}
+                                            <option value="{{ unidad.id }}">{{ unidad.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label class="form-label">Carrera</label>
+                                    <select name="carrera" class="form-select" required>
+                                        <option value="">Seleccione una carrera</option>
+                                        {% for carrera in carreras %}
+                                            <option value="{{ carrera.id }}">{{ carrera.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 2: Datos de la Asignatura -->
+                <div class="form-section subject-section">
+                    <div class="section-header">
+                        <div>
+                            <i class="fas fa-book"></i>
+                            Datos de la Asignatura
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label class="form-label">Asignatura</label>
+                                    <select name="asignatura" id="asignatura_select" class="form-select" required>
+                                        <option value="">Seleccione una asignatura</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="form-group">
+                                    <label class="form-label">Semestre</label>
+                                    <input type="number" name="semestre" id="semestre_input" class="form-input" 
+                                           placeholder="Semestre" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="form-group">
+                                    <label class="form-label">Código de Competencia</label>
+                                    <input type="text" name="codigo_competencia" id="codigo_competencia_input" class="form-input" 
+                                           placeholder="Se carga automáticamente" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label class="form-label">Sigla Curricular</label>
+                                    <input type="text" name="sigla_curricular" id="sigla_curricular_input" class="form-input" 
+                                           placeholder="Se carga automáticamente" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label class="form-label">Carga Horaria Semestral</label>
+                                    <input type="number" name="carga_horaria_semestral" id="carga_horaria_semestral_input" class="form-input" 
+                                           placeholder="Se carga automáticamente" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label class="form-label">Carga Horaria Semanal</label>
+                                    <input type="number" name="carga_horaria_semanal" id="carga_horaria_semanal_input" class="form-input" 
+                                           placeholder="Se carga automáticamente" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 3: Criterio de Desempeño -->
+                <div class="form-section criteria-section">
+                    <div class="section-header">
+                        <div>
+                            <i class="fas fa-tasks"></i>
+                            Criterio de Desempeño
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label class="form-label">Criterio de Desempeño</label>
+                            <select name="criterio_desempeno" id="criterio_desempeno_select" class="form-select" required>
+                                <option value="">Seleccione un criterio de desempeño</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 4: Unidad Didáctica -->
+                <div class="form-section units-section">
+                    <div class="section-header">
+                        <div>
+                            <i class="fas fa-graduation-cap"></i>
+                            Unidad Didáctica
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-group">
+                            <label class="form-label">Unidad Didáctica</label>
+                            <select name="unidad_didactica" id="unidad_didactica_select" class="form-select" required>
+                                <option value="">Seleccione una unidad didáctica</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 5: Contenido Analítico (Múltiple) -->
+                <div class="form-section content-section">
+                    <div class="section-header">
+                        <div>
+                            <i class="fas fa-list-alt"></i>
+                            Contenido Analítico
+                        </div>
+                        <button type="button" class="btn btn-add" onclick="agregarContenidoAnalitico()">
+                            <i class="fas fa-plus"></i>
+                            Agregar Contenido Analítico
+                        </button>
+                    </div>
+                    <div class="section-body">
+                        <div class="dynamic-section">
+                            <div id="contenidos-container">
+                                <div class="dynamic-item contenido-analitico-item" data-contenido="0">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <label class="form-label">Contenido Analítico</label>
+                                                <select name="contenidos_analiticos[]" class="form-select contenido-analitico-select" required>
+                                                    <option value="">Seleccione un contenido analítico</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Sección de múltiples grupos de datos adicionales -->
+                                    <div class="grupos-datos-adicionales" data-contenido="0">
+                                        <div style="margin-top: 20px; text-align: center; border-top: 2px dashed #e5e7eb; padding-top: 20px;">
+                                            <h5 style="color: #374151; margin-bottom: 15px; font-weight: 600;">
+                                                <i class="fas fa-layer-group"></i> Grupos de Datos Adicionales
+                                            </h5>
+                                            <button type="button" class="btn btn-secondary" onclick="agregarGrupoDatosAdicionales(0)">
+                                                <i class="fas fa-plus-circle"></i>
+                                                Agregar Grupo de Datos Adicionales
+                                            </button>
+
+                                        </div>
+                                        
+                                        <!-- Container para los grupos de datos adicionales -->
+                                        <div class="container-grupos-datos" id="container-grupos-0">
+                                            <!-- Los grupos se agregarán dinámicamente aquí -->
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Botón para eliminar contenido analítico -->
+                                    <div style="text-align: right; margin-top: 15px;">
+                                        <button type="button" class="btn btn-remove" onclick="eliminarContenido(this)">
+                                            <i class="fas fa-trash"></i>
+                                            Eliminar Contenido
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer con botones de acción -->
+        <div class="form-footer">
+            <a href="{% url 'core:malla_curricular' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" form="formulario-completo" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar Asignatura Completa
+            </button>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+    // ============================================================
+    // CARGAR CKEDITOR 4 DINÁMICAMENTE SI NO ESTÁ DISPONIBLE
+    // ============================================================
+    (function() {
+        // Verificar si CKEditor ya está cargado
+        if (typeof CKEDITOR === 'undefined') {
+            console.log('📦 Cargando CKEditor 4 desde CDN...');
+            
+            // Crear y cargar el script de CKEditor (versión gratuita más reciente)
+            const script = document.createElement('script');
+            script.src = 'https://cdn.ckeditor.com/4.22.1/full-all/ckeditor.js';
+            script.async = false; // Cargar de forma síncrona
+            script.onload = function() {
+                console.log('✅ CKEditor 4.22.1 cargado exitosamente');
+                
+                // Ocultar advertencia de seguridad de CKEditor
+                if (typeof CKEDITOR !== 'undefined') {
+                    CKEDITOR.config.versionCheck = false;
+                }
+                
+                // Disparar evento personalizado cuando CKEditor esté listo
+                window.dispatchEvent(new Event('ckeditor-loaded'));
+            };
+            script.onerror = function() {
+                console.error('❌ Error al cargar CKEditor desde CDN');
+            };
+            
+            // Agregar el script al head
+            document.head.appendChild(script);
+        } else {
+            console.log('✅ CKEditor ya está cargado');
+            
+            // Ocultar advertencia de seguridad de CKEditor
+            if (typeof CKEDITOR !== 'undefined') {
+                CKEDITOR.config.versionCheck = false;
+            }
+            
+            // Disparar evento inmediatamente si ya está cargado
+            setTimeout(() => {
+                window.dispatchEvent(new Event('ckeditor-loaded'));
+            }, 100);
+        }
+    })();
+    
+    let contadorContenidos = 1; // Contador para contenidos analíticos
+    let contadorGruposDatos = {}; // Para rastrear grupos de datos adicionales por contenido
+
+    // Ajustar margin-top dinámicamente basado en la altura del header del sistema
+    document.addEventListener('DOMContentLoaded', function() {
+        const formWrapper = document.querySelector('#agregar-datos-malla-page .form-wrapper');
+        const navbar = document.querySelector('nav, .navbar, header, .header');
+        
+        if (formWrapper && navbar) {
+            const navbarHeight = navbar.offsetHeight;
+            formWrapper.style.marginTop = (navbarHeight + 40) + 'px';
+            formWrapper.style.minHeight = `calc(100vh - ${navbarHeight + 40}px)`;
+        }
+        
+        // Inicializar contador de grupos para contenido 0
+        contadorGruposDatos['0'] = 0;
+        
+        // Filtrar carreras por unidad académica
+        const unidadSelect = document.querySelector('[name="unidad_academica"]');
+        const carreraSelect = document.querySelector('[name="carrera"]');
+        
+        if (unidadSelect) {
+            unidadSelect.addEventListener('change', function() {
+                const unidadId = this.value;
+                
+                // Limpiar selecciones dependientes
+                resetSelectOptions(carreraSelect, 'Seleccione una carrera');
+                resetSelectOptions(document.getElementById('asignatura_select'), 'Seleccione una asignatura');
+                clearAutoFields();
+                
+                if (unidadId) {
+                    fetch(`{% url 'core:carreras_por_unidad' %}?unidad_id=${unidadId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+                            data.carreras.forEach(carrera => {
+                                carreraSelect.innerHTML += `<option value="${carrera.id}">${carrera.display}</option>`;
+                            });
+                        })
+                        .catch(error => console.error('Error:', error));
+                } else {
+                    carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+                }
+            });
+        }
+        
+        // Filtrar asignaturas por carrera
+        if (carreraSelect) {
+            carreraSelect.addEventListener('change', function() {
+                const carreraId = this.value;
+                const asignaturaSelect = document.getElementById('asignatura_select');
+                
+                // Limpiar selecciones dependientes
+                resetSelectOptions(asignaturaSelect, 'Seleccione una asignatura');
+                clearAutoFields();
+                
+                if (carreraId) {
+                    fetch(`{% url 'core:asignaturas_por_carrera' %}?carrera_id=${carreraId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Respuesta asignaturas:', data); // Debug
+                            asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+                            if (data.asignaturas && data.asignaturas.length > 0) {
+                                data.asignaturas.forEach(asignatura => {
+                                    // Debug detallado para identificar el problema
+                                    console.log('Procesando asignatura:', {
+                                        id: asignatura.id,
+                                        nombre: asignatura.nombre,
+                                        display: asignatura.display,
+                                        calculado: asignatura.display || asignatura.nombre || 'Sin nombre'
+                                    });
+                                    
+                                    const nombre = asignatura.display || asignatura.nombre || 'Sin nombre';
+                                    const semestre = asignatura.semestre || '';
+                                    const codigo = asignatura.codigo_competencia || '';
+                                    const sigla = asignatura.sigla_curricular || '';
+                                    const horariaSemestral = asignatura.carga_horaria_semestral || asignatura.carga_semestral || '';
+                                    const horariaSemanal = asignatura.carga_horaria_semanal || asignatura.carga_semanal || '';
+                                    
+                                    asignaturaSelect.innerHTML += `<option value="${asignatura.id}" 
+                                        data-semestre="${semestre}" 
+                                        data-codigo="${codigo}" 
+                                        data-sigla="${sigla}" 
+                                        data-horaria-semestral="${horariaSemestral}" 
+                                        data-horaria-semanal="${horariaSemanal}">${nombre}</option>`;
+                                });
+                            } else {
+                                console.warn('No se encontraron asignaturas');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error cargando asignaturas:', error);
+                            asignaturaSelect.innerHTML = '<option value="">Error cargando asignaturas</option>';
+                        });
+                }
+            });
+        }
+        
+        // Cargar datos automáticamente cuando se selecciona asignatura
+        const asignaturaSelect = document.getElementById('asignatura_select');
+        if (asignaturaSelect) {
+            asignaturaSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                
+                if (selectedOption.value) {
+                    // Cargar campos automáticamente
+                    document.getElementById('semestre_input').value = selectedOption.dataset.semestre || '';
+                    document.getElementById('codigo_competencia_input').value = selectedOption.dataset.codigo || '';
+                    document.getElementById('sigla_curricular_input').value = selectedOption.dataset.sigla || '';
+                    document.getElementById('carga_horaria_semestral_input').value = selectedOption.dataset.horariaSemestral || '';
+                    document.getElementById('carga_horaria_semanal_input').value = selectedOption.dataset.horariaSemanal || '';
+                    
+                    // Cargar criterios de desempeño
+                    loadCriteriosDesempeno(selectedOption.value);
+                } else {
+                    clearAutoFields();
+                }
+            });
+        }
+        
+        // Cargar unidades didácticas cuando se selecciona criterio de desempeño
+        const criterioSelect = document.getElementById('criterio_desempeno_select');
+        if (criterioSelect) {
+            criterioSelect.addEventListener('change', function() {
+                const criterioId = this.value;
+                const unidadDidacticaSelect = document.getElementById('unidad_didactica_select');
+                
+                resetSelectOptions(unidadDidacticaSelect, 'Seleccione una unidad didáctica');
+                
+                if (criterioId) {
+                    loadUnidadesDidacticas(criterioId);
+                }
+            });
+        }
+        
+        // Cargar contenidos analíticos cuando se selecciona unidad didáctica
+        const unidadDidacticaSelect = document.getElementById('unidad_didactica_select');
+        if (unidadDidacticaSelect) {
+            unidadDidacticaSelect.addEventListener('change', function() {
+                const unidadId = this.value;
+                
+                if (unidadId) {
+                    loadContenidosAnaliticos(unidadId);
+                }
+            });
+        }
+    });
+
+    // Variables globales para manejar selecciones múltiples
+    let recursosSeleccionados = {};
+    
+    // Caché para evitar múltiples llamadas a la API
+    let cacheRecursos = {
+        equipos: null,
+        materiales: null,
+        herramientas: null,
+        reactivos: null
+    };
+    let cargandoRecursos = false;
+
+    // Función para cargar recursos automáticamente cuando cambia la unidad académica
+    function cargarTodosLosRecursos() {
+        const unidadSelect = document.querySelector('select[name="unidad_academica"]');
+        const unidadId = unidadSelect ? unidadSelect.value : '';
+        
+        console.log('🔍 cargarTodosLosRecursos llamado, unidadId:', unidadId, 'cargandoRecursos:', cargandoRecursos);
+        
+        if (!unidadId) {
+            console.warn('⚠️ No hay unidad seleccionada, abortando carga');
+            return;
+        }
+        
+        if (cargandoRecursos) {
+            console.warn('⚠️ Ya hay una carga en progreso, abortando');
+            return;
+        }
+        
+        cargandoRecursos = true;
+        console.log('🚀 Iniciando carga paralela de recursos...');
+        
+        // Cargar todos los recursos en paralelo usando Promise.all
+        Promise.all([
+            fetch(`/dashboard/ajax/equipos-por-unidad/?unidad_id=${unidadId}`).then(r => {
+                console.log('📡 Respuesta equipos:', r.status);
+                return r.json();
+            }),
+            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Material`).then(r => {
+                console.log('📡 Respuesta materiales:', r.status);
+                return r.json();
+            }),
+            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Herramienta`).then(r => {
+                console.log('📡 Respuesta herramientas:', r.status);
+                return r.json();
+            }),
+            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Reactivo`).then(r => {
+                console.log('📡 Respuesta reactivos:', r.status);
+                return r.json();
+            })
+        ])
+        .then(([equiposData, materialesData, herramientasData, reactivosData]) => {
+            console.log('✅ Datos recibidos:');
+            console.log('  - Equipos:', equiposData.length);
+            console.log('  - Materiales:', materialesData.length);
+            console.log('  - Herramientas:', herramientasData.length);
+            console.log('  - Reactivos:', reactivosData.length);
+            
+            // Guardar en caché
+            cacheRecursos.equipos = equiposData;
+            cacheRecursos.materiales = materialesData;
+            cacheRecursos.herramientas = herramientasData;
+            cacheRecursos.reactivos = reactivosData;
+            
+            // Aplicar datos a todos los selects existentes
+            const equiposSelects = document.querySelectorAll('.equipos-select');
+            const materialesSelects = document.querySelectorAll('.materiales-select');
+            const herramientasSelects = document.querySelectorAll('.herramientas-select');
+            const reactivosSelects = document.querySelectorAll('.reactivos-select');
+            
+            console.log('📊 Poblando selects:');
+            console.log('  - Equipos selects:', equiposSelects.length);
+            console.log('  - Materiales selects:', materialesSelects.length);
+            console.log('  - Herramientas selects:', herramientasSelects.length);
+            console.log('  - Reactivos selects:', reactivosSelects.length);
+            
+            equiposSelects.forEach(select => {
+                poblarSelectDesdeCache(select, cacheRecursos.equipos, 'descripcion');
+            });
+            materialesSelects.forEach(select => {
+                poblarSelectDesdeCache(select, cacheRecursos.materiales, 'nombre');
+            });
+            herramientasSelects.forEach(select => {
+                poblarSelectDesdeCache(select, cacheRecursos.herramientas, 'nombre');
+            });
+            reactivosSelects.forEach(select => {
+                poblarSelectDesdeCache(select, cacheRecursos.reactivos, 'nombre');
+            });
+            
+            cargandoRecursos = false;
+            console.log('✅ Carga de recursos completada exitosamente');
+        })
+        .catch(error => {
+            console.error('❌ Error cargando recursos:', error);
+            cargandoRecursos = false;
+        });
+    }
+    
+    // Función auxiliar para poblar un select desde el caché
+    function poblarSelectDesdeCache(selectElement, data, campo) {
+        console.log('📊 poblarSelectDesdeCache llamada con:', data?.length || 0, 'items, campo:', campo);
+        selectElement.innerHTML = '';
+        if (data && Array.isArray(data) && data.length > 0) {
+            data.forEach(item => {
+                if (item && item[campo] && item[campo].trim()) {
+                    const option = document.createElement('option');
+                    option.value = item[campo].trim();
+                    option.textContent = item[campo].trim();
+                    selectElement.appendChild(option);
+                }
+            });
+            console.log('✅ Select poblado con', selectElement.children.length, 'opciones');
+        } else {
+            selectElement.innerHTML = '<option value="">No hay datos disponibles</option>';
+            console.log('⚠️ No hay datos para poblar el select');
+        }
+    }
+    
+    // Función para cambiar entre tabs de insumos
+    function cambiarTabInsumo(contenidoIndex, grupoIndex, tipoInsumo) {
+        // Actualizar tabs activos
+        const tabs = document.querySelectorAll(`#tab_materiales_${contenidoIndex}_${grupoIndex}`);
+        if (tabs.length > 0) {
+            const tabsContainer = tabs[0].parentElement.querySelector('.tabs-insumos');
+            if (tabsContainer) {
+                tabsContainer.querySelectorAll('.tab-insumo').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                tabsContainer.querySelectorAll('.tab-insumo').forEach((tab, index) => {
+                    const tipos = ['materiales', 'herramientas', 'reactivos'];
+                    if (tipos[index] === tipoInsumo) {
+                        tab.classList.add('active');
+                    }
+                });
+            }
+        }
+        
+        // Actualizar contenido activo
+        document.querySelectorAll(`[id^="tab_"][id*="_${contenidoIndex}_${grupoIndex}"]`).forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        const contentToShow = document.getElementById(`tab_${tipoInsumo}_${contenidoIndex}_${grupoIndex}`);
+        if (contentToShow) {
+            contentToShow.classList.add('active');
+        }
+    }
+
+    function cargarEquiposEnSelect(equiposSelect, unidadId) {
+        // Usar caché si está disponible
+        if (cacheRecursos.equipos) {
+            poblarSelectDesdeCache(equiposSelect, cacheRecursos.equipos, 'descripcion');
+            return;
+        }
+        
+        equiposSelect.innerHTML = '<option value="">Cargando equipos...</option>';
+
+        fetch(`/dashboard/ajax/equipos-por-unidad/?unidad_id=${unidadId}`)
+            .then(response => response.json())
+            .then(data => {
+                cacheRecursos.equipos = data;
+                poblarSelectDesdeCache(equiposSelect, data, 'descripcion');
+            })
+            .catch(error => {
+                console.error('Error cargando equipos:', error);
+                equiposSelect.innerHTML = '<option value="">Error cargando equipos</option>';
+            });
+    }
+
+    function cargarMaterialesEnSelect(materialesSelect, unidadId) {
+        // Usar caché si está disponible
+        if (cacheRecursos.materiales) {
+            console.log('✅ Usando caché para materiales:', cacheRecursos.materiales.length, 'items');
+            poblarSelectDesdeCache(materialesSelect, cacheRecursos.materiales, 'nombre');
+            return;
+        }
+        
+        materialesSelect.innerHTML = '<option value="">Cargando materiales...</option>';
+        console.log('🔄 Cargando materiales desde API, unidadId:', unidadId);
+
+        fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Material`)
+            .then(response => {
+                console.log('📡 Respuesta materiales status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Materiales recibidos:', data.length, 'items', data.slice(0, 3));
+                cacheRecursos.materiales = data;
+                poblarSelectDesdeCache(materialesSelect, data, 'nombre');
+            })
+            .catch(error => {
+                console.error('❌ Error cargando materiales:', error);
+                materialesSelect.innerHTML = '<option value="">Error cargando materiales</option>';
+            });
+    }
+
+    function cargarHerramientasEnSelect(herramientasSelect, unidadId) {
+        // Usar caché si está disponible
+        if (cacheRecursos.herramientas) {
+            console.log('✅ Usando caché para herramientas:', cacheRecursos.herramientas.length, 'items');
+            poblarSelectDesdeCache(herramientasSelect, cacheRecursos.herramientas, 'nombre');
+            return;
+        }
+        
+        herramientasSelect.innerHTML = '<option value="">Cargando herramientas...</option>';
+        console.log('🔄 Cargando herramientas desde API, unidadId:', unidadId);
+
+        fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Herramienta`)
+            .then(response => {
+                console.log('📡 Respuesta herramientas status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Herramientas recibidas:', data.length, 'items', data.slice(0, 3));
+                cacheRecursos.herramientas = data;
+                poblarSelectDesdeCache(herramientasSelect, data, 'nombre');
+            })
+            .catch(error => {
+                console.error('❌ Error cargando herramientas:', error);
+                herramientasSelect.innerHTML = '<option value="">Error cargando herramientas</option>';
+            });
+    }
+    
+    function cargarReactivosEnSelect(reactivosSelect, unidadId) {
+        // Usar caché si está disponible
+        if (cacheRecursos.reactivos) {
+            console.log('✅ Usando caché para reactivos:', cacheRecursos.reactivos.length, 'items');
+            poblarSelectDesdeCache(reactivosSelect, cacheRecursos.reactivos, 'nombre');
+            return;
+        }
+        
+        reactivosSelect.innerHTML = '<option value="">Cargando reactivos...</option>';
+        console.log('🔄 Cargando reactivos desde API, unidadId:', unidadId);
+
+        fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Reactivo`)
+            .then(response => {
+                console.log('📡 Respuesta reactivos status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Reactivos recibidos:', data.length, 'items', data.slice(0, 3));
+                cacheRecursos.reactivos = data;
+                poblarSelectDesdeCache(reactivosSelect, data, 'nombre');
+            })
+            .catch(error => {
+                console.error('❌ Error cargando reactivos:', error);
+                reactivosSelect.innerHTML = '<option value="">Error cargando reactivos</option>';
+            });
+    }
+
+    // FUNCIÓN DE FILTRADO EN TIEMPO REAL PARA BÚSQUEDA
+    // ============================================================
+    /**
+     * Filtra las opciones de un select basándose en el texto ingresado
+     * @param {HTMLInputElement} inputElement - Input de búsqueda
+     * @param {number} contenidoIndex - Índice del contenido
+     * @param {number} grupoIndex - Índice del grupo
+     * @param {string} tipoRecurso - Tipo: equipos, materiales, herramientas, reactivos
+     */
+    function filtrarSelect(inputElement, contenidoIndex, grupoIndex, tipoRecurso) {
+        const searchText = inputElement.value.toLowerCase().trim();
+        
+        // Encontrar el select correspondiente dentro del mismo contenedor
+        const container = inputElement.closest('.form-group, .tab-content-insumo');
+        if (!container) {
+            console.error('No se encontró el contenedor para el input de búsqueda');
+            return;
+        }
+        
+        const selectElement = container.querySelector(`.${tipoRecurso}-select`);
+        if (!selectElement) {
+            console.error(`No se encontró el select para ${tipoRecurso}`);
+            return;
+        }
+        
+        // Obtener todas las opciones del select
+        const options = Array.from(selectElement.options);
+        
+        // Si el texto de búsqueda está vacío, mostrar todas las opciones
+        if (searchText === '') {
+            options.forEach(option => {
+                option.style.display = '';
+            });
+            return;
+        }
+        
+        // Filtrar opciones basándose en el texto de búsqueda
+        let visibleCount = 0;
+        options.forEach(option => {
+            const optionText = option.textContent.toLowerCase();
+            const optionValue = option.value.toLowerCase();
+            
+            // Mostrar solo si contiene el texto buscado (en texto o valor)
+            // Excluir opciones vacías o de "Cargando..."
+            if (option.value && option.value !== '' && 
+                !optionText.includes('cargando') && 
+                (optionText.includes(searchText) || optionValue.includes(searchText))) {
+                option.style.display = '';
+                visibleCount++;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+        
+        // Mensaje si no hay resultados (opcional)
+        if (visibleCount === 0) {
+            console.log(`No se encontraron resultados para "${searchText}" en ${tipoRecurso}`);
+        }
+    }
+
+    // Manejar selección múltiple de recursos
+    function handleRecursoSelection(selectElement, tipoRecurso, contenidoIndex, grupoIndex) {
+        const key = `${tipoRecurso}_${contenidoIndex}_${grupoIndex}`;
+        
+        if (!recursosSeleccionados[key]) {
+            recursosSeleccionados[key] = [];
+        }
+
+        // Obtener valores seleccionados
+        const selectedOptions = Array.from(selectElement.selectedOptions);
+        const selectedValues = selectedOptions
+            .map(option => option.value)
+            .filter(value => value && value.trim() !== '' && value !== 'undefined');
+        
+        // Actualizar array de seleccionados evitando duplicados
+        selectedValues.forEach(value => {
+            if (value && !recursosSeleccionados[key].includes(value)) {
+                recursosSeleccionados[key].push(value);
+            }
+        });
+
+        // Actualizar visualización
+        actualizarListaSeleccionados(tipoRecurso, contenidoIndex, grupoIndex);
+        actualizarCampoOculto(tipoRecurso, contenidoIndex, grupoIndex);
+        
+        // Limpiar selección del select
+        selectElement.selectedIndex = -1;
+    }
+
+    // Agregar recurso personalizado
+    function agregarOtroRecurso(tipoRecurso, contenidoIndex, grupoIndex) {
+        // Generar el ID correcto según el tipo de recurso
+        let inputId;
+        if (tipoRecurso === 'equipos') {
+            inputId = `otro_equipo_${contenidoIndex}_${grupoIndex}`;
+        } else if (tipoRecurso === 'materiales') {
+            inputId = `otro_material_${contenidoIndex}_${grupoIndex}`;
+        } else if (tipoRecurso === 'herramientas') {
+            inputId = `otro_herramienta_${contenidoIndex}_${grupoIndex}`;
+        } else if (tipoRecurso === 'reactivos') {
+            inputId = `otro_reactivo_${contenidoIndex}_${grupoIndex}`;
+        }
+        
+        const input = document.getElementById(inputId);
+        if (!input) {
+            console.error('No se encontró el input con ID:', inputId);
+            return;
+        }
+        const valor = input.value.trim();
+        
+        if (!valor) {
+            alert('Por favor, escriba el nombre del recurso');
+            return;
+        }
+
+        const key = `${tipoRecurso}_${contenidoIndex}_${grupoIndex}`;
+        
+        if (!recursosSeleccionados[key]) {
+            recursosSeleccionados[key] = [];
+        }
+
+        if (!recursosSeleccionados[key].includes(valor)) {
+            recursosSeleccionados[key].push(valor);
+            actualizarListaSeleccionados(tipoRecurso, contenidoIndex, grupoIndex);
+            actualizarCampoOculto(tipoRecurso, contenidoIndex, grupoIndex);
+            input.value = '';
+        } else {
+            alert('Este recurso ya está seleccionado');
+        }
+    }
+
+    // Actualizar lista visual de seleccionados
+    function actualizarListaSeleccionados(tipoRecurso, contenidoIndex, grupoIndex) {
+        const key = `${tipoRecurso}_${contenidoIndex}_${grupoIndex}`;
+        const listaDiv = document.getElementById(`${tipoRecurso}_seleccionados_${contenidoIndex}_${grupoIndex}`);
+        
+        if (!listaDiv || !recursosSeleccionados[key]) return;
+
+        listaDiv.innerHTML = '';
+        recursosSeleccionados[key].forEach((recurso, index) => {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-primary me-1 mb-1 d-inline-flex align-items-center';
+            badge.style.maxWidth = '300px';
+            badge.style.position = 'relative';
+            badge.innerHTML = `
+                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 5px;">${recurso}</span>
+                <i class="fas fa-times ms-1" style="cursor: pointer; flex-shrink: 0; padding: 2px;" 
+                   title="Eliminar ${recurso}"
+                   onclick="eliminarRecursoSeleccionado('${tipoRecurso}', ${contenidoIndex}, ${grupoIndex}, ${index})"></i>
+            `;
+            listaDiv.appendChild(badge);
+        });
+    }
+
+    // Eliminar recurso seleccionado
+    function eliminarRecursoSeleccionado(tipoRecurso, contenidoIndex, grupoIndex, index) {
+        const key = `${tipoRecurso}_${contenidoIndex}_${grupoIndex}`;
+        
+        if (recursosSeleccionados[key]) {
+            recursosSeleccionados[key].splice(index, 1);
+            actualizarListaSeleccionados(tipoRecurso, contenidoIndex, grupoIndex);
+            actualizarCampoOculto(tipoRecurso, contenidoIndex, grupoIndex);
+        }
+    }
+
+    // Actualizar campo oculto para envío del formulario
+    function actualizarCampoOculto(tipoRecurso, contenidoIndex, grupoIndex) {
+        const key = `${tipoRecurso}_${contenidoIndex}_${grupoIndex}`;
+        const inputId = `${tipoRecurso}_input_${contenidoIndex}_${grupoIndex}`;
+        const hiddenInput = document.getElementById(inputId);
+        
+        if (hiddenInput && recursosSeleccionados[key]) {
+            hiddenInput.value = JSON.stringify(recursosSeleccionados[key]);
+        }
+    }
+
+    // Función para agregar un grupo de datos adicionales (simplificada)
+    function agregarGrupoDatosAdicionales(contenidoIndex) {
+        const containerId = `container-grupos-${contenidoIndex}`;
+        const container = document.getElementById(containerId);
+        
+        if (!contadorGruposDatos[contenidoIndex]) {
+            contadorGruposDatos[contenidoIndex] = 0;
+        }
+        
+        const grupoIndex = contadorGruposDatos[contenidoIndex];
+        
+        const div = document.createElement('div');
+        div.className = 'grupo-datos-adicionales';
+        div.setAttribute('data-grupo', grupoIndex);
+        div.innerHTML = `
+            <div class="grupo-datos-header">
+                <h6 class="grupo-datos-title">
+                    <i class="fas fa-folder-open"></i>
+                    Grupo de Datos ${grupoIndex + 1}
+                </h6>
+                <button type="button" class="btn-eliminar-grupo" onclick="eliminarGrupoDatos(this)">
+                    <i class="fas fa-trash-alt"></i>
+                    Eliminar Grupo
+                </button>
+            </div>
+            
+            <div class="row">
+                <div class="col-6">
+                    <div class="form-group">
+                        <label class="form-label">Bibliografía</label>
+                        <textarea name="bibliografia_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                                 placeholder="Bibliografía recomendada" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-group">
+                        <label class="form-label">Práctica de Laboratorio</label>
+                        <textarea name="practica_laboratorio_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                                 placeholder="Descripción de la práctica" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-4">
+                    <div class="form-group">
+                        <label class="form-label">Título</label>
+                        <input type="text" name="titulo_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                               placeholder="Título de la práctica">
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group">
+                        <label class="form-label">Competencias</label>
+                        <input type="text" name="competencias_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                               placeholder="Competencias a desarrollar">
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group">
+                        <label class="form-label">Objetivo de la Práctica</label>
+                        <input type="text" name="objetivo_practica_${contenidoIndex}_${grupoIndex}" class="form-input" 
+                               placeholder="Objetivo principal">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Fundamento Teórico
+                            <i class="fas fa-info-circle ms-2" style="color: #3b82f6; font-size: 0.85rem; cursor: help;" 
+                               title="Usa la barra de herramientas para formato tipo Word: alineación, listas, tablas, colores. Para ecuaciones: botón 'fx' o usa $ para inline y $$ para ecuaciones en bloque."></i>
+                        </label>
+                        <textarea name="fundamento_teorico_${contenidoIndex}_${grupoIndex}" 
+                                 class="form-input ckeditor-field" 
+                                 placeholder="Fundamento teórico de la práctica - Usa el editor avanzado con alineación, ecuaciones y formato completo" 
+                                 rows="4"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Procedimientos
+                            <i class="fas fa-info-circle ms-2" style="color: #3b82f6; font-size: 0.85rem; cursor: help;" 
+                               title="Formato avanzado disponible: listas numeradas, viñetas, tablas, imágenes, alineación justificada, y más."></i>
+                        </label>
+                        <textarea name="procedimientos_${contenidoIndex}_${grupoIndex}" 
+                                 class="form-input ckeditor-field" 
+                                 placeholder="Pasos del procedimiento - Usa listas numeradas, tablas y formato avanzado" 
+                                 rows="4"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Selección de Equipos - Ancho Completo -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label" style="font-size: 0.95rem; font-weight: 600; color: #334155;">
+                            <i class="fas fa-toolbox me-2" style="color: #3b82f6;"></i>Equipos
+                        </label>
+                        
+                        <!-- Campo de búsqueda -->
+                        <div class="input-group mb-4">
+                            <span class="input-group-text">
+                                <i class="fas fa-search" style="font-size: 0.8rem;"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control form-control-sm buscar-equipos" 
+                                   placeholder="Filtrar equipos por nombre..." 
+                                   oninput="filtrarSelect(this, ${contenidoIndex}, ${grupoIndex}, 'equipos')">
+                        </div>
+                        
+                        <select name="equipos_${contenidoIndex}_${grupoIndex}" class="form-select equipos-select" multiple size="3" 
+                                onchange="handleRecursoSelection(this, 'equipos', ${contenidoIndex}, ${grupoIndex})">
+                            <option value="">Cargando equipos...</option>
+                        </select>
+                        
+                        <!-- Opción "Otro" para equipos -->
+                        <div class="otro-recurso-container" style="margin-top: 10px;">
+                            <div class="input-group">
+                                <input type="text" class="form-control form-control-sm" 
+                                       placeholder="Escribir otro equipo..." 
+                                       id="otro_equipo_${contenidoIndex}_${grupoIndex}">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="agregarOtroRecurso('equipos', ${contenidoIndex}, ${grupoIndex})">
+                                    <i class="fas fa-plus"></i> Agregar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Lista de seleccionados -->
+                        <div class="recursos-seleccionados-lista" id="equipos_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                             style="margin-top: 10px; max-height: 80px; overflow-y: auto;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de Insumos con Tabs -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-flask me-2"></i>Insumos</label>
+                        
+                        <!-- Tabs de Insumos -->
+                        <div class="tabs-insumos">
+                            <button type="button" class="tab-insumo active" 
+                                    onclick="cambiarTabInsumo(${contenidoIndex}, ${grupoIndex}, 'materiales')">
+                                <i class="fas fa-vial me-1"></i> Materiales
+                            </button>
+                            <button type="button" class="tab-insumo" 
+                                    onclick="cambiarTabInsumo(${contenidoIndex}, ${grupoIndex}, 'herramientas')">
+                                <i class="fas fa-wrench me-1"></i> Herramientas
+                            </button>
+                            <button type="button" class="tab-insumo" 
+                                    onclick="cambiarTabInsumo(${contenidoIndex}, ${grupoIndex}, 'reactivos')">
+                                <i class="fas fa-flask me-1"></i> Reactivos
+                            </button>
+                        </div>
+                        
+                        <!-- Contenido Tab Materiales -->
+                        <div class="tab-content-insumo active" id="tab_materiales_${contenidoIndex}_${grupoIndex}">
+                            <!-- Campo de búsqueda -->
+                            <div class="input-group mb-4">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search" style="font-size: 0.8rem;"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control form-control-sm buscar-materiales" 
+                                       placeholder="Filtrar materiales..." 
+                                       oninput="filtrarSelect(this, ${contenidoIndex}, ${grupoIndex}, 'materiales')">
+                            </div>
+                            
+                            <select name="materiales_${contenidoIndex}_${grupoIndex}" class="form-select materiales-select" multiple size="3"
+                                    onchange="handleRecursoSelection(this, 'materiales', ${contenidoIndex}, ${grupoIndex})">
+                                <option value="">Cargando materiales...</option>
+                            </select>
+                            
+                            <!-- Opción "Otro" para materiales -->
+                            <div class="otro-recurso-container" style="margin-top: 10px;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" 
+                                           placeholder="Escribir otro material..." 
+                                           id="otro_material_${contenidoIndex}_${grupoIndex}">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="agregarOtroRecurso('materiales', ${contenidoIndex}, ${grupoIndex})">
+                                        <i class="fas fa-plus"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Lista de seleccionados -->
+                            <div class="recursos-seleccionados-lista" id="materiales_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                                 style="margin-top: 10px; max-height: 70px; overflow-y: auto;">
+                            </div>
+                        </div>
+                        
+                        <!-- Contenido Tab Herramientas -->
+                        <div class="tab-content-insumo" id="tab_herramientas_${contenidoIndex}_${grupoIndex}">
+                            <!-- Campo de búsqueda -->
+                            <div class="input-group mb-4">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search" style="font-size: 0.8rem;"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control form-control-sm buscar-herramientas" 
+                                       placeholder="Filtrar herramientas..." 
+                                       oninput="filtrarSelect(this, ${contenidoIndex}, ${grupoIndex}, 'herramientas')">
+                            </div>
+                            
+                            <select name="herramientas_${contenidoIndex}_${grupoIndex}" class="form-select herramientas-select" multiple size="3"
+                                    onchange="handleRecursoSelection(this, 'herramientas', ${contenidoIndex}, ${grupoIndex})">
+                                <option value="">Cargando herramientas...</option>
+                            </select>
+                            
+                            <!-- Opción "Otro" para herramientas -->
+                            <div class="otro-recurso-container" style="margin-top: 10px;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" 
+                                           placeholder="Escribir otra herramienta..." 
+                                           id="otro_herramienta_${contenidoIndex}_${grupoIndex}">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="agregarOtroRecurso('herramientas', ${contenidoIndex}, ${grupoIndex})">
+                                        <i class="fas fa-plus"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Lista de seleccionados -->
+                            <div class="recursos-seleccionados-lista" id="herramientas_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                                 style="margin-top: 10px; max-height: 70px; overflow-y: auto;">
+                            </div>
+                        </div>
+                        
+                        <!-- Contenido Tab Reactivos -->
+                        <div class="tab-content-insumo" id="tab_reactivos_${contenidoIndex}_${grupoIndex}">
+                            <!-- Campo de búsqueda -->
+                            <div class="input-group mb-4">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search" style="font-size: 0.8rem;"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control form-control-sm buscar-reactivos" 
+                                       placeholder="Filtrar reactivos..." 
+                                       oninput="filtrarSelect(this, ${contenidoIndex}, ${grupoIndex}, 'reactivos')">
+                            </div>
+                            
+                            <select name="reactivos_${contenidoIndex}_${grupoIndex}" class="form-select reactivos-select" multiple size="3"
+                                    onchange="handleRecursoSelection(this, 'reactivos', ${contenidoIndex}, ${grupoIndex})">
+                                <option value="">Cargando reactivos...</option>
+                            </select>
+                            
+                            <!-- Opción "Otro" para reactivos -->
+                            <div class="otro-recurso-container" style="margin-top: 10px;">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" 
+                                           placeholder="Escribir otro reactivo..." 
+                                           id="otro_reactivo_${contenidoIndex}_${grupoIndex}">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="agregarOtroRecurso('reactivos', ${contenidoIndex}, ${grupoIndex})">
+                                        <i class="fas fa-plus"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Lista de seleccionados -->
+                            <div class="recursos-seleccionados-lista" id="reactivos_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                                 style="margin-top: 10px; max-height: 70px; overflow-y: auto;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Campos ocultos para almacenar selecciones -->
+            <input type="hidden" name="equipos_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                   id="equipos_input_${contenidoIndex}_${grupoIndex}" value="">
+            <input type="hidden" name="materiales_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                   id="materiales_input_${contenidoIndex}_${grupoIndex}" value="">
+            <input type="hidden" name="herramientas_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                   id="herramientas_input_${contenidoIndex}_${grupoIndex}" value="">
+            <input type="hidden" name="reactivos_seleccionados_${contenidoIndex}_${grupoIndex}" 
+                   id="reactivos_input_${contenidoIndex}_${grupoIndex}" value="">
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Cálculos y Resultados
+                            <i class="fas fa-info-circle ms-2" style="color: #3b82f6; font-size: 0.85rem; cursor: help;" 
+                               title="Ideal para ecuaciones matemáticas: usa el botón 'fx' para insertar ecuaciones. También puedes usar $ para fórmulas inline: $E=mc^2$ o $$ para ecuaciones centradas."></i>
+                        </label>
+                        <textarea name="calculos_resultados_${contenidoIndex}_${grupoIndex}" 
+                                 class="form-input ckeditor-field" 
+                                 placeholder="Cálculos esperados y resultados - Incluye ecuaciones usando el botón 'fx' o sintaxis LaTeX" 
+                                 rows="4"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Cuestionario
+                            <i class="fas fa-info-circle ms-2" style="color: #3b82f6; font-size: 0.85rem; cursor: help;" 
+                               title="Usa listas numeradas para preguntas, negritas para resaltar, y todos los formatos tipo Word disponibles."></i>
+                        </label>
+                        <textarea name="cuestionario_${contenidoIndex}_${grupoIndex}" 
+                                 class="form-input ckeditor-field" 
+                                 placeholder="Preguntas del cuestionario - Usa formato avanzado y numeración" 
+                                 rows="4"></textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(div);
+        contadorGruposDatos[contenidoIndex] = grupoIndex + 1;
+        
+        console.log(`➕ Grupo agregado - Contenido: ${contenidoIndex}, Grupo: ${grupoIndex}`);
+        
+        // IMPORTANTE: Cargar datos en los nuevos selects inmediatamente
+        setTimeout(() => {
+            const unidadSelect = document.querySelector('select[name="unidad_academica"]');
+            const unidadId = unidadSelect ? unidadSelect.value : '';
+            
+            if (unidadId) {
+                // Buscar los nuevos selects específicamente
+                const nuevoEquiposSelect = div.querySelector('.equipos-select');
+                const nuevoMaterialesSelect = div.querySelector('.materiales-select');
+                const nuevoHerramientasSelect = div.querySelector('.herramientas-select');
+                const nuevoReactivosSelect = div.querySelector('.reactivos-select');
+                
+                // Cargar datos en cada select
+                if (nuevoEquiposSelect) {
+                    cargarEquiposEnSelect(nuevoEquiposSelect, unidadId);
+                }
+                if (nuevoMaterialesSelect) {
+                    cargarMaterialesEnSelect(nuevoMaterialesSelect, unidadId);
+                }
+                if (nuevoHerramientasSelect) {
+                    cargarHerramientasEnSelect(nuevoHerramientasSelect, unidadId);
+                }
+                if (nuevoReactivosSelect) {
+                    cargarReactivosEnSelect(nuevoReactivosSelect, unidadId);
+                }
+            }
+        }, 100);
+        
+        // Animación de entrada
+        setTimeout(() => {
+            div.style.opacity = '0';
+            div.style.transform = 'translateY(20px)';
+            div.style.transition = 'all 0.4s ease';
+            
+            setTimeout(() => {
+                div.style.opacity = '1';
+                div.style.transform = 'translateY(0)';
+            }, 50);
+        }, 10);
+    }
+
+    // Función para eliminar un grupo de datos adicionales
+    function eliminarGrupoDatos(button) {
+        const grupoDiv = button.closest('.grupo-datos-adicionales');
+        grupoDiv.style.transition = 'all 0.3s ease';
+        grupoDiv.style.opacity = '0';
+        grupoDiv.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            grupoDiv.remove();
+            actualizarNumeracionGrupos();
+        }, 300);
+    }
+
+    // Función para actualizar la numeración de los grupos
+    function actualizarNumeracionGrupos() {
+        const containers = document.querySelectorAll('.container-grupos-datos');
+        containers.forEach(container => {
+            const grupos = container.querySelectorAll('.grupo-datos-adicionales');
+            grupos.forEach((grupo, index) => {
+                const title = grupo.querySelector('.grupo-datos-title');
+                title.innerHTML = `
+                    <i class="fas fa-folder-open"></i>
+                    Grupo de Datos ${index + 1}
+                `;
+            });
+        });
+    }
+
+    // Función para agregar contenido analítico
+    function agregarContenidoAnalitico() {
+        const container = document.getElementById('contenidos-container');
+        const contenidoIndex = contadorContenidos;
+        
+        // Inicializar contador de grupos para este nuevo contenido
+        contadorGruposDatos[contenidoIndex] = 0;
+        
+        const div = document.createElement('div');
+        div.className = 'dynamic-item contenido-analitico-item';
+        div.setAttribute('data-contenido', contenidoIndex);
+        
+        div.innerHTML = `
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label">Contenido Analítico</label>
+                        <select name="contenidos_analiticos[]" class="form-select contenido-analitico-select" required>
+                            <option value="">Seleccione un contenido analítico</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de múltiples grupos de datos adicionales -->
+            <div class="grupos-datos-adicionales" data-contenido="${contenidoIndex}">
+                <div style="margin-top: 20px; text-align: center; border-top: 2px dashed #e5e7eb; padding-top: 20px;">
+                    <h5 style="color: #374151; margin-bottom: 15px; font-weight: 600;">
+                        <i class="fas fa-layer-group"></i> Grupos de Datos Adicionales
+                    </h5>
+                    <button type="button" class="btn btn-secondary" onclick="agregarGrupoDatosAdicionales(${contenidoIndex})">
+                        <i class="fas fa-plus-circle"></i>
+                        Agregar Grupo de Datos Adicionales
+                    </button>
+                </div>
+                
+                <!-- Container para los grupos de datos adicionales -->
+                <div class="container-grupos-datos" id="container-grupos-${contenidoIndex}">
+                    <!-- Los grupos se agregarán dinámicamente aquí -->
+                </div>
+            </div>
+            
+            <!-- Botón para eliminar contenido analítico -->
+            <div style="text-align: right; margin-top: 15px;">
+                <button type="button" class="btn btn-remove" onclick="eliminarContenido(this)">
+                    <i class="fas fa-trash"></i>
+                    Eliminar Contenido
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(div);
+        contadorContenidos++;
+        
+        // Cargar opciones de contenido analítico si hay una unidad didáctica seleccionada
+        const unidadDidacticaSelect = document.getElementById('unidad_didactica_select');
+        if (unidadDidacticaSelect && unidadDidacticaSelect.value) {
+            loadContenidosAnaliticos(unidadDidacticaSelect.value);
+        }
+    }
+
+    // Función para eliminar contenido analítico
+    function eliminarContenido(button) {
+        const item = button.closest('.dynamic-item');
+        item.classList.add('removing');
+        setTimeout(() => item.remove(), 300);
+    }
+
+
+
+    // Funciones auxiliares para filtros en cascada
+    function resetSelectOptions(selectElement, placeholder) {
+        if (selectElement) {
+            selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+        }
+    }
+    
+    function clearAutoFields() {
+        document.getElementById('semestre_input').value = '';
+        document.getElementById('codigo_competencia_input').value = '';
+        document.getElementById('sigla_curricular_input').value = '';
+        document.getElementById('carga_horaria_semestral_input').value = '';
+        document.getElementById('carga_horaria_semanal_input').value = '';
+        
+        // Limpiar selects dependientes
+        resetSelectOptions(document.getElementById('criterio_desempeno_select'), 'Seleccione un criterio de desempeño');
+        resetSelectOptions(document.getElementById('unidad_didactica_select'), 'Seleccione una unidad didáctica');
+        
+        // Limpiar contenidos analíticos
+        const contenidoSelects = document.querySelectorAll('.contenido-analitico-select');
+        contenidoSelects.forEach(select => {
+            resetSelectOptions(select, 'Seleccione un contenido analítico');
+        });
+    }
+    
+    function loadCriteriosDesempeno(asignaturaId) {
+        const criterioSelect = document.getElementById('criterio_desempeno_select');
+        
+        fetch(`{% url 'core:criterios_desempeno' %}?asignatura_id=${asignaturaId}`)
+            .then(response => response.json())
+            .then(data => {
+                criterioSelect.innerHTML = '<option value="">Seleccione un criterio de desempeño</option>';
+                data.criterios.forEach(criterio => {
+                    criterioSelect.innerHTML += `<option value="${criterio.id}">${criterio.nombre}</option>`;
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+    
+    function loadUnidadesDidacticas(criterioId) {
+        const unidadSelect = document.getElementById('unidad_didactica_select');
+        
+        // Para las unidades didácticas, necesitamos obtener la asignatura del criterio
+        // Por ahora vamos a usar la asignatura seleccionada
+        const asignaturaSelect = document.getElementById('asignatura_select');
+        const asignaturaId = asignaturaSelect.value;
+        
+        if (asignaturaId) {
+            fetch(`{% url 'core:unidades_didacticas' %}?asignatura_id=${asignaturaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    unidadSelect.innerHTML = '<option value="">Seleccione una unidad didáctica</option>';
+                    data.unidades_didacticas.forEach(unidad => {
+                        unidadSelect.innerHTML += `<option value="${unidad.id}">${unidad.nombre}</option>`;
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    }
+    
+    function loadContenidosAnaliticos(unidadId) {
+        const contenidoSelects = document.querySelectorAll('.contenido-analitico-select');
+        
+        fetch(`{% url 'core:contenidos_analiticos' %}?unidad_didactica_id=${unidadId}`)
+            .then(response => response.json())
+            .then(data => {
+                contenidoSelects.forEach(select => {
+                    select.innerHTML = '<option value="">Seleccione un contenido analítico</option>';
+                    data.contenidos_analiticos.forEach(contenido => {
+                        select.innerHTML += `<option value="${contenido.id}">${contenido.nombre}</option>`;
+                    });
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+    
+    // ==================================================
+    // VALIDACIÓN ANTES DE SUBMIT - PREVENIR ERRORES
+    // ==================================================
+    document.getElementById('formulario-completo').addEventListener('submit', function(e) {
+        const asignaturaSelect = document.getElementById('id_asignatura');
+        const unidadAcademicaSelect = document.getElementById('id_unidad_academica');
+        const carreraSelect = document.getElementById('id_carrera');
+        
+        // Obtener información de la selección
+        const asignaturaSeleccionada = asignaturaSelect.options[asignaturaSelect.selectedIndex];
+        const unidadSeleccionada = unidadAcademicaSelect.options[unidadAcademicaSelect.selectedIndex];
+        const carreraSeleccionada = carreraSelect.options[carreraSelect.selectedIndex];
+        
+        if (!asignaturaSeleccionada || !asignaturaSeleccionada.value) {
+            alert('⚠️ Debe seleccionar una asignatura');
+            e.preventDefault();
+            return false;
+        }
+        
+        // CONFIRMACIÓN CRÍTICA: Mostrar exactamente dónde se guardará
+        const contenidosNombres = [];
+        document.querySelectorAll('input[name="contenidos_analiticos[]"]').forEach(input => {
+            if (input.value.trim()) {
+                contenidosNombres.push(input.value.trim());
+            }
+        });
+        
+        if (contenidosNombres.length === 0) {
+            alert('⚠️ Debe agregar al menos un contenido analítico');
+            e.preventDefault();
+            return false;
+        }
+        
+        // Construir mensaje de confirmación detallado
+        let mensaje = `📝 CONFIRMACIÓN DE CREACIÓN\n\n`;
+        mensaje += `Sus prácticas se guardarán en:\n`;
+        mensaje += `🎯 Asignatura: ${asignaturaSeleccionada.text}\n`;
+        mensaje += `🎓 Carrera: ${carreraSeleccionada.text}\n`;
+        mensaje += `🏫 Unidad: ${unidadSeleccionada.text}\n\n`;
+        mensaje += `🧪 Prácticas a crear (${contenidosNombres.length}):\n`;
+        contenidosNombres.forEach((nombre, index) => {
+            mensaje += `   ${index + 1}. ${nombre}\n`;
+        });
+        mensaje += `\n¿Confirma que esta información es correcta?`;
+        
+        if (!confirm(mensaje)) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Mostrar indicador de procesamiento detallado
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando práctica...';
+        submitBtn.disabled = true;
+        
+        // Mostrar mensaje de estado en la página
+        const formContainer = document.querySelector('.form-container');
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'alert alert-info mt-3';
+        statusDiv.innerHTML = `
+            <strong>⏳ Procesando...</strong><br>
+            Su práctica se está creando. Por favor espere...<br>
+            <small>No cierre esta ventana ni presione el botón nuevamente.</small>
+        `;
+        formContainer.appendChild(statusDiv);
+        
+        // Timeout de seguridad (30 segundos)
+        setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                statusDiv.className = 'alert alert-warning mt-3';
+                statusDiv.innerHTML = `
+                    <strong>⚠️ Tiempo de espera agotado</strong><br>
+                    Si la práctica no se creó, intente nuevamente.<br>
+                    <small>Puede verificar en la lista de asignaturas si se creó correctamente.</small>
+                `;
+            }
+        }, 30000);
+        
+        return true;
+    });
+</script>
+
+<!-- Panel de Ayuda Flotante para Ecuaciones Matemáticas -->
+<button class="help-toggle-btn" onclick="toggleHelpPanel()" title="Ayuda sobre ecuaciones y formato">
+    <i class="fas fa-question"></i>
+</button>
+
+<div class="help-panel" id="helpPanel">
+    <div class="help-panel-header">
+        <h6><i class="fas fa-graduation-cap me-2"></i>Guía Rápida</h6>
+        <button class="help-panel-close" onclick="toggleHelpPanel()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="help-panel-content">
+        <h6><i class="fas fa-superscript me-1"></i>Ecuaciones Matemáticas</h6>
+        <ul>
+            <li><strong>Botón 'fx':</strong> Inserta ecuaciones desde la barra</li>
+            <li><strong>Inline:</strong> <code>$E=mc^2$</code></li>
+            <li><strong>Centrada:</strong> <code>$$x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$$</code></li>
+        </ul>
+        
+        <h6><i class="fas fa-align-left me-1"></i>Alineación de Texto</h6>
+        <ul>
+            <li>Izquierda, Centro, Derecha, Justificado</li>
+            <li>Usa los botones en la barra superior</li>
+        </ul>
+        
+        <h6><i class="fas fa-list me-1"></i>Listas y Formato</h6>
+        <ul>
+            <li><strong>Numeradas:</strong> Para procedimientos paso a paso</li>
+            <li><strong>Viñetas:</strong> Para listados</li>
+            <li><strong>Tablas:</strong> Insertar desde botón tabla</li>
+            <li><strong>Negritas, cursivas, subrayado</strong></li>
+        </ul>
+        
+        <h6><i class="fas fa-palette me-1"></i>Colores y Estilos</h6>
+        <ul>
+            <li>Color de texto y fondo</li>
+            <li>Diferentes tamaños de fuente</li>
+            <li>Resaltadores de texto</li>
+        </ul>
+        
+        <p style="margin-top: 12px; font-size: 0.75rem; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 8px;">
+            <i class="fas fa-lightbulb me-1"></i>
+            <strong>Tip:</strong> Usa Ctrl+B (negrita), Ctrl+I (cursiva), Ctrl+U (subrayado)
+        </p>
+    </div>
+</div>
+
+<script>
+    function toggleHelpPanel() {
+        const panel = document.getElementById('helpPanel');
+        const btn = document.querySelector('.help-toggle-btn');
+        panel.classList.toggle('active');
+        btn.classList.toggle('active');
+    }
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Script adicional que se ejecuta después de cargar todo
+    document.addEventListener('DOMContentLoaded', function() {
+        // Forzar estilos críticos si no se aplicaron correctamente
+        const formWrapper = document.querySelector('#agregar-datos-malla-page .form-wrapper');
+        if (formWrapper) {
+            const computedStyle = window.getComputedStyle(formWrapper);
+            if (computedStyle.background === 'initial' || computedStyle.background.indexOf('gradient') === -1) {
+                console.log('Aplicando estilos de emergencia...');
+                formWrapper.style.setProperty('background', 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', 'important');
+            }
+        }
+        
+        // Verificar que los botones tengan los estilos correctos
+        const buttons = document.querySelectorAll('#agregar-datos-malla-page .btn');
+        buttons.forEach(btn => {
+            const style = window.getComputedStyle(btn);
+            if (style.borderRadius === '0px' || style.borderRadius === 'initial') {
+                btn.style.setProperty('border-radius', '30px', 'important');
+            }
+        });
+    });
+
+    // Función para cargar equipos y materiales basados en la unidad académica
+    function loadEquiposYMateriales() {
+        var unidadId = document.getElementById('id_unidad_academica').value;
+        if (unidadId) {
+            console.log('Cargando equipos e insumos para unidad:', unidadId);
+            
+            // Cargar equipos para todos los selects de equipos
+            fetch(`/dashboard/ajax/equipos-por-unidad/?unidad_id=${unidadId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Equipos recibidos:', data.length);
+                    
+                    // Buscar todos los selects de equipos en la página
+                    var selectsEquipos = document.querySelectorAll('.equipos-select');
+                    selectsEquipos.forEach(select => {
+                        select.innerHTML = '<option value="">Seleccionar equipo...</option>';
+                        data.forEach(equipo => {
+                            select.innerHTML += `<option value="${equipo.descripcion}">${equipo.descripcion}</option>`;
+                        });
+                    });
+                    
+                    // También actualizar el select fijo si existe
+                    var selectEquipos = document.getElementById('select_equipos');
+                    if (selectEquipos) {
+                        selectEquipos.innerHTML = '<option value="">Seleccionar equipo...</option>';
+                        data.forEach(equipo => {
+                            selectEquipos.innerHTML += `<option value="${equipo.descripcion}">${equipo.descripcion}</option>`;
+                        });
+                    }
+                })
+                .catch(error => console.error('Error cargando equipos:', error));
+
+            // Cargar materiales para todos los selects de materiales
+            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Material`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Materiales recibidos:', data.length);
+                    
+                    // Buscar todos los selects de materiales en la página
+                    var selectsMateriales = document.querySelectorAll('.materiales-select');
+                    selectsMateriales.forEach(select => {
+                        select.innerHTML = '<option value="">Seleccionar material...</option>';
+                        data.forEach(insumo => {
+                            select.innerHTML += `<option value="${insumo.nombre}">${insumo.nombre}</option>`;
+                        });
+                    });
+                    
+                    // También actualizar el select fijo si existe
+                    var selectMateriales = document.getElementById('select_materiales');
+                    if (selectMateriales) {
+                        selectMateriales.innerHTML = '<option value="">Seleccionar material...</option>';
+                        data.forEach(insumo => {
+                            selectMateriales.innerHTML += `<option value="${insumo.nombre}">${insumo.nombre}</option>`;
+                        });
+                    }
+                })
+                .catch(error => console.error('Error cargando materiales:', error));
+
+            // Cargar herramientas para todos los selects de herramientas
+            fetch(`/dashboard/ajax/insumos-por-unidad/?unidad_id=${unidadId}&categoria=Herramienta`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Herramientas recibidas:', data.length);
+                    
+                    // Buscar todos los selects de herramientas en la página
+                    var selectsHerramientas = document.querySelectorAll('.herramientas-select');
+                    selectsHerramientas.forEach(select => {
+                        select.innerHTML = '<option value="">Seleccionar herramienta...</option>';
+                        data.forEach(insumo => {
+                            select.innerHTML += `<option value="${insumo.nombre}">${insumo.nombre}</option>`;
+                        });
+                    });
+                })
+                .catch(error => console.error('Error cargando herramientas:', error));
+        }
+    }
+
+    // Función para mostrar modal de agregar equipo
+    function mostrarModalAgregarEquipo() {
+        document.getElementById('modal-agregar-equipo').style.display = 'block';
+    }
+
+    // Función para mostrar modal de agregar material
+    function mostrarModalAgregarMaterial() {
+        document.getElementById('modal-agregar-material').style.display = 'block';
+    }
+
+    // Función para obtener CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Event listeners para cuando cambie la unidad académica
+    document.addEventListener('DOMContentLoaded', function() {
+        var unidadSelect = document.getElementById('id_unidad_academica');
+        if (unidadSelect) {
+            unidadSelect.addEventListener('change', loadEquiposYMateriales);
+            
+            // Cargar datos inicialmente si ya hay una unidad seleccionada
+            if (unidadSelect.value) {
+                console.log('Cargando datos iniciales...');
+                loadEquiposYMateriales();
+            }
+        }
+        
+        // También cargar datos cada vez que se agregue un nuevo grupo de práctica
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE && 
+                        node.classList && node.classList.contains('grupo-practica')) {
+                        console.log('Nuevo grupo de práctica detectado, cargando datos...');
+                        setTimeout(loadEquiposYMateriales, 100); // Pequeño delay para asegurar que los elementos estén listos
+                    }
+                });
+            });
+        });
+        
+        observer.observe(document.body, { childList: true, subtree: true });
+    });
+
+    // ============================================================
+    // FUNCIONES PARA EL MODAL DE SELECCIÓN DE RECURSOS (YA NO SE USAN)
+    // ============================================================
+    
+    // Variables eliminadas - funcionalidad simplificada
+    
+    let modalContext = {
+        contenidoIndex: null,
+        grupoIndex: null,
+        tabActiva: 'equipos'
+    };
+    
+    // Abrir el modal de recursos
+    function abrirModalRecursos(contenidoIndex, grupoIndex, tipoRecurso = 'equipos') {
+        console.log('Abriendo modal:', contenidoIndex, grupoIndex, tipoRecurso);
+        
+        // Guardar el contexto del modal
+        modalContext.contenidoIndex = contenidoIndex;
+        modalContext.grupoIndex = grupoIndex;
+        modalContext.tabActiva = tipoRecurso;
+        
+        // Limpiar selecciones previas
+        recursosSeleccionados = {
+            equipos: [],
+            materiales: [],
+            herramientas: []
+        };
+        
+        const modal = document.getElementById('modal-recursos');
+        if (!modal) {
+            console.error('Modal no encontrado');
+            return;
+        }
+        
+        console.log('Modal encontrado:', modal);
+        console.log('Estilo actual display:', modal.style.display);
+        console.log('Clases actuales:', modal.className);
+        
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.classList.add('visible');
+        
+        console.log('Modal debería estar visible ahora - display:', modal.style.display);
+        console.log('Clases después:', modal.className);
+        
+        // Activar la pestaña correspondiente y actualizar título
+        cambiarTab(tipoRecurso);
+        
+        // Cargar datos de la pestaña activa
+        cargarDatosTab(tipoRecurso);
+    }
+    
+    // Hacer función disponible globalmente
+    window.abrirModalRecursos = abrirModalRecursos;
+    
+    // Cerrar el modal de recursos
+    function cerrarModalRecursos() {
+        const modal = document.getElementById('modal-recursos');
+        modal.style.display = 'none';
+        modal.classList.remove('visible');
+        console.log('Modal cerrado');
+    }
+    
+    // Hacer función disponible globalmente
+    window.cerrarModalRecursos = cerrarModalRecursos;
+    
+    // Cambiar pestaña
+    function cambiarTab(tipoRecurso) {
+        console.log('Cambiando a pestaña:', tipoRecurso);
+        
+        // Actualizar variable global
+        modalContext.tabActiva = tipoRecurso;
+        
+        // Actualizar título del modal según la pestaña activa
+        const modal = document.getElementById('modal-recursos');
+        const titulo = modal.querySelector('.modal-header h4');
+        const iconos = {
+            equipos: 'fas fa-tools',
+            materiales: 'fas fa-vials', 
+            herramientas: 'fas fa-wrench'
+        };
+        const titulos = {
+            equipos: 'Seleccionar Equipos',
+            materiales: 'Seleccionar Materiales',
+            herramientas: 'Seleccionar Herramientas'
+        };
+        
+        if (titulo) {
+            titulo.innerHTML = `<i class="${iconos[tipoRecurso]}"></i> ${titulos[tipoRecurso]}`;
+        }
+        
+        // Desactivar todas las pestañas
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+        
+        // Activar la pestaña seleccionada
+        const tabBtn = document.getElementById(`tab-${tipoRecurso}`);
+        const tabPane = document.getElementById(`content-${tipoRecurso}`);
+        
+        if (tabBtn && tabPane) {
+            tabBtn.classList.add('active');
+            tabPane.classList.add('active');
+        } else {
+            console.error('No se encontraron elementos para la pestaña:', tipoRecurso);
+        }
+        
+        // Cargar datos si no se han cargado
+        cargarDatosTab(tipoRecurso);
+    }
+    
+    // Hacer función disponible globalmente
+    window.cambiarTab = cambiarTab;
+    
+    // Cargar datos de una pestaña específica
+    function cargarDatosTab(tipoRecurso) {
+        console.log('Cargando datos para:', tipoRecurso);
+        
+        const unidadSelect = document.querySelector('[name="unidad_academica"]');
+        if (!unidadSelect) {
+            alert('No se encontró el selector de unidad académica');
+            return;
+        }
+        
+        const unidadId = unidadSelect.value;
+        if (!unidadId) {
+            alert('Por favor seleccione una unidad académica primero');
+            return;
+        }
+        
+        console.log('Unidad académica seleccionada:', unidadId);
+        
+        const loading = document.getElementById(`loading-${tipoRecurso}`);
+        const grid = document.getElementById(`grid-${tipoRecurso}`);
+        
+        if (!loading || !grid) {
+            console.error('Elementos de loading o grid no encontrados para:', tipoRecurso);
+            return;
+        }
+        
+        loading.style.display = 'block';
+        grid.style.display = 'none';
+        
+        let url;
+        if (tipoRecurso === 'equipos') {
+            url = `{% url 'core:equipos_por_unidad' %}?unidad_id=${unidadId}`;
+        } else {
+            // Para materiales y herramientas usamos insumos con categoría específica
+            const categoria = tipoRecurso === 'materiales' ? 'materiales' : 'herramientas';
+            url = `{% url 'core:insumos_por_unidad' %}?unidad_id=${unidadId}&categoria=${categoria}`;
+        }
+        
+        console.log('Haciendo fetch a:', url);
+        
+        fetch(url)
+            .then(response => {
+                console.log('Respuesta recibida:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos recibidos:', data);
+                loading.style.display = 'none';
+                grid.style.display = 'grid';
+                
+                let recursos = [];
+                if (tipoRecurso === 'equipos') {
+                    recursos = data.equipos || [];
+                } else {
+                    // Para materiales y herramientas, usar directamente los insumos ya filtrados por el servidor
+                    recursos = data.insumos || [];
+                }
+                
+                console.log('Recursos procesados:', recursos.length);
+                todosLosRecursos[tipoRecurso] = recursos;
+                mostrarRecursos(tipoRecurso, recursos);
+                actualizarContadores();
+            })
+            .catch(error => {
+                console.error('Error cargando recursos:', error);
+                loading.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error al cargar datos';
+            });
+    }
+    
+    // Mostrar recursos en la grid
+    function mostrarRecursos(tipoRecurso, recursos) {
+        const grid = document.getElementById(`grid-${tipoRecurso}`);
+        
+        if (recursos.length === 0) {
+            grid.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;"><i class="fas fa-inbox"></i><br>No hay recursos disponibles</div>';
+            return;
+        }
+        
+        grid.innerHTML = recursos.map(recurso => {
+            const isSelected = recursosSeleccionados[tipoRecurso].some(sel => sel.id === recurso.id);
+            
+            // Adaptar los campos según el tipo de recurso y el formato de datos
+            let nombre, detalles;
+            
+            if (tipoRecurso === 'equipos') {
+                // Para equipos importados, usar el campo 'nombre' que contiene código + descripción
+                nombre = recurso.nombre || recurso.equipo_existente || 'Sin nombre';
+                detalles = `Estado: ${recurso.estado || 'N/A'}`;
+                if (recurso.responsable) {
+                    detalles += ` | Responsable: ${recurso.responsable}`;
+                }
+            } else {
+                // Para materiales/herramientas
+                nombre = recurso.nombre_elemento || recurso.nombre || 'Sin nombre';
+                detalles = `Categoría: ${recurso.categoria || 'N/A'}`;
+            }
+                
+            return `
+                <div class="recurso-card ${isSelected ? 'selected' : ''}" 
+                     onclick="toggleRecurso('${tipoRecurso}', '${recurso.id}', '${nombre.replace(/'/g, "\\'")}')">
+                    <div class="checkbox">
+                        ${isSelected ? '<i class="fas fa-check"></i>' : ''}
+                    </div>
+                    <div class="recurso-nombre">${nombre}</div>
+                    <div class="recurso-detalles">${detalles}</div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Toggle selección de recurso
+    function toggleRecurso(tipoRecurso, id, nombre) {
+        const index = recursosSeleccionados[tipoRecurso].findIndex(r => r.id === id);
+        
+        if (index > -1) {
+            // Quitar selección
+            recursosSeleccionados[tipoRecurso].splice(index, 1);
+        } else {
+            // Agregar selección
+            recursosSeleccionados[tipoRecurso].push({ id, nombre });
+        }
+        
+        // Actualizar vista
+        mostrarRecursos(tipoRecurso, todosLosRecursos[tipoRecurso]);
+        actualizarContadores();
+    }
+    
+    // Seleccionar/deseleccionar todos
+    function seleccionarTodos() {
+        const tabActiva = modalContext.tabActiva;
+        const recursos = todosLosRecursos[tabActiva];
+        
+        recursosSeleccionados[tabActiva] = recursos.map(recurso => ({
+            id: recurso.id,
+            nombre: tabActiva === 'equipos' ? recurso.equipo_existente : recurso.nombre_elemento
+        }));
+        
+        mostrarRecursos(tabActiva, recursos);
+        actualizarContadores();
+    }
+    
+    // Limpiar selección
+    function limpiarSeleccion() {
+        const tabActiva = modalContext.tabActiva;
+        recursosSeleccionados[tabActiva] = [];
+        
+        mostrarRecursos(tabActiva, todosLosRecursos[tabActiva]);
+        actualizarContadores();
+    }
+    
+    // Filtrar recursos
+    function filtrarRecursos() {
+        const busqueda = document.getElementById('buscar-recursos').value.toLowerCase();
+        const tabActiva = modalContext.tabActiva;
+        
+        const recursosFiltrados = todosLosRecursos[tabActiva].filter(recurso => {
+            const nombre = tabActiva === 'equipos' ? recurso.equipo_existente : recurso.nombre_elemento;
+            return nombre.toLowerCase().includes(busqueda);
+        });
+        
+        mostrarRecursos(tabActiva, recursosFiltrados);
+    }
+    
+    // Actualizar contadores
+    function actualizarContadores() {
+        // Actualizar contadores en las pestañas
+        ['equipos', 'materiales', 'herramientas'].forEach(tipo => {
+            const countElement = document.getElementById(`count-${tipo}`);
+            if (countElement) {
+                const count = recursosSeleccionados[tipo].length;
+                countElement.textContent = count;
+                
+                // Añadir animación cuando hay selecciones
+                if (count > 0) {
+                    countElement.style.background = '#10b981';
+                    countElement.style.color = 'white';
+                    countElement.style.borderRadius = '12px';
+                    countElement.style.padding = '2px 8px';
+                    countElement.style.fontWeight = 'bold';
+                } else {
+                    countElement.style.background = 'transparent';
+                    countElement.style.color = 'inherit';
+                    countElement.style.padding = '0';
+                }
+            }
+        });
+        
+        // Actualizar contador total en el footer
+        const totalSeleccionados = Object.values(recursosSeleccionados).reduce((total, arr) => total + arr.length, 0);
+        const summaryElement = document.getElementById('selection-count');
+        if (summaryElement) {
+            const iconos = {
+                0: 'fas fa-info-circle',
+                1: 'fas fa-check-circle',
+                default: 'fas fa-check-double'
+            };
+            const icono = iconos[totalSeleccionados] || iconos.default;
+            
+            summaryElement.innerHTML = `
+                <i class="${icono}"></i> 
+                ${totalSeleccionados} recurso${totalSeleccionados !== 1 ? 's' : ''} seleccionado${totalSeleccionados !== 1 ? 's' : ''}
+            `;
+            
+            // Cambiar color según la cantidad
+            if (totalSeleccionados > 0) {
+                summaryElement.style.color = '#10b981';
+                summaryElement.style.fontWeight = 'bold';
+            } else {
+                summaryElement.style.color = '#64748b';
+                summaryElement.style.fontWeight = '600';
+            }
+        }
+    }
+    
+    // Confirmar selección
+    function confirmarSeleccion() {
+        const totalSeleccionados = Object.values(recursosSeleccionados).reduce((total, arr) => total + arr.length, 0);
+        
+        if (totalSeleccionados === 0) {
+            alert('Por favor seleccione al menos un recurso');
+            return;
+        }
+        
+        // Obtener el área de selección específica
+        const areaSeleccion = document.getElementById(`recursos_${modalContext.contenidoIndex}_${modalContext.grupoIndex}`);
+        
+        let html = '';
+        
+        ['equipos', 'materiales', 'herramientas'].forEach(tipo => {
+            if (recursosSeleccionados[tipo].length > 0) {
+                const tipoCapitalizado = tipo.charAt(0).toUpperCase() + tipo.slice(0, -1);
+                html += `<div class="tipo-recurso">
+                    <strong>${tipoCapitalizado}s (${recursosSeleccionados[tipo].length}):</strong><br>
+                    ${recursosSeleccionados[tipo].map(r => 
+                        `<span class="recurso-tag">
+                            ${r.nombre} 
+                            <i class="fas fa-times" onclick="eliminarRecurso('${tipo}', ${r.id})" title="Eliminar"></i>
+                        </span>`
+                    ).join(' ')}
+                </div>`;
+            }
+        });
+        
+        if (html === '') {
+            html = `<div class="recursos-empty">
+                <i class="fas fa-info-circle"></i>
+                No se han seleccionado recursos aún. Haz clic en el botón de arriba para seleccionar.
+            </div>`;
+        }
+        
+        areaSeleccion.innerHTML = html;
+        
+        // Cerrar modal
+        cerrarModalRecursos();
+        
+        // Mostrar mensaje de confirmación
+        alert(`Se han seleccionado ${totalSeleccionados} recursos correctamente`);
+    }
+    
+    // Hacer funciones disponibles globalmente
+    window.seleccionarTodos = seleccionarTodos;
+    window.limpiarSeleccion = limpiarSeleccion;
+    window.filtrarRecursos = filtrarRecursos;
+    window.confirmarSeleccion = confirmarSeleccion;
+    window.toggleRecurso = toggleRecurso;
+    
+    // Función para eliminar un recurso específico
+    function eliminarRecurso(tipo, id) {
+        const index = recursosSeleccionados[tipo].findIndex(r => r.id === id);
+        if (index > -1) {
+            recursosSeleccionados[tipo].splice(index, 1);
+            
+            // Actualizar la vista
+            const areaSeleccion = document.getElementById(`recursos_${modalContext.contenidoIndex}_${modalContext.grupoIndex}`);
+            let html = '';
+            
+            ['equipos', 'materiales', 'herramientas'].forEach(tipoRecurso => {
+                if (recursosSeleccionados[tipoRecurso].length > 0) {
+                    const tipoCapitalizado = tipoRecurso.charAt(0).toUpperCase() + tipoRecurso.slice(0, -1);
+                    html += `<div class="tipo-recurso">
+                        <strong>${tipoCapitalizado}s (${recursosSeleccionados[tipoRecurso].length}):</strong><br>
+                        ${recursosSeleccionados[tipoRecurso].map(r => 
+                            `<span class="recurso-tag">
+                                ${r.nombre} 
+                                <i class="fas fa-times" onclick="eliminarRecurso('${tipoRecurso}', ${r.id})" title="Eliminar"></i>
+                            </span>`
+                        ).join(' ')}
+                    </div>`;
+                }
+            });
+            
+            if (html === '') {
+                html = `<div class="recursos-empty">
+                    <i class="fas fa-info-circle"></i>
+                    No se han seleccionado recursos aún. Haz clic en el botón de arriba para seleccionar.
+                </div>`;
+            }
+            
+            areaSeleccion.innerHTML = html;
+        }
+    }
+
+    // Agregar event listener para carga automática cuando cambie la unidad académica
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 DOM Cargado - Inicializando sistema de recursos');
+        
+        const unidadSelect = document.querySelector('select[name="unidad_academica"]');
+        if (unidadSelect) {
+            console.log('📋 Unidad select encontrado, valor actual:', unidadSelect.value);
+            
+            unidadSelect.addEventListener('change', function() {
+                console.log('🔄 Cambio de unidad detectado:', this.value);
+                // Limpiar caché cuando cambia la unidad
+                cacheRecursos = {
+                    equipos: null,
+                    materiales: null,
+                    herramientas: null,
+                    reactivos: null
+                };
+                cargarTodosLosRecursos();
+            });
+            
+            // IMPORTANTE: Cargar datos automáticamente si ya hay una unidad seleccionada
+            if (unidadSelect.value) {
+                console.log('✅ Unidad ya seleccionada, cargando recursos automáticamente...');
+                setTimeout(() => {
+                    cargarTodosLosRecursos();
+                }, 500);
+            } else {
+                console.log('⚠️ No hay unidad seleccionada. Por favor selecciona una unidad académica.');
+            }
+        } else {
+            console.error('❌ No se encontró el select de unidad académica');
+        }
+        
+        // Inicializar los nuevos grupos de datos con carga automática
+        const originalAgregarGrupo = agregarGrupoDatosAdicionales;
+        agregarGrupoDatosAdicionales = function(contenidoIndex) {
+            originalAgregarGrupo(contenidoIndex);
+            // Los datos ya se cargan dentro de originalAgregarGrupo
+            // Solo necesitamos inicializar CKEditor
+            
+            // Inicializar CKEditor para los nuevos campos
+            setTimeout(() => {
+                const nuevoContainer = document.querySelector(`[data-contenido-index="${contenidoIndex}"]`);
+                if (nuevoContainer) {
+                    initializeCKEditor(nuevoContainer);
+                } else {
+                    // Fallback: reinicializar todos los campos no inicializados
+                    initializeCKEditor();
+                }
+            }, 200);
+        };
+        
+        // ============================================================
+        // INICIALIZACIÓN DE CKEDITOR 4 PARA CAMPOS DE TEXTO ENRIQUECIDO
+        // ============================================================
+        
+        // Configuración específica de CKEditor 4 para campos de laboratorio
+        const ckeditorConfig = {
+            // Desactivar verificación de versión para ocultar advertencia de seguridad
+            versionCheck: false,
+            
+            toolbar: [
+                { name: 'clipboard', items: ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo'] },
+                { name: 'editing', items: ['Find', 'Replace', '-', 'SelectAll', '-', 'Scayt'] },
+                '/',
+                { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat'] },
+                { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', 'CreateDiv'] },
+                { name: 'align', items: ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
+                '/',
+                { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar', 'PageBreak', 'Iframe'] },
+                { name: 'links', items: ['Link', 'Unlink', 'Anchor'] },
+                { name: 'math', items: ['Mathjax'] },
+                '/',
+                { name: 'styles', items: ['Styles', 'Format', 'Font', 'FontSize'] },
+                { name: 'colors', items: ['TextColor', 'BGColor'] },
+                { name: 'tools', items: ['Maximize', 'ShowBlocks', 'Source'] }
+            ],
+            height: 300,
+            removePlugins: 'elementspath',
+            resize_enabled: true,
+            resize_minHeight: 200,
+            resize_maxHeight: 800,
+            
+            // ============================================================
+            // PLUGINS AVANZADOS PARA ECUACIONES Y FUNCIONALIDADES WORD
+            // ============================================================
+            
+            // Habilitar plugins avanzados
+            extraPlugins: 'uploadimage,autogrow,mathjax,justify,font,colorbutton,colordialog,find,selectall,clipboard,pastetext,pastefromword,tableresize,pagebreak,iframe,div',
+            
+            // Configuración de MathJax para ecuaciones matemáticas
+            mathJaxLib: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS_HTML',
+            mathJaxClass: 'equation',
+            
+            // Auto-ajustar altura del editor
+            autoGrow_minHeight: 200,
+            autoGrow_maxHeight: 600,
+            
+            // Configuración para convertir imágenes pegadas a base64
+            // Esto permite pegar imágenes desde el portapapeles sin servidor
+            uploadUrl: '/placeholder-upload-url', // URL de placeholder
+            
+            // Función personalizada para manejar imágenes como base64
+            // Esto se ejecuta cuando se pega una imagen
+            on: {
+                paste: function(evt) {
+                    // Si se pega una imagen, convertirla a base64
+                    const editor = evt.editor;
+                    const data = evt.data;
+                    
+                    if (data.dataTransfer && data.dataTransfer.getFilesCount && data.dataTransfer.getFilesCount() > 0) {
+                        evt.cancel(); // Cancelar el pegado por defecto
+                        
+                        const filesCount = data.dataTransfer.getFilesCount();
+                        
+                        for (let i = 0; i < filesCount; i++) {
+                            const file = data.dataTransfer.getFile(i);
+                            
+                            // Solo procesar archivos de imagen
+                            if (file && file.type.match(/^image\//)) {
+                                const reader = new FileReader();
+                                
+                                reader.onload = function(e) {
+                                    // Crear elemento de imagen con data URL (base64)
+                                    const imgHtml = '<img src="' + e.target.result + '" alt="Imagen pegada" style="max-width: 100%;" />';
+                                    editor.insertHtml(imgHtml);
+                                };
+                                
+                                reader.readAsDataURL(file);
+                            }
+                        }
+                    }
+                }
+            },
+            
+            // Configuración de formato
+            format_tags: 'p;h1;h2;h3;h4;h5;h6;pre',
+            
+            // Permitir todo el contenido HTML (incluyendo imágenes en base64)
+            allowedContent: true,
+            extraAllowedContent: '*(*);*{*}',
+            
+            // Configuración de tabla mejorada
+            table_toolbar: 'tableProperties,tableDelete,|,tableRow,tableColumn,tableCell',
+            
+            // Configuración del diálogo de imagen
+            image_previewText: ' ', // Sin texto de preview
+            
+            // Permitir arrastrar y soltar imágenes
+            disallowedContent: '', // No deshabilitar ningún contenido
+            
+            // Configuración de lenguaje (español)
+            language: 'es',
+            
+            // Configuración de contenido
+            enterMode: 2, // <br> en lugar de <p>
+            shiftEnterMode: 1 // <p> cuando se presiona Shift+Enter
+        };
+        
+        // Función para inicializar CKEditor en elementos específicos
+        function initializeCKEditor(container = document) {
+            // Verificar que CKEDITOR esté disponible
+            if (typeof CKEDITOR === 'undefined') {
+                console.warn('⏳ Esperando a que CKEditor se cargue...');
+                return;
+            }
+            
+            const ckeditorFields = container.querySelectorAll('.ckeditor-field');
+            console.log(`🔧 Inicializando CKEditor para ${ckeditorFields.length} campos`);
+            
+            ckeditorFields.forEach((field, index) => {
+                // Solo inicializar si aún no está inicializado
+                if (!field.dataset.ckeditorInitialized) {
+                    try {
+                        // Reemplazar el textarea con CKEditor
+                        const editor = CKEDITOR.replace(field, ckeditorConfig);
+                        
+                        editor.on('instanceReady', function() {
+                            console.log(`✅ CKEditor inicializado para campo ${field.name || 'sin-nombre'}`);
+                            field.dataset.ckeditorInitialized = 'true';
+                        });
+                        
+                        // Guardar la instancia del editor en el elemento
+                        field.ckeditorInstance = editor;
+                        
+                    } catch (error) {
+                        console.error('❌ Error al inicializar CKEditor:', error);
+                    }
+                }
+            });
+        }
+        
+        // Función para reinicializar CKEditor en elementos dinámicos
+        window.reinitializeCKEditor = function(container) {
+            setTimeout(() => {
+                initializeCKEditor(container);
+            }, 300);
+        };
+        
+        // Esperar al evento personalizado cuando CKEditor esté cargado
+        window.addEventListener('ckeditor-loaded', function() {
+            console.log('🎉 CKEditor listo - Inicializando campos...');
+            
+            // Inicializar todos los campos existentes
+            setTimeout(() => {
+                initializeCKEditor();
+            }, 200);
+        });
+        
+        // Reinicializar cuando se agreguen nuevos grupos dinámicamente
+        document.addEventListener('DOMNodeInserted', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('grupo-adicional')) {
+                reinitializeCKEditor(e.target);
+            }
+        });
+    });
+</script>
+
+<!-- Modal para seleccionar recursos -->
+<div id="modal-recursos" class="modal" style="display: none;">
+    <div class="modal-content modal-recursos-content">
+        <div class="modal-header">
+            <h4><i class="fas fa-search"></i> Seleccionar Equipos, Materiales y Herramientas</h4>
+            <span class="close" onclick="cerrarModalRecursos()">&times;</span>
+        </div>
+        
+        <!-- Pestañas -->
+        <div class="modal-tabs">
+            <button class="tab-btn active" onclick="cambiarTab('equipos')" id="tab-equipos">
+                <i class="fas fa-tools"></i> Equipos (<span id="count-equipos">0</span>)
+            </button>
+            <button class="tab-btn" onclick="cambiarTab('materiales')" id="tab-materiales">
+                <i class="fas fa-vials"></i> Materiales (<span id="count-materiales">0</span>)
+            </button>
+            <button class="tab-btn" onclick="cambiarTab('herramientas')" id="tab-herramientas">
+                <i class="fas fa-wrench"></i> Herramientas (<span id="count-herramientas">0</span>)
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <!-- Barra de búsqueda -->
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="buscar-recursos" placeholder="Buscar recursos..." onkeyup="filtrarRecursos()">
+                <div class="search-actions">
+                    <button type="button" class="btn-select-all" onclick="seleccionarTodos()">
+                        <i class="fas fa-check-double"></i> Seleccionar todos
+                    </button>
+                    <button type="button" class="btn-clear-all" onclick="limpiarSeleccion()">
+                        <i class="fas fa-times"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Contenido de pestañas -->
+            <div class="tab-content">
+                <!-- Pestaña Equipos -->
+                <div id="content-equipos" class="tab-pane active">
+                    <div class="loading" id="loading-equipos">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando equipos...
+                    </div>
+                    <div class="recursos-grid" id="grid-equipos"></div>
+                </div>
+                
+                <!-- Pestaña Materiales -->
+                <div id="content-materiales" class="tab-pane">
+                    <div class="loading" id="loading-materiales">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando materiales...
+                    </div>
+                    <div class="recursos-grid" id="grid-materiales"></div>
+                </div>
+                
+                <!-- Pestaña Herramientas -->
+                <div id="content-herramientas" class="tab-pane">
+                    <div class="loading" id="loading-herramientas">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando herramientas...
+                    </div>
+                    <div class="recursos-grid" id="grid-herramientas"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <div class="selection-summary">
+                <span id="selection-count">0 recursos seleccionados</span>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalRecursos()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="confirmarSeleccion()">
+                    <i class="fas fa-check"></i> Confirmar Selección
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

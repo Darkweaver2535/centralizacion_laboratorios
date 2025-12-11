@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle de la Práctica - {{ practica.nombre }}{% endblock %}
+
+{% block page_title %}
+<i class="fas fa-flask"></i> Detalle de la Práctica de Laboratorio
+{% endblock %}
+
+{% block page_description %}
+{{ practica.nombre }} - {{ asignatura.nombre }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header con información básica -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-microscope"></i> 
+                        {{ practica.nombre }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Información Académica</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th class="bg-light" width="40%">Carrera:</th>
+                                    <td>{{ asignatura.carrera }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">Asignatura:</th>
+                                    <td>{{ asignatura.nombre }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">Semestre:</th>
+                                    <td>{{ asignatura.semestre }}°</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">Unidad Didáctica:</th>
+                                    <td>{{ unidad.nombre }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-success">Información de la Práctica</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th class="bg-light" width="40%">Tipo:</th>
+                                    <td>
+                                        <span class="badge badge-info">
+                                            {{ practica.get_tipo_practica_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">Duración:</th>
+                                    <td>{{ practica.duracion_horas }} horas</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">Estudiantes:</th>
+                                    <td>{{ practica.numero_estudiantes }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">Orden:</th>
+                                    <td>{{ practica.orden }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competencias -->
+            {% if competencias %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy"></i> 
+                        Competencias ({{ competencias.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for competencia in competencias %}
+                        <div class="col-md-6 mb-3">
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-star"></i> 
+                                    Competencia {{ forloop.counter }}
+                                </h6>
+                                <p class="mb-0">{{ competencia.descripcion }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Objetivos -->
+            {% if objetivos %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bullseye"></i> 
+                        Objetivos de la Práctica ({{ objetivos.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for objetivo in objetivos %}
+                        <div class="col-md-6 mb-3">
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-target"></i> 
+                                    Objetivo {{ forloop.counter }}
+                                </h6>
+                                <p class="mb-0">{{ objetivo.descripcion }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Descripción del Contenido Analítico -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-book-open"></i> 
+                        Descripción del Contenido Analítico
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="content-description">
+                        {{ contenido.descripcion|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i> 
+                        Acciones Disponibles
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <a href="{% url 'guias:generar_practica_pdf' practica.id %}" 
+                       class="btn btn-danger btn-lg mr-3" 
+                       target="_blank">
+                        <i class="fas fa-file-pdf"></i> 
+                        Generar Guía PDF
+                    </a>
+                    
+                    <a href="{% url 'visualizacion:visualizacion' %}?categoria=guias" 
+                       class="btn btn-secondary btn-lg">
+                        <i class="fas fa-arrow-left"></i> 
+                        Volver a Guías
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+.content-description {
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+.alert-heading {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.card-header h5 {
+    font-weight: bold;
+}
+
+.table th {
+    font-weight: bold;
+}
+
+.badge {
+    font-size: 1em;
+    padding: 8px 12px;
+}
+</style>
+{% endblock %}

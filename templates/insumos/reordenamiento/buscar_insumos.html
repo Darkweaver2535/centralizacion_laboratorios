@@ -1,0 +1,524 @@
+{% extends 'base.html' %}
+
+{% block title %}Buscar Insumos - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Buscar Insumos para Reordenamiento{% endblock %}
+
+{% block page_description %}Selecciona insumos para agregar a la tarea de reordenamiento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb y navegación -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'insumos:reordenamiento_insumos' %}">Reordenamiento</a></li>
+                    {% if tarea %}
+                        <li class="breadcrumb-item"><a href="{% url 'insumos:detalle_tarea' tarea.pk %}">{{ tarea.titulo|truncatechars:20 }}</a></li>
+                    {% endif %}
+                    <li class="breadcrumb-item active" aria-current="page">Buscar Insumos</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="h3 mb-1 text-primary">
+                                <i class="fas fa-search me-2"></i>Buscar Insumos para Reordenamiento
+                            </h2>
+                            {% if tarea %}
+                                <p class="text-muted mb-0">Tarea: {{ tarea.titulo }}</p>
+                            {% else %}
+                                <p class="text-muted mb-0">Selecciona insumos para agregar a una tarea</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            {% if tarea %}
+                                <a href="{% url 'insumos:detalle_tarea' tarea.pk %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver a Tarea
+                                </a>
+                            {% else %}
+                                <a href="{% url 'insumos:reordenamiento_insumos' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Panel Principal -->
+        <div class="col-lg-9">
+            <!-- Filtros -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3" id="filtroForm">
+                        {% if tarea %}
+                            <input type="hidden" name="tarea_id" value="{{ tarea.pk }}">
+                        {% endif %}
+                        
+                        <div class="col-md-3">
+                            <label for="unidad_academica" class="form-label">Unidad Académica</label>
+                            <select class="form-select" id="unidad_academica" name="unidad_academica">
+                                <option value="">Todas las unidades</option>
+                                {% for unidad in unidades_academicas %}
+                                    <option value="{{ unidad.id }}" 
+                                            {% if filtros.unidad_academica == unidad.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ unidad.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="carrera" class="form-label">Carrera</label>
+                            <select class="form-select" id="carrera" name="carrera">
+                                <option value="">Todas las carreras</option>
+                                {% for carrera in carreras %}
+                                    <option value="{{ carrera.id }}" 
+                                            {% if filtros.carrera == carrera.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ carrera.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="laboratorio" class="form-label">Laboratorio</label>
+                            <select class="form-select" id="laboratorio" name="laboratorio">
+                                <option value="">Todos los laboratorios</option>
+                                {% for laboratorio in laboratorios %}
+                                    <option value="{{ laboratorio.id }}" 
+                                            {% if filtros.laboratorio == laboratorio.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ laboratorio.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="categoria" class="form-label">Categoría</label>
+                            <select class="form-select" id="categoria" name="categoria">
+                                <option value="">Todas las categorías</option>
+                                {% for key, value in categorias %}
+                                    <option value="{{ key }}" 
+                                            {% if filtros.categoria == key %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="">Todos los estados</option>
+                                {% for key, value in estados %}
+                                    <option value="{{ key }}" 
+                                            {% if filtros.estado == key %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="busqueda" class="form-label">Búsqueda</label>
+                            <input type="text" class="form-control" id="busqueda" name="busqueda" 
+                                   value="{{ filtros.busqueda }}" 
+                                   placeholder="Nombre, marca, código o características...">
+                        </div>
+
+                        <div class="col-md-3 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Buscar
+                            </button>
+                            <a href="{% if tarea %}{% url 'insumos:buscar_insumos' %}?tarea_id={{ tarea.pk }}{% else %}{% url 'insumos:buscar_insumos' %}{% endif %}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Limpiar
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-12 d-flex justify-content-end">
+                            <button type="button" class="btn btn-info" id="seleccionarTodos">
+                                <i class="fas fa-check-square me-2"></i>Seleccionar Todos
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de Insumos -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-flask me-2"></i>Insumos Encontrados
+                        {% if insumos.paginator.count %}
+                            ({{ insumos.paginator.count }} insumos)
+                        {% endif %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if insumos %}
+                        <form method="post" action="{% url 'insumos:procesar_tarea' tarea.pk %}" id="seleccionForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="agregar_insumos">
+                            
+                            <div class="row">
+                                {% for insumo in insumos %}
+                                    <div class="col-lg-6 col-xl-4 mb-3">
+                                        <div class="card insumo-card h-100" 
+                                             onclick="toggleInsumoSelection({{ insumo.id }})">
+                                            <div class="card-body">
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input insumo-checkbox" 
+                                                           type="checkbox" 
+                                                           name="insumos_seleccionados" 
+                                                           value="{{ insumo.id }}" 
+                                                           id="insumo_{{ insumo.id }}">
+                                                    <label class="form-check-label font-weight-bold" 
+                                                           for="insumo_{{ insumo.id }}">
+                                                        {{ insumo.nombre_elemento|truncatechars:30 }}
+                                                    </label>
+                                                </div>
+
+                                                <div class="small text-muted mb-2">
+                                                    <strong>Código:</strong> {{ insumo.codigo_inventario|default:"Sin código" }}
+                                                    <br>
+                                                    <strong>Marca/Modelo:</strong> {{ insumo.marca_modelo|default:"N/A" }}
+                                                    <br>
+                                                    <strong>Categoría:</strong> {{ insumo.get_categoria_display }}
+                                                    <br>
+                                                    <strong>Estado:</strong> 
+                                                    <span class="badge bg-{% if insumo.estado == 'bueno' %}success{% elif insumo.estado == 'regular' %}warning{% elif insumo.estado == 'malo' %}danger{% else %}secondary{% endif %}">
+                                                        {{ insumo.get_estado_display }}
+                                                    </span>
+                                                </div>
+
+                                                <div class="small">
+                                                    <strong>Ubicación:</strong>
+                                                    <br>{{ insumo.unidad_academica.nombre }}
+                                                    <br>{{ insumo.laboratorio.nombre }}
+                                                    {% if insumo.ubicacion_fisica %}
+                                                        <br><strong>Ubicación:</strong> {{ insumo.ubicacion_fisica }}
+                                                    {% endif %}
+                                                </div>
+
+                                                <div class="small mt-2">
+                                                    <strong>Cantidad:</strong> {{ insumo.cantidad }} {{ insumo.get_unidad_medida_display }}
+                                                    <br>
+                                                    <strong>Uso:</strong> {{ insumo.get_uso_principal_display|default:"N/A" }}
+                                                </div>
+
+                                                {% if insumo.link_fotografia %}
+                                                    <div class="mt-2">
+                                                        <img src="{{ insumo.link_fotografia }}" 
+                                                             class="img-thumbnail" 
+                                                             style="max-height: 60px; max-width: 80px;" 
+                                                             alt="Foto del insumo">
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Paginación -->
+                            {% if insumos.has_other_pages %}
+                                <nav aria-label="Paginación de insumos" class="mt-4">
+                                    <ul class="pagination justify-content-center">
+                                        {% if insumos.has_previous %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">Primera</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ insumos.previous_page_number }}">Anterior</a>
+                                            </li>
+                                        {% endif %}
+
+                                        <li class="page-item active">
+                                            <span class="page-link">
+                                                Página {{ insumos.number }} de {{ insumos.paginator.num_pages }}
+                                            </span>
+                                        </li>
+
+                                        {% if insumos.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ insumos.next_page_number }}">Siguiente</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ insumos.paginator.num_pages }}">Última</a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            {% endif %}
+                        </form>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-600">No se encontraron insumos</h5>
+                            <p class="text-muted">Ajusta los filtros de búsqueda para encontrar insumos.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Lateral - Resumen de Selección -->
+        <div class="col-lg-3">
+            <div class="selection-summary">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-clipboard-check me-2"></i>Insumos Seleccionados
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="text-center">
+                                <div class="h3 mb-0 text-primary" id="contadorSeleccionados">0</div>
+                                <small class="text-muted">insumos seleccionados</small>
+                            </div>
+                        </div>
+
+                        <div id="resumenSeleccion" class="mb-3" style="display: none;">
+                            <div class="small text-muted">
+                                <strong>Selección actual:</strong>
+                                <ul id="listaSeleccionados" class="mt-2">
+                                </ul>
+                            </div>
+                        </div>
+
+                        {% if tarea %}
+                            <!-- Formulario de destino -->
+                            <div class="mb-3">
+                                <label for="unidad_destino" class="form-label small">Unidad Destino</label>
+                                <select class="form-select form-select-sm" id="unidad_destino" name="unidad_destino">
+                                    <option value="">Mantener actual</option>
+                                    {% for unidad in unidades_academicas %}
+                                        <option value="{{ unidad.id }}">{{ unidad.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="laboratorio_destino" class="form-label small">Laboratorio Destino</label>
+                                <select class="form-select form-select-sm" id="laboratorio_destino" name="laboratorio_destino">
+                                    <option value="">Mantener actual</option>
+                                </select>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-success" id="agregarInsumos" disabled>
+                                    <i class="fas fa-plus me-2"></i>Agregar a Tarea
+                                </button>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info small">
+                                Selecciona una tarea para continuar con el proceso.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let insumosSeleccionados = [];
+
+function toggleInsumoSelection(insumoId) {
+    const checkbox = document.getElementById(`insumo_${insumoId}`);
+    const card = checkbox.closest('.insumo-card');
+    
+    checkbox.checked = !checkbox.checked;
+    
+    if (checkbox.checked) {
+        card.classList.add('selected');
+        insumosSeleccionados.push(insumoId);
+    } else {
+        card.classList.remove('selected');
+        insumosSeleccionados = insumosSeleccionados.filter(id => id !== insumoId);
+    }
+    
+    actualizarResumenSeleccion();
+}
+
+function actualizarResumenSeleccion() {
+    const contador = document.getElementById('contadorSeleccionados');
+    const resumen = document.getElementById('resumenSeleccion');
+    const lista = document.getElementById('listaSeleccionados');
+    const botonAgregar = document.getElementById('agregarInsumos');
+    
+    contador.textContent = insumosSeleccionados.length;
+    
+    if (insumosSeleccionados.length > 0) {
+        resumen.style.display = 'block';
+        
+        // Actualizar lista de seleccionados
+        lista.innerHTML = '';
+        insumosSeleccionados.forEach(insumoId => {
+            const checkbox = document.getElementById(`insumo_${insumoId}`);
+            const label = checkbox.nextElementSibling.textContent;
+            const li = document.createElement('li');
+            li.textContent = label;
+            lista.appendChild(li);
+        });
+        
+        if (botonAgregar) {
+            botonAgregar.disabled = false;
+        }
+    } else {
+        resumen.style.display = 'none';
+        if (botonAgregar) {
+            botonAgregar.disabled = true;
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Seleccionar todos
+    document.getElementById('seleccionarTodos').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.insumo-checkbox');
+        const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(checkbox => {
+            const insumoId = parseInt(checkbox.value);
+            const card = checkbox.closest('.insumo-card');
+            
+            if (todosSeleccionados) {
+                checkbox.checked = false;
+                card.classList.remove('selected');
+                insumosSeleccionados = insumosSeleccionados.filter(id => id !== insumoId);
+            } else {
+                checkbox.checked = true;
+                card.classList.add('selected');
+                if (!insumosSeleccionados.includes(insumoId)) {
+                    insumosSeleccionados.push(insumoId);
+                }
+            }
+        });
+        
+        this.innerHTML = todosSeleccionados ? 
+            '<i class="fas fa-check-square me-2"></i>Seleccionar Todos' : 
+            '<i class="fas fa-square me-2"></i>Deseleccionar Todos';
+        
+        actualizarResumenSeleccion();
+    });
+
+    // Actualizar laboratorios cuando cambie la unidad
+    const unidadSelect = document.getElementById('unidad_destino');
+    const laboratorioSelect = document.getElementById('laboratorio_destino');
+    
+    if (unidadSelect && laboratorioSelect) {
+        unidadSelect.addEventListener('change', function() {
+            const unidadId = this.value;
+            
+            // Limpiar laboratorios
+            laboratorioSelect.innerHTML = '<option value="">Mantener actual</option>';
+            
+            if (unidadId) {
+                // Hacer petición AJAX para obtener laboratorios
+                fetch('{% url "insumos:laboratorios_unidad_ajax" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        'unidad_id': unidadId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        data.laboratorios.forEach(lab => {
+                            const option = document.createElement('option');
+                            option.value = lab.id;
+                            option.textContent = lab.nombre;
+                            laboratorioSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+    }
+
+    // Agregar insumos a la tarea
+    const botonAgregar = document.getElementById('agregarInsumos');
+    if (botonAgregar) {
+        botonAgregar.addEventListener('click', function() {
+            if (insumosSeleccionados.length === 0) {
+                alert('Selecciona al menos un insumo.');
+                return;
+            }
+            
+            const form = document.getElementById('seleccionForm');
+            const unidadDestino = document.getElementById('unidad_destino').value;
+            const laboratorioDestino = document.getElementById('laboratorio_destino').value;
+            
+            // Agregar campos de destino al formulario
+            if (unidadDestino) {
+                const inputUnidad = document.createElement('input');
+                inputUnidad.type = 'hidden';
+                inputUnidad.name = 'unidad_destino';
+                inputUnidad.value = unidadDestino;
+                form.appendChild(inputUnidad);
+            }
+            
+            if (laboratorioDestino) {
+                const inputLaboratorio = document.createElement('input');
+                inputLaboratorio.type = 'hidden';
+                inputLaboratorio.name = 'laboratorio_destino';
+                inputLaboratorio.value = laboratorioDestino;
+                form.appendChild(inputLaboratorio);
+            }
+            
+            form.submit();
+        });
+    }
+});
+</script>
+
+<style>
+.insumo-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.insumo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.insumo-card.selected {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.selection-summary {
+    position: sticky;
+    top: 20px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,662 @@
+{% extends 'base.html' %}
+
+{% block title %}Agregar Activo Fijo{% endblock %}
+
+{% block page_title %}Nuevo Activo Fijo{% endblock %}
+
+{% block page_description %}Registrar un nuevo activo fijo en el sistema{% endblock %}
+
+{% block content %}
+<div class="agregar-activo-container">
+    
+    <div class="form-header">
+        <h1><i class="fas fa-plus-circle"></i> Registrar Nuevo Activo Fijo</h1>
+        <p>Complete la información del activo que desea registrar en el sistema</p>
+    </div>
+
+    <form method="post" class="activo-form" id="activoForm">
+        {% csrf_token %}
+        
+        <!-- Información básica -->
+        <div class="form-section">
+            <h2><i class="fas fa-info-circle"></i> Información Básica</h2>
+            <div class="form-grid">
+                <div class="form-group required">
+                    <label for="{{ form.codigo_patrimonial.id_for_label }}">
+                        Código Patrimonial
+                        <span class="required-asterisk">*</span>
+                    </label>
+                    {{ form.codigo_patrimonial }}
+                    {% if form.codigo_patrimonial.errors %}
+                        <div class="error-message">
+                            {% for error in form.codigo_patrimonial.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="help-text">Código único del activo (ej: EMI-2024-001)</small>
+                </div>
+
+                <div class="form-group required">
+                    <label for="{{ form.categoria.id_for_label }}">
+                        Categoría
+                        <span class="required-asterisk">*</span>
+                    </label>
+                    {{ form.categoria }}
+                    {% if form.categoria.errors %}
+                        <div class="error-message">
+                            {% for error in form.categoria.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.nombre.id_for_label }}">Nombre del Activo</label>
+                    {{ form.nombre }}
+                    {% if form.nombre.errors %}
+                        <div class="error-message">
+                            {% for error in form.nombre.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.marca.id_for_label }}">Marca</label>
+                    {{ form.marca }}
+                    {% if form.marca.errors %}
+                        <div class="error-message">
+                            {% for error in form.marca.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.modelo.id_for_label }}">Modelo</label>
+                    {{ form.modelo }}
+                    {% if form.modelo.errors %}
+                        <div class="error-message">
+                            {% for error in form.modelo.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.numero_serie.id_for_label }}">Número de Serie</label>
+                    {{ form.numero_serie }}
+                    {% if form.numero_serie.errors %}
+                        <div class="error-message">
+                            {% for error in form.numero_serie.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                    <div class="error-message">
+                        {% for error in form.descripcion.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="help-text">Descripción detallada del activo</small>
+            </div>
+        </div>
+
+        <!-- Información financiera -->
+        <div class="form-section">
+            <h2><i class="fas fa-dollar-sign"></i> Información Financiera</h2>
+            <div class="form-grid">
+                <div class="form-group required">
+                    <label for="{{ form.valor_adquisicion.id_for_label }}">
+                        Valor de Adquisición (Bs.)
+                        <span class="required-asterisk">*</span>
+                    </label>
+                    {{ form.valor_adquisicion }}
+                    {% if form.valor_adquisicion.errors %}
+                        <div class="error-message">
+                            {% for error in form.valor_adquisicion.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group required">
+                    <label for="{{ form.fecha_adquisicion.id_for_label }}">
+                        Fecha de Adquisición
+                        <span class="required-asterisk">*</span>
+                    </label>
+                    {{ form.fecha_adquisicion }}
+                    {% if form.fecha_adquisicion.errors %}
+                        <div class="error-message">
+                            {% for error in form.fecha_adquisicion.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.proveedor.id_for_label }}">Proveedor</label>
+                    {{ form.proveedor }}
+                    {% if form.proveedor.errors %}
+                        <div class="error-message">
+                            {% for error in form.proveedor.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.numero_factura.id_for_label }}">Número de Factura</label>
+                    {{ form.numero_factura }}
+                    {% if form.numero_factura.errors %}
+                        <div class="error-message">
+                            {% for error in form.numero_factura.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.garantia_meses.id_for_label }}">Garantía (meses)</label>
+                    {{ form.garantia_meses }}
+                    {% if form.garantia_meses.errors %}
+                        <div class="error-message">
+                            {% for error in form.garantia_meses.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ubicación y asignación -->
+        <div class="form-section">
+            <h2><i class="fas fa-map-marker-alt"></i> Ubicación y Asignación</h2>
+            <div class="form-grid">
+                <div class="form-group required">
+                    <label for="{{ form.unidad_academica.id_for_label }}">
+                        Unidad Académica
+                        <span class="required-asterisk">*</span>
+                    </label>
+                    {{ form.unidad_academica }}
+                    {% if form.unidad_academica.errors %}
+                        <div class="error-message">
+                            {% for error in form.unidad_academica.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.laboratorio.id_for_label }}">Laboratorio</label>
+                    {{ form.laboratorio }}
+                    {% if form.laboratorio.errors %}
+                        <div class="error-message">
+                            {% for error in form.laboratorio.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.carrera.id_for_label }}">Carrera</label>
+                    {{ form.carrera }}
+                    {% if form.carrera.errors %}
+                        <div class="error-message">
+                            {% for error in form.carrera.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.ubicacion_fisica.id_for_label }}">Ubicación Física</label>
+                    {{ form.ubicacion_fisica }}
+                    {% if form.ubicacion_fisica.errors %}
+                        <div class="error-message">
+                            {% for error in form.ubicacion_fisica.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="help-text">Ej: Aula 101, Oficina 205, Laboratorio A</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.responsable.id_for_label }}">Responsable</label>
+                    {{ form.responsable }}
+                    {% if form.responsable.errors %}
+                        <div class="error-message">
+                            {% for error in form.responsable.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Estados y condiciones -->
+        <div class="form-section">
+            <h2><i class="fas fa-cogs"></i> Estados y Condiciones</h2>
+            <div class="form-grid">
+                <div class="form-group required">
+                    <label for="{{ form.estado_fisico.id_for_label }}">
+                        Estado Físico
+                        <span class="required-asterisk">*</span>
+                    </label>
+                    {{ form.estado_fisico }}
+                    {% if form.estado_fisico.errors %}
+                        <div class="error-message">
+                            {% for error in form.estado_fisico.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group required">
+                    <label for="{{ form.estado_operativo.id_for_label }}">
+                        Estado Operativo
+                        <span class="required-asterisk">*</span>
+                    </label>
+                    {{ form.estado_operativo }}
+                    {% if form.estado_operativo.errors %}
+                        <div class="error-message">
+                            {% for error in form.estado_operativo.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.fecha_ultimo_mantenimiento.id_for_label }}">Último Mantenimiento</label>
+                    {{ form.fecha_ultimo_mantenimiento }}
+                    {% if form.fecha_ultimo_mantenimiento.errors %}
+                        <div class="error-message">
+                            {% for error in form.fecha_ultimo_mantenimiento.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.frecuencia_mantenimiento_meses.id_for_label }}">Frecuencia Mantenimiento (meses)</label>
+                    {{ form.frecuencia_mantenimiento_meses }}
+                    {% if form.frecuencia_mantenimiento_meses.errors %}
+                        <div class="error-message">
+                            {% for error in form.frecuencia_mantenimiento_meses.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="{{ form.observaciones.id_for_label }}">Observaciones</label>
+                {{ form.observaciones }}
+                {% if form.observaciones.errors %}
+                    <div class="error-message">
+                        {% for error in form.observaciones.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="help-text">Observaciones adicionales sobre el estado del activo</small>
+            </div>
+        </div>
+
+        <!-- Especificaciones técnicas -->
+        <div class="form-section">
+            <h2><i class="fas fa-microchip"></i> Especificaciones Técnicas</h2>
+            <div class="form-group full-width">
+                <label for="{{ form.especificaciones_tecnicas.id_for_label }}">Especificaciones Técnicas</label>
+                {{ form.especificaciones_tecnicas }}
+                {% if form.especificaciones_tecnicas.errors %}
+                    <div class="error-message">
+                        {% for error in form.especificaciones_tecnicas.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="help-text">Especificaciones técnicas detalladas (procesador, memoria, dimensiones, etc.)</small>
+            </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-save"></i> Guardar Activo
+            </button>
+            <a href="{% url 'activos:seleccionar_metodo' %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar formato de fecha
+    const fechaInputs = document.querySelectorAll('input[type="date"]');
+    fechaInputs.forEach(input => {
+        if (!input.value) {
+            // Establecer fecha actual por defecto para fecha de adquisición
+            if (input.id.includes('fecha_adquisicion')) {
+                input.value = new Date().toISOString().split('T')[0];
+            }
+        }
+    });
+
+    // Validación de números
+    const numeroInputs = document.querySelectorAll('input[type="number"]');
+    numeroInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.value < 0) {
+                this.value = 0;
+            }
+        });
+    });
+
+    // Dependencias unidad académica -> laboratorio/carrera
+    const unidadSelect = document.getElementById('id_unidad_academica');
+    const laboratorioSelect = document.getElementById('id_laboratorio');
+    const carreraSelect = document.getElementById('id_carrera');
+
+    if (unidadSelect && laboratorioSelect && carreraSelect) {
+        unidadSelect.addEventListener('change', function() {
+            const unidadId = this.value;
+            
+            // Limpiar laboratorios y carreras
+            laboratorioSelect.innerHTML = '<option value="">---------</option>';
+            carreraSelect.innerHTML = '<option value="">---------</option>';
+            
+            if (unidadId) {
+                // Cargar laboratorios
+                fetch(`/activos/ajax/laboratorios-por-unidad/?unidad_id=${unidadId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(laboratorio => {
+                            const option = document.createElement('option');
+                            option.value = laboratorio.id;
+                            option.textContent = laboratorio.nombre;
+                            laboratorioSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+
+                // Cargar carreras
+                fetch(`/activos/ajax/carreras-por-unidad/?unidad_id=${unidadId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(carrera => {
+                            const option = document.createElement('option');
+                            option.value = carrera.id;
+                            option.textContent = carrera.nombre;
+                            carreraSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        });
+    }
+
+    // Validación del formulario
+    const form = document.getElementById('activoForm');
+    form.addEventListener('submit', function(e) {
+        const codigoPatrimonial = document.getElementById('id_codigo_patrimonial').value.trim();
+        const categoria = document.getElementById('id_categoria').value;
+        const valorAdquisicion = document.getElementById('id_valor_adquisicion').value;
+        const fechaAdquisicion = document.getElementById('id_fecha_adquisicion').value;
+        
+        let errores = [];
+        
+        if (!codigoPatrimonial) {
+            errores.push('El código patrimonial es obligatorio');
+        }
+        
+        if (!categoria) {
+            errores.push('La categoría es obligatoria');
+        }
+        
+        if (!valorAdquisicion || valorAdquisicion <= 0) {
+            errores.push('El valor de adquisición debe ser mayor a 0');
+        }
+        
+        if (!fechaAdquisicion) {
+            errores.push('La fecha de adquisición es obligatoria');
+        }
+        
+        if (errores.length > 0) {
+            e.preventDefault();
+            alert('Por favor corrija los siguientes errores:\n\n' + errores.join('\n'));
+        }
+    });
+});
+</script>
+
+<style>
+.agregar-activo-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+}
+
+.form-header h1 {
+    margin: 0 0 1rem 0;
+    font-size: 2.5rem;
+    font-weight: 300;
+}
+
+.form-header p {
+    margin: 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.activo-form {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.form-section {
+    padding: 2rem;
+    border-bottom: 1px solid #f1f2f6;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h2 {
+    margin: 0 0 1.5rem 0;
+    color: #2c3e50;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-section h2 i {
+    color: #3498db;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group.required label::after {
+    content: '';
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.required-asterisk {
+    color: #e74c3c;
+    font-size: 1.1rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.help-text {
+    margin-top: 0.25rem;
+    color: #7f8c8d;
+    font-size: 0.85rem;
+}
+
+.error-message {
+    margin-top: 0.25rem;
+    color: #e74c3c;
+    font-size: 0.85rem;
+}
+
+.error-message span {
+    display: block;
+}
+
+.form-actions {
+    padding: 2rem;
+    background: #f8f9fa;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn {
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-lg {
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+}
+
+.btn-success {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #219a52;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #7f8c8d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #6c7b7d;
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .agregar-activo-container {
+        padding: 1rem;
+    }
+    
+    .form-header h1 {
+        font-size: 2rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

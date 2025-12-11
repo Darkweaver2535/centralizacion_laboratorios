@@ -1,0 +1,1689 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Perfil - Sistema de Laboratorios EMI{% endblock %}
+
+{% block content %}
+<div class="mi-perfil-container">
+    <!-- Header Section -->
+    <div class="perfil-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="header-text">
+                    <h1>Mi Perfil</h1>
+                    <p>Gestiona tu información personal y datos de contacto</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'usuarios:configuracion' %}" class="btn-header-config">
+                    <i class="fas fa-cog"></i>
+                    Configuración
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="perfil-content">
+        <!-- Profile Overview Card -->
+        <div class="profile-overview-card">
+            <div class="profile-main">
+                <div class="profile-avatar-section">
+                    <div class="avatar-wrapper">
+                        {% if usuario.foto_perfil %}
+                            <img src="{{ usuario.foto_perfil.url }}" class="profile-avatar" alt="Foto de perfil">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                <span class="avatar-letter">{{ usuario.get_full_name|default:usuario.username|first|upper }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="avatar-status status-{{ usuario.is_active|yesno:'activo,inactivo' }}">
+                            <i class="fas fa-circle"></i>
+                        </div>
+                        <button class="avatar-edit-btn" onclick="document.getElementById('avatarInput').click();">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+                
+                <div class="profile-info">
+                    <h2 class="profile-name">{{ usuario.get_full_name|default:usuario.username }}</h2>
+                    <p class="profile-role">{{ usuario.get_rol_display }}</p>
+                    
+                    <div class="profile-badges">
+                        <span class="status-badge status-{{ usuario.is_active|yesno:'activo,inactivo' }}">
+                            <i class="fas fa-circle"></i>
+                            {{ usuario.is_active|yesno:'Activo,Inactivo' }}
+                        </span>
+                        <span class="role-badge role-{{ usuario.rol }}">
+                            <i class="fas fa-user-tag"></i>
+                            {{ usuario.get_rol_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="profile-quick-info">
+                        <div class="quick-info-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>{{ usuario.correo_institucional }}</span>
+                        </div>
+                        <div class="quick-info-item">
+                            <i class="fas fa-building"></i>
+                            <span>{{ usuario.get_sede_asignacion_display|default:'No asignada' }}</span>
+                        </div>
+                        {% if usuario.telefono %}
+                            <div class="quick-info-item">
+                                <i class="fas fa-phone"></i>
+                                <span>{{ usuario.telefono }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Section -->
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ usuario.date_joined|timesince }}</div>
+                        <div class="stat-label">En el sistema</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-sign-in-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">
+                            {% if usuario.last_login %}
+                                {{ usuario.last_login|timesince }} atrás
+                            {% else %}
+                                Nunca
+                            {% endif %}
+                        </div>
+                        <div class="stat-label">Último acceso</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ actividades_count|default:0 }}</div>
+                        <div class="stat-label">Actividades</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Form Section -->
+        <div class="form-sections-grid">
+            <!-- Información Personal -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="section-title">Información Personal</h3>
+                    <p class="section-subtitle">Actualiza tus datos personales básicos</p>
+                </div>
+                
+                <form method="post" class="profile-form" id="personalInfoForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user"></i>
+                                Nombres <span class="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   name="nombres" 
+                                   class="form-input" 
+                                   value="{{ usuario.nombres }}" 
+                                   placeholder="Ingresa tus nombres"
+                                   required>
+                            <div class="field-hint">Tu nombre completo</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user"></i>
+                                Apellidos <span class="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   name="apellidos" 
+                                   class="form-input" 
+                                   value="{{ usuario.apellidos }}" 
+                                   placeholder="Ingresa tus apellidos"
+                                   required>
+                            <div class="field-hint">Tus apellidos completos</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-id-card"></i>
+                                Cédula de Identidad
+                            </label>
+                            <input type="text" 
+                                   name="ci" 
+                                   class="form-input" 
+                                   value="{{ usuario.ci }}"
+                                   placeholder="Número de CI">
+                            <div class="field-hint">Sin puntos ni espacios</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Expedido en
+                            </label>
+                            <select name="expedido" class="form-select">
+                                <option value="">Seleccionar departamento...</option>
+                                {% for codigo, nombre in estados_ci %}
+                                    <option value="{{ codigo }}" {% if usuario.expedido == codigo %}selected{% endif %}>
+                                        {{ nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="field-hint">Departamento de expedición</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-phone"></i>
+                                Teléfono Personal
+                            </label>
+                            <input type="tel" 
+                                   name="telefono" 
+                                   class="form-input" 
+                                   value="{{ usuario.telefono }}"
+                                   placeholder="Número de teléfono">
+                            <div class="field-hint">Incluye el código de área</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-birthday-cake"></i>
+                                Fecha de Nacimiento
+                            </label>
+                            <input type="date" 
+                                   name="fecha_nacimiento" 
+                                   class="form-input" 
+                                   value="{{ usuario.fecha_nacimiento|date:'Y-m-d' }}">
+                            <div class="field-hint">Día/Mes/Año</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">
+                            <i class="fas fa-save"></i>
+                            Guardar Cambios
+                        </button>
+                        <button type="reset" class="btn-reset">
+                            <i class="fas fa-undo"></i>
+                            Restablecer
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Información Institucional -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3 class="section-title">Información Institucional</h3>
+                    <p class="section-subtitle">Datos relacionados con tu rol en la institución</p>
+                </div>
+                
+                <div class="readonly-info">
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Correo Institucional</div>
+                            <div class="info-value">{{ usuario.correo_institucional }}</div>
+                            <div class="info-note">
+                                <i class="fas fa-lock"></i>
+                                No modificable - Contacta al administrador
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Sede de Asignación</div>
+                            <div class="info-value">{{ usuario.get_sede_asignacion_display|default:'No asignada' }}</div>
+                            <div class="info-note">
+                                <i class="fas fa-info-circle"></i>
+                                Asignado por administración
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Laboratorio Asignado</div>
+                            <div class="info-value">{{ usuario.laboratorio_asignacion|default:'No asignado' }}</div>
+                            <div class="info-note">
+                                <i class="fas fa-info-circle"></i>
+                                Según disponibilidad y rol
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-user-tag"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Rol en el Sistema</div>
+                            <div class="info-value">{{ usuario.get_rol_display }}</div>
+                            <div class="info-note">
+                                <i class="fas fa-shield-alt"></i>
+                                Define tus permisos de acceso
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-calendar-plus"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Fecha de Registro</div>
+                            <div class="info-value">{{ usuario.date_joined|date:'d/m/Y H:i' }}</div>
+                            <div class="info-note">
+                                <i class="fas fa-clock"></i>
+                                Miembro desde hace {{ usuario.date_joined|timesince }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if usuario.cargo_posicion %}
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Cargo/Posición</div>
+                            <div class="info-value">{{ usuario.cargo_posicion }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Password Change Section -->
+        <div class="password-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="section-text">
+                    <h3 class="section-title">Seguridad de la Cuenta</h3>
+                    <p class="section-subtitle">Gestiona la seguridad de tu cuenta</p>
+                </div>
+                <div class="section-actions">
+                    <button type="button" class="btn-change-password" onclick="openModal('passwordModal')">
+                        <i class="fas fa-key"></i>
+                        Cambiar Contraseña
+                    </button>
+                </div>
+            </div>
+            
+            <div class="security-info">
+                <div class="security-item">
+                    <div class="security-icon">
+                        <i class="fas fa-shield-check"></i>
+                    </div>
+                    <div class="security-content">
+                        <div class="security-title">Estado de Seguridad</div>
+                        <div class="security-status good">
+                            <i class="fas fa-check-circle"></i>
+                            Cuenta protegida
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="security-content">
+                        <div class="security-title">Último Cambio de Contraseña</div>
+                        <div class="security-value">
+                            {% if usuario.password_changed_date %}
+                                {{ usuario.password_changed_date|timesince }} atrás
+                            {% else %}
+                                No registrado
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="security-content">
+                        <div class="security-title">Cambio Requerido</div>
+                        <div class="security-value">
+                            {% if usuario.debe_cambiar_password %}
+                                <span class="warning">Sí - Cambiar pronto</span>
+                            {% else %}
+                                <span class="success">No requerido</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="activity-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <h3 class="section-title">Actividad Reciente</h3>
+                <p class="section-subtitle">Historial de tus últimas acciones en el sistema</p>
+            </div>
+            
+            {% if actividades_recientes %}
+                <div class="activity-timeline">
+                    {% for actividad in actividades_recientes %}
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <h4 class="timeline-title">{{ actividad.accion }}</h4>
+                                    <span class="timeline-date">{{ actividad.fecha_hora|date:"d/m/Y H:i" }}</span>
+                                </div>
+                                <p class="timeline-description">{{ actividad.detalles|default:"Sin detalles adicionales" }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-activity">
+                    <div class="empty-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h4>Sin actividad registrada</h4>
+                    <p>Cuando realices acciones en el sistema, aparecerán aquí.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cambiar contraseña -->
+<div class="modal-overlay" id="passwordModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Cambiar Contraseña</h3>
+            <button type="button" class="modal-close" onclick="closeModal('passwordModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{% url 'usuarios:cambiar_password' %}" id="passwordForm">
+            <div class="modal-body">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Contraseña Actual</label>
+                    <div class="password-input-group">
+                        <input type="password" name="current_password" class="form-input" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Nueva Contraseña</label>
+                    <div class="password-input-group">
+                        <input type="password" name="new_password" class="form-input" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-requirements">
+                        <div class="requirement" data-requirement="length">
+                            <i class="fas fa-times"></i>
+                            Mínimo 8 caracteres
+                        </div>
+                        <div class="requirement" data-requirement="uppercase">
+                            <i class="fas fa-times"></i>
+                            Al menos una mayúscula
+                        </div>
+                        <div class="requirement" data-requirement="lowercase">
+                            <i class="fas fa-times"></i>
+                            Al menos una minúscula
+                        </div>
+                        <div class="requirement" data-requirement="number">
+                            <i class="fas fa-times"></i>
+                            Al menos un número
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Confirmar Nueva Contraseña</label>
+                    <div class="password-input-group">
+                        <input type="password" name="confirm_password" class="form-input" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-modal-cancel" onclick="closeModal('passwordModal')">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-modal-confirm">
+                    <i class="fas fa-key"></i>
+                    Cambiar Contraseña
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Container principal */
+.mi-perfil-container {
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    min-height: calc(100vh - 140px);
+}
+
+/* Header */
+.perfil-header {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 25px rgba(6, 182, 212, 0.15);
+    color: white;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.header-text h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.header-text p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+.btn-header-config {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-header-config:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-2px);
+}
+
+/* Main Content */
+.perfil-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Profile Overview Card */
+.profile-overview-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-overview-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
+.profile-main {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 30px;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+/* Avatar Section */
+.profile-avatar-section {
+    position: relative;
+}
+
+.avatar-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #f8fafc;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid #f8fafc;
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.3);
+}
+
+.avatar-letter {
+    font-size: 40px;
+    font-weight: 700;
+    color: white;
+}
+
+.avatar-status {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 3px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.avatar-status.status-activo {
+    background: #10b981;
+    color: white;
+}
+
+.avatar-status.status-inactivo {
+    background: #ef4444;
+    color: white;
+}
+
+.avatar-edit-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 12px;
+}
+
+.avatar-edit-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+}
+
+/* Profile Info */
+.profile-name {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.profile-role {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.profile-badges {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.status-badge, .role-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-activo {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.status-inactivo {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.role-administrador {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.role-jefe_uycit {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+}
+
+.role-auxiliar {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.profile-quick-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.quick-info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #64748b;
+    font-size: 15px;
+}
+
+.quick-info-item i {
+    width: 20px;
+    color: #06b6d4;
+    font-size: 16px;
+}
+
+/* Profile Stats */
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 25px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    border-left: 4px solid #06b6d4;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0891b2;
+    font-size: 18px;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Form Sections */
+.form-sections-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.form-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.section-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    padding: 25px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.section-icon {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.section-title {
+    margin: 0 0 5px 0;
+    color: #1e293b;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.section-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+/* Form Elements */
+.profile-form {
+    padding: 25px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-label i {
+    color: #06b6d4;
+    width: 16px;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.form-input,
+.form-select {
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-input:focus,
+.form-select:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+
+.field-hint {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.btn-submit,
+.btn-reset {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    color: white;
+}
+
+.btn-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+.btn-reset {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-reset:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+}
+
+/* Readonly Info */
+.readonly-info {
+    padding: 25px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border-left: 4px solid #06b6d4;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0891b2;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.info-value {
+    color: #1e293b;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.info-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #6b7280;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.info-note i {
+    font-size: 10px;
+}
+
+/* Password Section */
+.password-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.password-section .section-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 15px;
+    align-items: center;
+}
+
+.section-text {
+    flex: 1;
+}
+
+.btn-change-password {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.btn-change-password:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.security-info {
+    padding: 25px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    background: linear-gradient(135deg, #fefbf2 0%, #fef3c7 100%);
+}
+
+.security-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #f59e0b;
+}
+
+.security-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d97706;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.security-content {
+    flex: 1;
+}
+
+.security-title {
+    font-weight: 600;
+    color: #374151;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.security-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.security-status.good {
+    color: #059669;
+}
+
+.security-value {
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.security-value .warning {
+    color: #d97706;
+    font-weight: 500;
+}
+
+.security-value .success {
+    color: #059669;
+    font-weight: 500;
+}
+
+/* Activity Section */
+.activity-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.activity-timeline {
+    padding: 25px;
+    position: relative;
+}
+
+.activity-timeline::before {
+    content: '';
+    position: absolute;
+    left: 45px;
+    top: 25px;
+    bottom: 25px;
+    width: 2px;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+    padding-left: 70px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: 36px;
+    top: 15px;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+}
+
+.timeline-content {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid #06b6d4;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.timeline-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.timeline-date {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.timeline-description {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.empty-activity {
+    padding: 60px;
+    text-align: center;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #94a3b8;
+}
+
+.empty-activity h4 {
+    color: #374151;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.empty-activity p {
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 25px 30px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Password Input Group */
+.password-input-group {
+    position: relative;
+}
+
+.password-input-group .form-input {
+    padding-right: 45px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.password-toggle:hover {
+    color: #374151;
+    background: #f3f4f6;
+}
+
+/* Password Requirements */
+.password-requirements {
+    margin-top: 10px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 8px;
+    border-left: 4px solid #e2e8f0;
+}
+
+.requirement {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.requirement:last-child {
+    margin-bottom: 0;
+}
+
+.requirement.valid {
+    color: #059669;
+}
+
+.requirement.valid i {
+    color: #059669;
+}
+
+.requirement i {
+    width: 12px;
+    font-size: 10px;
+    color: #ef4444;
+}
+
+/* Modal Buttons */
+.btn-modal-cancel,
+.btn-modal-confirm {
+    padding: 12px 24px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-modal-cancel {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-modal-cancel:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+}
+
+.btn-modal-confirm {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.btn-modal-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .mi-perfil-container {
+        padding: 15px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .profile-main {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 25px;
+    }
+    
+    .profile-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-sections-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .security-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-container {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-name {
+        font-size: 24px;
+    }
+    
+    .profile-overview-card {
+        padding: 25px;
+    }
+    
+    .profile-avatar,
+    .avatar-placeholder {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .avatar-letter {
+        font-size: 32px;
+    }
+    
+    .timeline-item {
+        padding-left: 50px;
+    }
+    
+    .timeline-dot {
+        left: 26px;
+    }
+    
+    .activity-timeline::before {
+        left: 35px;
+    }
+}
+</style>
+
+<script>
+// Modal functionality
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Password toggle functionality
+function togglePassword(button) {
+    const input = button.parentElement.querySelector('input');
+    const icon = button.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const avatarInput = document.getElementById('avatarInput');
+    const passwordForm = document.getElementById('passwordForm');
+
+    // Avatar change functionality
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const currentAvatar = document.querySelector('.profile-avatar');
+                    const avatarPlaceholder = document.querySelector('.avatar-placeholder');
+                    
+                    if (currentAvatar) {
+                        currentAvatar.src = e.target.result;
+                    } else if (avatarPlaceholder) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'profile-avatar';
+                        img.alt = 'Foto de perfil';
+                        avatarPlaceholder.parentNode.replaceChild(img, avatarPlaceholder);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Password validation
+    if (passwordForm) {
+        const newPasswordInput = passwordForm.querySelector('input[name="new_password"]');
+        const confirmPasswordInput = passwordForm.querySelector('input[name="confirm_password"]');
+        
+        if (newPasswordInput) {
+            newPasswordInput.addEventListener('input', function() {
+                validatePassword(this.value);
+            });
+        }
+        
+        passwordForm.addEventListener('submit', function(e) {
+            const newPassword = newPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (newPassword !== confirmPassword) {
+                e.preventDefault();
+                alert('Las contraseñas no coinciden');
+                return false;
+            }
+            
+            if (!isPasswordValid(newPassword)) {
+                e.preventDefault();
+                alert('La contraseña no cumple con los requisitos mínimos');
+                return false;
+            }
+        });
+    }
+
+    // Close modal when clicking outside
+    const modalOverlays = document.querySelectorAll('.modal-overlay');
+    modalOverlays.forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
+
+    // Escape key to close modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const openModal = document.querySelector('.modal-overlay.show');
+            if (openModal) {
+                closeModal(openModal.id);
+            }
+        }
+    });
+
+    // Form validation
+    const forms = document.querySelectorAll('.profile-form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const requiredFields = form.querySelectorAll('input[required]');
+            let valid = true;
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.style.borderColor = '#ef4444';
+                    valid = false;
+                } else {
+                    field.style.borderColor = '#e5e7eb';
+                }
+            });
+
+            if (!valid) {
+                e.preventDefault();
+                alert('Por favor complete todos los campos requeridos');
+            }
+        });
+    });
+});
+
+// Password validation functions
+function validatePassword(password) {
+    const requirements = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /\d/.test(password)
+    };
+
+    Object.keys(requirements).forEach(req => {
+        const element = document.querySelector(`[data-requirement="${req}"]`);
+        if (element) {
+            const icon = element.querySelector('i');
+            if (requirements[req]) {
+                element.classList.add('valid');
+                icon.className = 'fas fa-check';
+            } else {
+                element.classList.remove('valid');
+                icon.className = 'fas fa-times';
+            }
+        }
+    });
+
+    return Object.values(requirements).every(Boolean);
+}
+
+function isPasswordValid(password) {
+    return password.length >= 8 &&
+           /[A-Z]/.test(password) &&
+           /[a-z]/.test(password) &&
+           /\d/.test(password);
+}
+</script>
+{% endblock %}

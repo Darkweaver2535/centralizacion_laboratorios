@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Laboratorios EMI{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: #1e3a8a;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .navbar-logo {
+            width: 80px;
+            height: auto;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-menu-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .user-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            margin-top: 8px;
+        }
+
+        .user-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-header {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .dropdown-header .user-name {
+            font-weight: 600;
+            color: #1e3a8a;
+            margin-bottom: 5px;
+        }
+
+        .dropdown-header .user-email {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background: #f3f4f6;
+            color: #1e3a8a;
+        }
+
+        .dropdown-item i {
+            width: 16px;
+            text-align: center;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 5px 0;
+        }
+
+        .logout-btn {
+            color: #dc2626 !important;
+        }
+
+        .logout-btn:hover {
+            background: #fef2f2 !important;
+            color: #b91c1c !important;
+        }
+
+        /* Layout */
+        .layout {
+            display: block;
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: white;
+            width: 280px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            height: calc(100vh - 70px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f8f9fa;
+        }
+
+        .sidebar-header h3 {
+            color: #1e3a8a;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar-menu > li {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        /* Menu Item Base */
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 20px;
+            color: #374151;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .menu-item:hover {
+            background: #f3f4f6;
+            color: #1e3a8a;
+            transform: translateX(4px);
+        }
+
+        .menu-item.active {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(30, 58, 138, 0.3);
+        }
+
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #fbbf24;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .menu-item.active:hover {
+            transform: none;
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+        }
+
+        .menu-item i {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .menu-item.active i {
+            color: #fbbf24;
+        }
+
+        /* Dropdown Menu */
+        .dropdown-menu {
+            position: relative;
+        }
+
+        .dropdown-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 15px 20px;
+            color: #374151;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .dropdown-toggle:hover {
+            background: #f3f4f6;
+            color: #1e3a8a;
+            transform: translateX(4px);
+        }
+
+        .dropdown-toggle.open {
+            background: #f3f4f6;
+            color: #1e3a8a;
+        }
+
+        .dropdown-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .dropdown-arrow {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+            color: #6b7280;
+        }
+
+        .dropdown-toggle.open .dropdown-arrow {
+            transform: rotate(90deg);
+            color: #1e3a8a;
+        }
+
+        .dropdown-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .dropdown-content.open {
+            max-height: 300px;
+        }
+
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px 12px 52px;
+            color: #6b7280;
+            text-decoration: none;
+            font-weight: 400;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .submenu-item:hover {
+            background: #e5e7eb;
+            color: #374151;
+            transform: translateX(4px);
+        }
+
+        .submenu-item.active {
+            background: #dbeafe;
+            color: #1e3a8a;
+            font-weight: 500;
+        }
+
+        .submenu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: #1e3a8a;
+            border-radius: 50%;
+        }
+
+        .submenu-item i {
+            font-size: 14px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .submenu-placeholder {
+            padding: 12px 20px 12px 52px;
+            color: #9ca3af;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        /* Bubble Menu Styles */
+        .bubble-menu {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .bubble-menu.expanded {
+            background: linear-gradient(135deg, #f8faff 0%, #e0f2fe 100%);
+            border-radius: 12px;
+            margin: 4px 8px;
+            box-shadow: 0 4px 20px rgba(30, 58, 138, 0.1);
+        }
+
+        .bubble-toggle {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bubble-toggle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .bubble-menu.expanded .bubble-toggle::before {
+            left: 100%;
+        }
+
+        .bubble-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bubble-expanded {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 0 0 8px 8px;
+            border-top: 1px solid rgba(30, 58, 138, 0.1);
+        }
+
+        .bubble-section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px 8px 40px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6366f1;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            border-bottom: 1px solid #e0e7ff;
+            margin-bottom: 4px;
+        }
+
+        .bubble-section-label i {
+            color: #6366f1;
+            -webkit-text-fill-color: #6366f1;
+            font-size: 10px;
+        }
+
+        .bubble-menu .submenu-item {
+            margin: 2px 8px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .bubble-menu .submenu-item:hover {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%);
+            color: #1e40af;
+            transform: translateX(8px);
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.15);
+        }
+
+        .bubble-menu .submenu-item.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .bubble-menu .submenu-item.active:hover {
+            transform: translateX(4px);
+        }
+
+        .bubble-menu .submenu-item.active::before {
+            display: none;
+        }
+
+        /* Animation for bubble expansion */
+        @keyframes bubbleExpand {
+            from {
+                max-height: 0;
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                max-height: 400px;
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bubble-expanded.open {
+            animation: bubbleExpand 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        /* Enhanced dropdown arrow for bubble menus */
+        .bubble-toggle .dropdown-arrow {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #6b7280;
+        }
+
+        .bubble-menu.expanded .dropdown-arrow {
+            color: #3b82f6;
+            transform: rotate(90deg);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            padding: 30px;
+            background: #f8f9fa;
+            min-height: calc(100vh - 70px);
+        }
+
+        .content-header {
+            margin-bottom: 30px;
+        }
+
+        .content-header h2 {
+            color: #1e3a8a;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .content-header p {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            color: #1e3a8a;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .navbar h1 {
+                font-size: 16px;
+            }
+
+            .navbar-logo {
+                width: 60px;
+            }
+
+            .dropdown-toggle:hover {
+                transform: none;
+            }
+
+            .submenu-item:hover {
+                transform: none;
+            }
+        }
+
+        /* Mobile menu toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+        }
+    </style>
+    
+    <!-- Bloque para CSS adicional de templates hijo -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% load static %}
+    
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <button class="mobile-menu-toggle" onclick="toggleSidebar()">☰</button>
+            <img src="{% static 'images/emi_logo.png' %}" alt="Logo EMI" class="navbar-logo">
+            <h1>Sistema de Gestión de Laboratorios</h1>
+        </div>
+        <div class="user-info">
+            <div class="user-menu">
+                <button class="user-menu-btn" onclick="toggleUserMenu()">
+                    <div class="user-avatar">
+                        {% if user.is_authenticated %}{{ user.get_full_name|default:user.username|first|upper }}{% else %}A{% endif %}
+                    </div>
+                    <div class="user-name">{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% else %}Anónimo{% endif %}</div>
+                    <i class="fas fa-chevron-down" style="font-size: 12px;"></i>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="dropdown-header">
+                        <div class="user-name">{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% else %}Anónimo{% endif %}</div>
+                        <div class="user-email">{% if user.is_authenticated %}{{ user.correo_institucional|default:user.email }}{% else %}Usuario anónimo{% endif %}</div>
+                    </div>
+                    <a href="{% url 'usuarios:perfil' %}" class="dropdown-item">
+                        <i class="fas fa-user"></i>
+                        Mi Perfil
+                    </a>
+                    <a href="{% url 'usuarios:configuracion' %}" class="dropdown-item">
+                        <i class="fas fa-cog"></i>
+                        Configuración
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'login:logout' %}" class="dropdown-item logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Menú Principal</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <!-- 1. Dashboard -->
+                <li>
+                    <a href="{% url 'core:dashboard' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                
+                <!-- 2. Gestión de la Información (Registro R1) -->
+                {% if user.rol != 'docente' %}
+                <li class="dropdown-menu bubble-menu" data-dropdown="gestion-informacion">
+                    <button class="dropdown-toggle bubble-toggle" onclick="toggleBubble(this)">
+                        <div class="bubble-content">
+                            <i class="fas fa-database dropdown-icon"></i>
+                            <span>Gestión de la Información</span>
+                        </div>
+                        <i class="fas fa-chevron-right dropdown-arrow"></i>
+                    </button>
+                    <div class="dropdown-content bubble-expanded">
+                        <div class="bubble-section-label">
+                            <i class="fas fa-edit"></i>
+                            <span>Registro de Datos (R1)</span>
+                        </div>
+                        <a href="{% url 'core:malla_curricular' %}" class="submenu-item {% if request.resolver_match.namespace == 'core' and 'malla' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-graduation-cap"></i>
+                            Malla Curricular
+                        </a>
+                        <a href="{% url 'core:seleccionar_metodo' 'equipos' %}" class="submenu-item {% if request.resolver_match.namespace == 'equipos' %}active{% endif %}">
+                            <i class="fas fa-flask"></i>
+                            Equipos
+                        </a>
+                        <a href="{% url 'core:seleccionar_metodo' 'insumos' %}" class="submenu-item {% if request.resolver_match.namespace == 'insumos' %}active{% endif %}">
+                            <i class="fas fa-boxes"></i>
+                            Insumos
+                        </a>
+                        <a href="{% url 'activos:seleccionar_metodo' %}" class="submenu-item {% if request.resolver_match.namespace == 'activos' %}active{% endif %}">
+                            <i class="fas fa-archive"></i>
+                            Activos Fijos
+                        </a>
+                    </div>
+                </li>
+                {% endif %}
+
+                <!-- 3. Gestión de Laboratorios (Visualización R2) - Enlace Directo -->
+                <li>
+                    <a href="{% url 'visualizacion:analisis' %}" class="menu-item {% if request.resolver_match.namespace == 'visualizacion' %}active{% endif %}">
+                        <i class="fas fa-microscope"></i>
+                        Gestión de Laboratorios
+                    </a>
+                </li>
+
+                <!-- 4. Usuarios -->
+                {% if user.rol != 'docente' %}
+                <li>
+                    <a href="{% url 'usuarios:lista' %}" class="menu-item {% if request.resolver_match.namespace == 'usuarios' %}active{% endif %}">
+                        <i class="fas fa-users"></i>
+                        Usuarios
+                    </a>
+                </li>
+                {% endif %}
+                
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block header_content %}
+            <div class="content-header">
+                <h2>{% block page_title %}Bienvenido al Sistema{% endblock %}</h2>
+                <p>{% block page_description %}Sistema de gestión centralizada de laboratorios y equipos de la EMI{% endblock %}</p>
+            </div>
+            {% endblock %}
+
+            {% block content %}
+            <div class="card">
+                <h3>Panel Principal</h3>
+                <p>Selecciona una opción del menú lateral para comenzar a trabajar con el sistema.</p>
+                
+                <div style="margin-top: 20px;">
+                    <h4>Funcionalidades Principales:</h4>
+                    <ul style="margin-top: 10px; padding-left: 20px; color: #6b7280;">
+                        <li>Gestión integral de equipos de laboratorio</li>
+                        <li>Control de insumos (herramientas, materiales y reactivos)</li>
+                        <li>Gestión de activos fijos institucionales</li>
+                        <li>Visualización y análisis de información por diferentes criterios</li>
+                        <li>Gestión centralizada de la información académica</li>
+                        <li>Reportes y métricas avanzadas</li>
+                    </ul>
+                </div>
+
+                <div style="margin-top: 25px; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #1e3a8a;">
+                    <h4 style="color: #1e3a8a; margin-bottom: 10px;"><i class="fas fa-rocket"></i> Nuevas Funcionalidades</h4>
+                    <ul style="color: #374151; font-size: 14px;">
+                        <li><strong>Equipos:</strong> Sistema completo de gestión con información detallada</li>
+                        <li><strong>Insumos:</strong> Gestión separada de materiales, herramientas y reactivos</li>
+                        <li><strong>Activos Fijos:</strong> Control patrimonial de activos institucionales</li>
+                        <li><strong>Dashboard:</strong> Métricas y estadísticas en tiempo real</li>
+                    </ul>
+                </div>
+            </div>
+            {% endblock %}
+        </main>
+    </div>
+
+    <script>
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Cerrar menú de usuario al hacer click fuera
+        document.addEventListener('click', function(event) {
+            const userMenu = document.querySelector('.user-menu');
+            const userDropdown = document.getElementById('userDropdown');
+            
+            if (!userMenu.contains(event.target)) {
+                userDropdown.classList.remove('show');
+            }
+        });
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        function toggleDropdown(button) {
+            const content = button.nextElementSibling;
+            const arrow = button.querySelector('.dropdown-arrow');
+            
+            // Cerrar otros dropdowns
+            document.querySelectorAll('.dropdown-content').forEach(dropdown => {
+                if (dropdown !== content) {
+                    dropdown.classList.remove('open');
+                    dropdown.previousElementSibling.classList.remove('open');
+                }
+            });
+            
+            // Toggle current dropdown
+            content.classList.toggle('open');
+            button.classList.toggle('open');
+        }
+
+        // Nueva función para manejar menús tipo burbuja
+        function toggleBubble(button) {
+            const content = button.nextElementSibling;
+            const arrow = button.querySelector('.dropdown-arrow');
+            const parentLi = button.closest('li');
+            
+            // Cerrar otras burbujas
+            document.querySelectorAll('.bubble-menu').forEach(bubble => {
+                if (bubble !== parentLi) {
+                    const bubbleContent = bubble.querySelector('.dropdown-content');
+                    const bubbleToggle = bubble.querySelector('.dropdown-toggle');
+                    const bubbleArrow = bubble.querySelector('.dropdown-arrow');
+                    
+                    bubbleContent.classList.remove('open');
+                    bubbleToggle.classList.remove('open');
+                    bubble.classList.remove('expanded');
+                    if (bubbleArrow) {
+                        bubbleArrow.style.transform = 'rotate(0deg)';
+                    }
+                }
+            });
+            
+            // Toggle burbuja actual
+            const isOpen = content.classList.contains('open');
+            
+            if (isOpen) {
+                // Cerrar burbuja
+                content.classList.remove('open');
+                button.classList.remove('open');
+                parentLi.classList.remove('expanded');
+                if (arrow) {
+                    arrow.style.transform = 'rotate(0deg)';
+                }
+            } else {
+                // Abrir burbuja
+                content.classList.add('open');
+                button.classList.add('open');
+                parentLi.classList.add('expanded');
+                if (arrow) {
+                    arrow.style.transform = 'rotate(90deg)';
+                }
+            }
+        }
+
+        // Cerrar sidebar en mobile al hacer click fuera
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target)) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+
+        // Activar elemento del menú basado en la URL actual y abrir dropdowns correspondientes
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            
+            // Verificar submenús activos y abrir su dropdown/burbuja padre
+            document.querySelectorAll('.submenu-item.active').forEach(activeSubmenu => {
+                const parentDropdown = activeSubmenu.closest('.dropdown-menu');
+                if (parentDropdown) {
+                    const toggle = parentDropdown.querySelector('.dropdown-toggle');
+                    const content = parentDropdown.querySelector('.dropdown-content');
+                    const arrow = parentDropdown.querySelector('.dropdown-arrow');
+                    
+                    toggle.classList.add('open');
+                    content.classList.add('open');
+                    
+                    // Si es un menú burbuja, agregar clases especiales
+                    if (parentDropdown.classList.contains('bubble-menu')) {
+                        parentDropdown.classList.add('expanded');
+                        if (arrow) {
+                            arrow.style.transform = 'rotate(90deg)';
+                        }
+                    }
+                }
+            });
+
+            // Activar elementos basado en URL
+            const menuItems = document.querySelectorAll('.menu-item, .submenu-item');
+            menuItems.forEach(item => {
+                const itemPath = item.getAttribute('href');
+                if (itemPath && currentPath.includes(itemPath) && itemPath !== '#') {
+                    item.classList.add('active');
+                    
+                    // Si es un submenu, abrir su dropdown/burbuja padre
+                    if (item.classList.contains('submenu-item')) {
+                        const parentDropdown = item.closest('.dropdown-menu');
+                        if (parentDropdown) {
+                            const toggle = parentDropdown.querySelector('.dropdown-toggle');
+                            const content = parentDropdown.querySelector('.dropdown-content');
+                            const arrow = parentDropdown.querySelector('.dropdown-arrow');
+                            
+                            toggle.classList.add('open');
+                            content.classList.add('open');
+                            
+                            // Si es un menú burbuja, agregar clases especiales
+                            if (parentDropdown.classList.contains('bubble-menu')) {
+                                parentDropdown.classList.add('expanded');
+                                if (arrow) {
+                                    arrow.style.transform = 'rotate(90deg)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+        
+        // Función auxiliar para compatibilidad con dropdowns normales (si existen)
+        function toggleDropdown(button) {
+            const content = button.nextElementSibling;
+            const arrow = button.querySelector('.dropdown-arrow');
+            
+            // Toggle current dropdown
+            content.classList.toggle('open');
+            button.classList.toggle('open');
+        }
+    </script>
+    
+    <!-- Bloque para JavaScript adicional de templates hijo -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

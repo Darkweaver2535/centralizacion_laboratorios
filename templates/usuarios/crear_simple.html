@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Crear Usuario - Simple{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Crear Usuario - Versión Simple</h1>
+    
+    <form method="POST" enctype="multipart/form-data" id="userForm">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label>Rol:</label>
+            <select name="rol" required>
+                <option value="">Seleccionar...</option>
+                {% for key, value in roles_disponibles %}
+                    <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Nombres:</label>
+            <input type="text" name="nombres" required>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Apellidos:</label>
+            <input type="text" name="apellidos" required>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Número de documento:</label>
+            <input type="text" name="numero_documento" required>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Correo institucional:</label>
+            <input type="email" name="correo_institucional" required>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Sede:</label>
+            <select name="sede_asignacion" required>
+                {% for key, value in sedes %}
+                    <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Password:</label>
+            <input type="password" name="password" required>
+        </div>
+        
+        <!-- Campos específicos para auxiliar -->
+        <div style="margin-bottom: 20px;">
+            <label>Nivel de formación:</label>
+            <select name="nivel_formacion">
+                {% for key, value in niveles_formacion %}
+                    <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Área de formación:</label>
+            <input type="text" name="area_formacion">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Cargo/Posición:</label>
+            <input type="text" name="cargo_posicion">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Turno de trabajo:</label>
+            <select name="turno_trabajo">
+                {% for key, value in turnos %}
+                    <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Estado:</label>
+            <select name="estado_usuario">
+                {% for key, value in estados %}
+                    <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" style="background: #3b82f6; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+            Crear Usuario
+        </button>
+        
+        <a href="{% url 'usuarios:lista' %}" style="margin-left: 10px;">Cancelar</a>
+    </form>
+</div>
+
+<script>
+document.getElementById('userForm').addEventListener('submit', function(e) {
+    console.log('Formulario simple enviándose...');
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = 'Creando...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

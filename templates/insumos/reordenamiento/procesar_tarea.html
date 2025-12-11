@@ -1,0 +1,1152 @@
+{% extends 'base.html' %}
+
+{% block title %}Procesar Tarea - Sistema de Laboratorios EMI{% endblock %}
+
+{% block page_title %}Procesar Tarea de Reordenamiento{% endblock %}
+
+{% block page_description %}Gestión de insumos para la tarea: {{ tarea.titulo }}{% endblock %}
+
+{% block content %}
+<div class="procesar-tarea-container">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb-section">
+        <div class="breadcrumb-nav">
+            <a href="{% url 'insumos:reordenamiento_insumos' %}" class="breadcrumb-link">
+                <i class="fas fa-tasks"></i> Reordenamiento
+            </a>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <a href="{% url 'insumos:detalle_tarea_reordenamiento' tarea.pk %}" class="breadcrumb-link">
+                {{ tarea.titulo|truncatechars:20 }}
+            </a>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <span class="breadcrumb-current">Procesar</span>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-content">
+            <div class="header-info">
+                <h1><i class="fas fa-cogs"></i> Procesar Tarea de Reordenamiento</h1>
+                <p>{{ tarea.titulo }}</p>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'insumos:detalle_tarea_reordenamiento' tarea.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al Detalle
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-grid">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <!-- Task Information -->
+            <div class="info-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-info-circle"></i> Información de la Tarea</h3>
+                </div>
+                <div class="panel-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Tipo:</label>
+                            <span class="badge-tipo">{{ tarea.get_tipo_display }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Estado:</label>
+                            <span class="badge-estado estado-{{ tarea.estado }}">{{ tarea.get_estado_display }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Prioridad:</label>
+                            <span class="badge-prioridad prioridad-{{ tarea.prioridad }}">{{ tarea.get_prioridad_display }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Progreso:</label>
+                            <span class="progress-info">{{ tarea.porcentaje_completado }}%</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Creada:</label>
+                            <span>{{ tarea.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        {% if tarea.usuario_asignado %}
+                        <div class="info-item">
+                            <label>Asignada a:</label>
+                            <span>{{ tarea.usuario_asignado.get_full_name|default:tarea.usuario_asignado.username }}</span>
+                        </div>
+                        {% endif %}
+                        {% if tarea.descripcion %}
+                        <div class="info-item full-width">
+                            <label>Descripción:</label>
+                            <span class="description">{{ tarea.descripcion }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Panel -->
+            <div class="progress-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-chart-line"></i> Progreso de Procesamiento</h3>
+                </div>
+                <div class="panel-content">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number total">{{ insumos_tarea.count }}</div>
+                            <div class="stat-label">Total Insumos</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number processed" id="insumos-procesados">0</div>
+                            <div class="stat-label">Procesados</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number pending" id="insumos-pendientes">{{ insumos_tarea.count }}</div>
+                            <div class="stat-label">Pendientes</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" 
+                                 style="width: {{ tarea.porcentaje_completado }}%">
+                            </div>
+                        </div>
+                        <div class="progress-text" id="progress-text">{{ tarea.porcentaje_completado }}%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insumo List -->
+            <div class="insumo-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-flask"></i> Insumos para Procesar</h3>
+                </div>
+                <div class="panel-content">
+                    {% if insumos_tarea %}
+                        <div class="insumo-list">
+                            {% for insumo_tarea in insumos_tarea %}
+                                <div class="insumo-item {% if insumo_tarea.procesado %}processed{% else %}pending{% endif %}" 
+                                     data-insumo-id="{{ insumo_tarea.id }}">
+                                    <div class="insumo-header">
+                                        <div class="insumo-title">
+                                            <h4>{{ insumo_tarea.insumo.nombre_elemento }}</h4>
+                                            <div class="insumo-status">
+                                                {% if insumo_tarea.procesado %}
+                                                    <span class="status-badge processed">
+                                                        <i class="fas fa-check-circle"></i> Procesado
+                                                    </span>
+                                                {% else %}
+                                                    <span class="status-badge pending">
+                                                        <i class="fas fa-clock"></i> Pendiente
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="insumo-details">
+                                        <div class="details-grid">
+                                            <div class="detail-item">
+                                                <label>Código:</label>
+                                                <span>{{ insumo_tarea.insumo.codigo_inventario|default:"Sin código" }}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <label>Marca/Modelo:</label>
+                                                <span>{{ insumo_tarea.insumo.marca_modelo|default:"N/A" }}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <label>Estado:</label>
+                                                <span>{{ insumo_tarea.insumo.get_estado_display }}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <label>Origen:</label>
+                                                <div class="location-info">
+                                                    <div>{{ insumo_tarea.unidad_academica_origen.nombre }}</div>
+                                                    <div>{{ insumo_tarea.laboratorio_origen.get_nombre_display }}</div>
+                                                </div>
+                                            </div>
+                                            {% if insumo_tarea.unidad_academica_destino or insumo_tarea.laboratorio_destino %}
+                                            <div class="detail-item">
+                                                <label>Destino:</label>
+                                                <div class="location-info destination">
+                                                    {% if insumo_tarea.unidad_academica_destino %}
+                                                        <div>{{ insumo_tarea.unidad_academica_destino.nombre }}</div>
+                                                    {% endif %}
+                                                    {% if insumo_tarea.laboratorio_destino %}
+                                                        <div>{{ insumo_tarea.laboratorio_destino.get_nombre_display }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if insumo_tarea.procesado and insumo_tarea.fecha_procesado %}
+                                            <div class="processed-info">
+                                                <i class="fas fa-check-circle"></i>
+                                                Procesado el {{ insumo_tarea.fecha_procesado|date:"d/m/Y H:i" }}
+                                            </div>
+                                        {% endif %}
+
+                                        {% if insumo_tarea.observaciones_insumo %}
+                                            <div class="observations">
+                                                <strong>Observaciones:</strong> {{ insumo_tarea.observaciones_insumo }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if not insumo_tarea.procesado %}
+                                        <div class="action-buttons">
+                                            <button type="button" class="btn btn-success btn-process" 
+                                                    onclick="procesarInsumo({{ insumo_tarea.id }})">
+                                                <i class="fas fa-check"></i> Procesar
+                                            </button>
+                                            <button type="button" class="btn btn-info btn-details" 
+                                                    onclick="mostrarDetalles({{ insumo_tarea.id }})">
+                                                <i class="fas fa-info"></i> Detalles
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-flask"></i>
+                            <h4>No hay insumos para procesar</h4>
+                            <p>Esta tarea no tiene insumos asignados.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <!-- Bulk Actions Panel -->
+            <div class="actions-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-tools"></i> Acciones Masivas</h3>
+                </div>
+                <div class="panel-content">
+                    <div class="bulk-actions">
+                        <button type="button" class="btn btn-success btn-block" 
+                                onclick="procesarTodosInsumos()" 
+                                {% if not insumos_tarea %}disabled{% endif %}>
+                            <i class="fas fa-check-double"></i> Procesar Todos los Insumos
+                        </button>
+                        <button type="button" class="btn btn-warning btn-block" 
+                                onclick="marcarTareaCompletada()" 
+                                {% if tarea.estado == 'completada' %}disabled{% endif %}>
+                            <i class="fas fa-flag-checkered"></i> Marcar Tarea como Completada
+                        </button>
+                        <button type="button" class="btn btn-info btn-block" 
+                                onclick="actualizarEstadisticas()">
+                            <i class="fas fa-sync"></i> Actualizar Estadísticas
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log Panel -->
+            <div class="log-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-history"></i> Registro de Actividad</h3>
+                </div>
+                <div class="panel-content">
+                    <div class="activity-log" id="activity-log">
+                        <div class="log-entry">
+                            <div class="log-time">{{ tarea.fecha_creacion|date:"H:i" }}</div>
+                            <div class="log-message">Tarea creada</div>
+                        </div>
+                        {% if tarea.fecha_inicio %}
+                        <div class="log-entry">
+                            <div class="log-time">{{ tarea.fecha_inicio|date:"H:i" }}</div>
+                            <div class="log-message">Procesamiento iniciado</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing Instructions -->
+            <div class="instructions-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-info-circle"></i> Instrucciones</h3>
+                </div>
+                <div class="panel-content">
+                    <div class="instructions">
+                        <h4>Pasos para procesar insumos:</h4>
+                        <ol>
+                            <li>Revise cada insumo en la lista</li>
+                            <li>Verifique los datos de origen y destino</li>
+                            <li>Haga clic en "Procesar" para cada insumo</li>
+                            <li>Registre observaciones si es necesario</li>
+                            <li>Complete todos los insumos</li>
+                            <li>Marque la tarea como completada</li>
+                        </ol>
+                        
+                        <div class="tip">
+                            <i class="fas fa-lightbulb"></i>
+                            <strong>Tip:</strong> Use "Procesar Todos" para marcar todos los insumos como procesados de una vez.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Detalles de Insumo -->
+<div id="insumoModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4><i class="fas fa-flask"></i> Detalles del Insumo</h4>
+            <button type="button" class="close-modal" onclick="cerrarModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<style>
+    .procesar-tarea-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-section {
+        margin-bottom: 25px;
+    }
+
+    .breadcrumb-nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    .breadcrumb-link {
+        color: #3b82f6;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb-link:hover {
+        color: #1e40af;
+    }
+
+    .breadcrumb-separator {
+        color: #cbd5e0;
+        font-size: 12px;
+    }
+
+    .breadcrumb-current {
+        color: #374151;
+        font-weight: 500;
+    }
+
+    /* Header Section */
+    .header-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 25px;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .header-info h1 {
+        margin: 0 0 8px 0;
+        color: #1e3a8a;
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-info p {
+        margin: 0;
+        color: #64748b;
+        font-size: 16px;
+    }
+
+    .header-actions {
+        flex-shrink: 0;
+    }
+
+    /* Content Grid */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 25px;
+    }
+
+    .left-panel, .right-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* Panels */
+    .info-panel, .progress-panel, .insumo-panel, .actions-panel, .log-panel, .instructions-panel {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 20px;
+    }
+
+    .panel-header h3 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 18px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .panel-content {
+        padding: 20px;
+    }
+
+    /* Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .info-item.full-width {
+        grid-column: span 2;
+    }
+
+    .info-item label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 13px;
+    }
+
+    .info-item span {
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .description {
+        line-height: 1.5;
+        padding: 8px 12px;
+        background: #f8fafc;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Badges */
+    .badge-tipo, .badge-estado, .badge-prioridad {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .badge-tipo {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .estado-pendiente { background: #fef3c7; color: #d97706; }
+    .estado-en_progreso { background: #dbeafe; color: #1e40af; }
+    .estado-completada { background: #dcfce7; color: #16a34a; }
+    .estado-cancelada { background: #fecaca; color: #dc2626; }
+
+    .prioridad-baja { background: #f3f4f6; color: #6b7280; }
+    .prioridad-media { background: #fef3c7; color: #d97706; }
+    .prioridad-alta { background: #fecaca; color: #dc2626; }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .stat-number {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .stat-number.total { color: #3b82f6; }
+    .stat-number.processed { color: #10b981; }
+    .stat-number.pending { color: #f59e0b; }
+
+    .stat-label {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .progress-bar {
+        flex: 1;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(135deg, #10b981, #059669);
+        transition: width 0.3s ease;
+    }
+
+    .progress-text {
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    /* Insumo List */
+    .insumo-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .insumo-item {
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .insumo-item.processed {
+        border-color: #10b981;
+        background: #f0fdf4;
+    }
+
+    .insumo-item.pending {
+        border-color: #f59e0b;
+        background: #fffbeb;
+    }
+
+    .insumo-header {
+        padding: 15px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .insumo-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .insumo-title h4 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .status-badge.processed {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .status-badge.pending {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .insumo-details {
+        padding: 15px;
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .detail-item label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 12px;
+    }
+
+    .detail-item span {
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .location-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .location-info.destination {
+        color: #059669;
+        font-weight: 500;
+    }
+
+    .processed-info {
+        background: #dcfce7;
+        color: #059669;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin: 10px 0;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .observations {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 13px;
+        color: #374151;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        font-size: 13px;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-warning {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .btn-info {
+        background: #0ea5e9;
+        color: white;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-block {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Bulk Actions */
+    .bulk-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Activity Log */
+    .activity-log {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .log-entry {
+        display: flex;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .log-entry:last-child {
+        border-bottom: none;
+    }
+
+    .log-time {
+        color: #6b7280;
+        font-size: 12px;
+        font-weight: 500;
+        min-width: 50px;
+    }
+
+    .log-message {
+        color: #374151;
+        font-size: 13px;
+    }
+
+    /* Instructions */
+    .instructions h4 {
+        margin: 0 0 15px 0;
+        color: #1e3a8a;
+        font-size: 16px;
+    }
+
+    .instructions ol {
+        margin: 0 0 20px 0;
+        padding-left: 20px;
+    }
+
+    .instructions li {
+        margin-bottom: 5px;
+        color: #374151;
+        font-size: 13px;
+    }
+
+    .tip {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 6px;
+        padding: 12px;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .tip i {
+        color: #0369a1;
+        margin-top: 2px;
+    }
+
+    .tip strong {
+        color: #0369a1;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #64748b;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        color: #cbd5e0;
+    }
+
+    .empty-state h4 {
+        margin: 0 0 8px 0;
+        color: #374151;
+    }
+
+    .empty-state p {
+        margin: 0;
+        font-size: 14px;
+    }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .modal-header h4 {
+        margin: 0;
+        color: #1e3a8a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #6b7280;
+        font-size: 18px;
+        padding: 4px;
+    }
+
+    .close-modal:hover {
+        color: #374151;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .procesar-tarea-container {
+            padding: 15px;
+        }
+
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .header-content {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .modal-content {
+            width: 95%;
+        }
+    }
+</style>
+
+<script>
+// Procesamiento de insumos
+let procesamiento = {
+    // Procesar un insumo individual
+    procesarInsumo: function(insumoTareaId) {
+        if (confirm('¿Está seguro de que desea procesar este insumo?')) {
+            fetch(`{% url "insumos:procesar_insumo_individual" 0 %}`.replace('0', insumoTareaId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.getCsrfToken(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.actualizarInsumoUI(insumoTareaId, true);
+                    this.actualizarEstadisticas();
+                    this.agregarLogEntry('Insumo procesado correctamente');
+                } else {
+                    alert('Error al procesar el insumo: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error de conexión al procesar el insumo');
+            });
+        }
+    },
+
+    // Procesar todos los insumos
+    procesarTodosInsumos: function() {
+        if (confirm('¿Está seguro de que desea procesar todos los insumos pendientes?')) {
+            fetch(`{% url "insumos:procesar_todos_insumos" tarea.pk %}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.getCsrfToken(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar UI para todos los insumos
+                    document.querySelectorAll('.insumo-item.pending').forEach(item => {
+                        const insumoId = item.getAttribute('data-insumo-id');
+                        this.actualizarInsumoUI(insumoId, true);
+                    });
+                    this.actualizarEstadisticas();
+                    this.agregarLogEntry(`${data.procesados} insumos procesados masivamente`);
+                } else {
+                    alert('Error al procesar los insumos: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error de conexión al procesar los insumos');
+            });
+        }
+    },
+
+    // Marcar tarea como completada
+    marcarTareaCompletada: function() {
+        if (confirm('¿Está seguro de que desea marcar esta tarea como completada?')) {
+            fetch(`{% url "insumos:completar_tarea" tarea.pk %}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.getCsrfToken(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.agregarLogEntry('Tarea marcada como completada');
+                    location.reload(); // Recargar para mostrar el nuevo estado
+                } else {
+                    alert('Error al completar la tarea: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error de conexión al completar la tarea');
+            });
+        }
+    },
+
+    // Actualizar UI de un insumo específico
+    actualizarInsumoUI: function(insumoTareaId, procesado) {
+        const insumoItem = document.querySelector(`[data-insumo-id="${insumoTareaId}"]`);
+        if (insumoItem) {
+            if (procesado) {
+                insumoItem.classList.remove('pending');
+                insumoItem.classList.add('processed');
+                
+                const statusBadge = insumoItem.querySelector('.status-badge');
+                statusBadge.className = 'status-badge processed';
+                statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Procesado';
+                
+                const actionButtons = insumoItem.querySelector('.action-buttons');
+                if (actionButtons) {
+                    actionButtons.remove();
+                }
+                
+                // Agregar info de procesado
+                const details = insumoItem.querySelector('.insumo-details');
+                const processedInfo = document.createElement('div');
+                processedInfo.className = 'processed-info';
+                processedInfo.innerHTML = '<i class="fas fa-check-circle"></i> Procesado el ' + new Date().toLocaleString();
+                details.appendChild(processedInfo);
+            }
+        }
+    },
+
+    // Actualizar estadísticas
+    actualizarEstadisticas: function() {
+        const procesados = document.querySelectorAll('.insumo-item.processed').length;
+        const pendientes = document.querySelectorAll('.insumo-item.pending').length;
+        const total = procesados + pendientes;
+        const porcentaje = total > 0 ? Math.round((procesados / total) * 100) : 0;
+
+        document.getElementById('insumos-procesados').textContent = procesados;
+        document.getElementById('insumos-pendientes').textContent = pendientes;
+        document.getElementById('progress-fill').style.width = porcentaje + '%';
+        document.getElementById('progress-text').textContent = porcentaje + '%';
+    },
+
+    // Mostrar detalles de un insumo
+    mostrarDetalles: function(insumoTareaId) {
+        fetch(`{% url "insumos:detalle_insumo_tarea" 0 %}`.replace('0', insumoTareaId))
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('modalBody').innerHTML = data.html;
+                    document.getElementById('insumoModal').style.display = 'flex';
+                } else {
+                    alert('Error al cargar los detalles del insumo');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error de conexión al cargar los detalles');
+            });
+    },
+
+    // Cerrar modal
+    cerrarModal: function() {
+        document.getElementById('insumoModal').style.display = 'none';
+    },
+
+    // Agregar entrada al log
+    agregarLogEntry: function(mensaje) {
+        const log = document.getElementById('activity-log');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.innerHTML = `
+            <div class="log-time">${new Date().toLocaleTimeString()}</div>
+            <div class="log-message">${mensaje}</div>
+        `;
+        log.insertBefore(entry, log.firstChild);
+    },
+
+    // Obtener CSRF token
+    getCsrfToken: function() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+};
+
+// Funciones globales para onclick handlers
+function procesarInsumo(insumoTareaId) {
+    procesamiento.procesarInsumo(insumoTareaId);
+}
+
+function procesarTodosInsumos() {
+    procesamiento.procesarTodosInsumos();
+}
+
+function marcarTareaCompletada() {
+    procesamiento.marcarTareaCompletada();
+}
+
+function actualizarEstadisticas() {
+    procesamiento.actualizarEstadisticas();
+}
+
+function mostrarDetalles(insumoTareaId) {
+    procesamiento.mostrarDetalles(insumoTareaId);
+}
+
+function cerrarModal() {
+    procesamiento.cerrarModal();
+}
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar estadísticas iniciales
+    procesamiento.actualizarEstadisticas();
+    
+    // Cerrar modal al hacer clic fuera de él
+    document.getElementById('insumoModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            procesamiento.cerrarModal();
+        }
+    });
+    
+    // Actualizar estadísticas cada 30 segundos
+    setInterval(() => {
+        procesamiento.actualizarEstadisticas();
+    }, 30000);
+});
+</script>
+{% endblock %}

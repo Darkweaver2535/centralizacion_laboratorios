@@ -1,0 +1,1735 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar {{ tarea.titulo }} - Reordenamiento{% endblock %}
+
+{% block content %}
+<div class="editar-tarea-insumos-container">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb-section">
+        <div class="breadcrumb-nav">
+            <a href="{% url 'insumos:reordenamiento_insumos' %}" class="breadcrumb-link">
+                <i class="fas fa-vials"></i> Reordenamiento
+            </a>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <a href="{% url 'insumos:detalle_tarea_reordenamiento' tarea.pk %}" class="breadcrumb-link">
+                {{ tarea.titulo|truncatechars:20 }}
+            </a>
+            <span class="breadcrumb-separator">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+            <span class="breadcrumb-current">Editar</span>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-content">
+            <div class="header-info">
+                <h1><i class="fas fa-edit"></i> Editar Tarea de Reordenamiento</h1>
+                <p>Modificar información y configuración de la tarea</p>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'insumos:detalle_tarea_reordenamiento' tarea.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al Detalle
+                </a>
+                <a href="{% url 'insumos:reordenamiento_insumos' %}" class="btn btn-outline">
+                    <i class="fas fa-list"></i> Lista de Tareas
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form -->
+    <div class="form-container">
+        <div class="form-card">
+            <div class="form-header">
+                <h3>
+                    <i class="fas fa-tasks"></i> 
+                    Información de la Tarea
+                    <span class="badge-estado estado-{{ tarea.estado }}">{{ tarea.get_estado_display }}</span>
+                </h3>
+            </div>
+            
+            <div class="form-body">
+                <form method="post" id="editarTareaForm">
+                    {% csrf_token %}
+                    
+                    <!-- Título -->
+                    <div class="form-section">
+                        <div class="form-group full-width">
+                            <label for="titulo" class="form-label">
+                                Título de la Tarea <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-input" id="titulo" name="titulo" 
+                                   value="{{ tarea.titulo }}" required 
+                                   placeholder="Ingrese el título de la tarea">
+                            <div class="input-feedback" id="titulo-feedback"></div>
+                        </div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="form-section">
+                        <div class="form-group full-width">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-textarea" id="descripcion" name="descripcion" 
+                                      rows="4" placeholder="Descripción detallada de la tarea...">{{ tarea.descripcion }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Configuración Principal -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-cog"></i> Configuración Principal
+                        </h4>
+                        <div class="form-grid four-columns">
+                            <div class="form-group">
+                                <label for="tipo" class="form-label">
+                                    Tipo de Tarea <span class="required">*</span>
+                                </label>
+                                <select class="form-select" id="tipo" name="tipo" required>
+                                    {% for valor, texto in tipos_tarea %}
+                                        <option value="{{ valor }}" {% if tarea.tipo == valor %}selected{% endif %}>
+                                            {{ texto }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="estado" class="form-label">
+                                    Estado <span class="required">*</span>
+                                </label>
+                                <select class="form-select" id="estado" name="estado" required>
+                                    {% for valor, texto in estados_tarea %}
+                                        <option value="{{ valor }}" {% if tarea.estado == valor %}selected{% endif %}>
+                                            {{ texto }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="input-help">Se actualiza automáticamente al procesar</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="prioridad" class="form-label">
+                                    Prioridad <span class="required">*</span>
+                                </label>
+                                <select class="form-select" id="prioridad" name="prioridad" required>
+                                    {% for valor, texto in prioridades %}
+                                        <option value="{{ valor }}" {% if tarea.prioridad == valor %}selected{% endif %}>
+                                            {{ texto }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="porcentaje_completado" class="form-label">Progreso (%)</label>
+                                <div class="progress-input-container">
+                                    <input type="number" class="form-input" id="porcentaje_completado" 
+                                           name="porcentaje_completado" min="0" max="100" 
+                                           value="{{ tarea.porcentaje_completado }}">
+                                    <div class="progress-bar-mini">
+                                        <div class="progress-fill-mini" style="width: {{ tarea.porcentaje_completado }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fechas y Asignación -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-calendar"></i> Fechas y Asignación
+                        </h4>
+                        <div class="form-grid two-columns">
+                            <div class="form-group">
+                                <label for="fecha_fin_estimada" class="form-label">Fecha Fin Estimada</label>
+                                <input type="date" class="form-input" id="fecha_fin_estimada" 
+                                       name="fecha_fin_estimada" 
+                                       value="{% if tarea.fecha_fin_estimada %}{{ tarea.fecha_fin_estimada|date:'Y-m-d' }}{% endif %}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="usuario_asignado" class="form-label">Asignar a Usuario</label>
+                                <select class="form-select" id="usuario_asignado" name="usuario_asignado">
+                                    <option value="">Sin asignar</option>
+                                    {% for usuario in usuarios %}
+                                        <option value="{{ usuario.id }}" 
+                                                {% if tarea.usuario_asignado and tarea.usuario_asignado.id == usuario.id %}selected{% endif %}>
+                                            {{ usuario.get_full_name|default:usuario.username }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="form-section">
+                        <div class="form-group full-width">
+                            <label for="observaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-textarea" id="observaciones" name="observaciones" 
+                                      rows="3" placeholder="Observaciones adicionales...">{{ tarea.observaciones }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Información del Sistema -->
+                    <div class="info-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-info-circle"></i> Información del Sistema
+                        </h4>
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <div class="info-item">
+                                    <label>Fecha de Creación:</label>
+                                    <span>{{ tarea.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Creado por:</label>
+                                    <span>{{ tarea.usuario_creador.get_full_name|default:tarea.usuario_creador.username }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="info-card">
+                                <div class="info-item">
+                                    <label>Fecha de Inicio:</label>
+                                    <span>
+                                        {% if tarea.fecha_inicio %}
+                                            {{ tarea.fecha_inicio|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">No iniciada</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Última Modificación:</label>
+                                    <span>{{ tarea.fecha_modificacion|date:"d/m/Y H:i" }}</span>
+                                </div>
+                            </div>
+                            
+                            {% if tarea.fecha_fin_real %}
+                            <div class="info-card">
+                                <div class="info-item">
+                                    <label>Fecha Fin Real:</label>
+                                    <span>{{ tarea.fecha_fin_real|date:"d/m/Y H:i" }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Información sobre Estados -->
+                    <div class="help-section">
+                        <div class="help-card">
+                            <h5><i class="fas fa-lightbulb"></i> Información sobre Estados</h5>
+                            <div class="help-grid">
+                                <div class="help-item">
+                                    <span class="badge-estado estado-pendiente">Pendiente</span>
+                                    <span>Tarea creada pero no iniciada</span>
+                                </div>
+                                <div class="help-item">
+                                    <span class="badge-estado estado-en_proceso">En Proceso</span>
+                                    <span>Se establece automáticamente al procesar</span>
+                                </div>
+                                <div class="help-item">
+                                    <span class="badge-estado estado-completada">Completada</span>
+                                    <span>Todos los insumos han sido procesados</span>
+                                </div>
+                                <div class="help-item">
+                                    <span class="badge-estado estado-cancelada">Cancelada</span>
+                                    <span>Tarea cancelada manualmente</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <div class="actions-left">
+                            <a href="{% url 'insumos:detalle_tarea_reordenamiento' tarea.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            {% if tarea.estado != 'completada' %}
+                                <a href="{% url 'insumos:eliminar_tarea_reordenamiento' tarea.pk %}" 
+                                   class="btn btn-danger"
+                                   onclick="return confirm('¿Estás seguro de eliminar esta tarea? Esta acción no se puede deshacer.')">
+                                    <i class="fas fa-trash"></i> Eliminar Tarea
+                                </a>
+                            {% endif %}
+                        </div>
+                        <div class="actions-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insumos Section -->
+    <div class="insumos-container">
+        <div class="insumos-card">
+            <div class="insumos-header">
+                <h3><i class="fas fa-vials"></i> Insumos Asociados ({{ insumos_tarea.count }})</h3>
+                <div class="insumos-actions">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="openAgregarInsumosModal()">
+                        <i class="fas fa-plus"></i> Agregar Insumos
+                    </button>
+                    <a href="{% url 'insumos:detalle_tarea_reordenamiento' tarea.pk %}" class="btn btn-sm btn-outline">
+                        <i class="fas fa-eye"></i> Ver Detalles Completos
+                    </a>
+                </div>
+            </div>
+            <div class="insumos-content">
+                {% if insumos_tarea %}
+                    <div class="insumos-grid">
+                        {% for insumo_tarea in insumos_tarea %}
+                            <div class="insumo-item {% if insumo_tarea.procesado %}processed{% else %}pending{% endif %}" id="insumo-item-{{ insumo_tarea.id }}">
+                                <div class="insumo-info">
+                                    <h4>{{ insumo_tarea.insumo.nombre_elemento }}</h4>
+                                    <div class="insumo-details">
+                                        <span class="detail">
+                                            <strong>Categoría:</strong> 
+                                            <span class="badge-categoria">{{ insumo_tarea.insumo.get_categoria_display }}</span>
+                                        </span>
+                                        {% if insumo_tarea.insumo.marca_modelo %}
+                                        <span class="detail">
+                                            <strong>Marca:</strong> {{ insumo_tarea.insumo.marca_modelo }}
+                                        </span>
+                                        {% endif %}
+                                        <span class="detail">
+                                            <strong>Ubicación:</strong> 
+                                            {{ insumo_tarea.insumo.unidad_academica.nombre }} - 
+                                            {{ insumo_tarea.insumo.laboratorio.get_nombre_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="insumo-actions">
+                                    <div class="insumo-status">
+                                        {% if insumo_tarea.procesado %}
+                                            <span class="status-badge status-processed">
+                                                <i class="fas fa-check-circle"></i> Procesado
+                                            </span>
+                                        {% else %}
+                                            <span class="status-badge status-pending">
+                                                <i class="fas fa-clock"></i> Pendiente
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if not insumo_tarea.procesado %}
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn-action btn-remove" 
+                                                onclick="removeInsumoFromTarea({{ insumo_tarea.id }})"
+                                                title="Quitar de la tarea">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-vials"></i>
+                        <h4>No hay insumos asignados</h4>
+                        <p>Agrega insumos a esta tarea para comenzar el reordenamiento.</p>
+                        <button type="button" class="btn btn-primary" onclick="openAgregarInsumosModal()">
+                            <i class="fas fa-plus"></i> Agregar Insumos
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Agregar Insumos -->
+<div id="agregarInsumosModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-search"></i> Buscar y Agregar Insumos</h3>
+            <button type="button" class="btn-close" onclick="closeAgregarInsumosModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Filtros de búsqueda -->
+            <div class="search-filters">
+                <div class="filter-row">
+                    <input type="text" id="buscarInsumos" placeholder="Buscar por nombre, código o descripción..." class="form-input">
+                    <select id="laboratorioFiltro" class="form-input">
+                        <option value="">Todos los laboratorios</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Lista de insumos disponibles -->
+            <div class="modal-insumos-list">
+                <div id="modalInsumosContainer">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Cargando insumos...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <span id="contadorSeleccionados" style="margin-right: auto; color: #6b7280;">0 insumos seleccionados</span>
+            <button type="button" class="btn btn-secondary" onclick="closeAgregarInsumosModal()">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button type="button" class="btn btn-primary" onclick="agregarInsumosSeleccionados()">
+                <i class="fas fa-plus"></i> Agregar Seleccionados
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .editar-tarea-insumos-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-section {
+        margin-bottom: 25px;
+    }
+
+    .breadcrumb-nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    .breadcrumb-link {
+        color: #3b82f6;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb-link:hover {
+        color: #1e3a8a;
+        text-decoration: none;
+    }
+
+    .breadcrumb-separator {
+        color: #cbd5e0;
+        font-size: 12px;
+    }
+
+    .breadcrumb-current {
+        color: #374151;
+        font-weight: 500;
+    }
+
+    /* Header Section */
+    .header-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 25px;
+        border-left: 4px solid #3b82f6;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .header-info h1 {
+        margin: 0 0 8px 0;
+        color: #1e3a8a;
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-info p {
+        margin: 0;
+        color: #64748b;
+        font-size: 16px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    /* Form Container */
+    .form-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .form-header {
+        padding: 20px 25px;
+        background: #f8fafc;
+        border-bottom: 2px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .form-header h3 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 18px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-body {
+        padding: 30px;
+    }
+
+    /* Form Sections */
+    .form-section {
+        margin-bottom: 30px;
+    }
+
+    .form-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .section-title {
+        margin: 0 0 20px 0;
+        color: #374151;
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .section-title i {
+        color: #3b82f6;
+    }
+
+    /* Form Grids */
+    .form-grid {
+        display: grid;
+        gap: 20px;
+    }
+
+    .form-grid.two-columns {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .form-grid.four-columns {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    /* Form Groups */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .required {
+        color: #ef4444;
+        font-weight: 700;
+    }
+
+    /* Form Inputs */
+    .form-input,
+    .form-select,
+    .form-textarea {
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 80px;
+        font-family: inherit;
+    }
+
+    .form-select {
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 12px center;
+        background-repeat: no-repeat;
+        background-size: 16px;
+        padding-right: 40px;
+        appearance: none;
+    }
+
+    .input-help {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 4px;
+    }
+
+    .input-feedback {
+        font-size: 12px;
+        margin-top: 4px;
+        min-height: 16px;
+    }
+
+    .input-feedback.success {
+        color: #10b981;
+    }
+
+    .input-feedback.error {
+        color: #ef4444;
+    }
+
+    /* Progress Input */
+    .progress-input-container {
+        position: relative;
+    }
+
+    .progress-bar-mini {
+        height: 4px;
+        background: #e5e7eb;
+        border-radius: 2px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+
+    .progress-fill-mini {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #1e3a8a);
+        border-radius: 2px;
+        transition: width 0.3s ease;
+    }
+
+    /* Badges */
+    .badge-estado {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+    }
+
+    .badge-estado.estado-pendiente { background: #fef3c7; color: #92400e; }
+    .badge-estado.estado-en_proceso { background: #dbeafe; color: #1e40af; }
+    .badge-estado.estado-completada { background: #dcfce7; color: #166534; }
+    .badge-estado.estado-cancelada { background: #f3f4f6; color: #6b7280; }
+
+    /* Info Section */
+    .info-section {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .info-card {
+        background: white;
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-item label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 13px;
+    }
+
+    .info-item span {
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .text-muted {
+        color: #9ca3af !important;
+        font-style: italic;
+    }
+
+    /* Help Section */
+    .help-section {
+        background: #f0f9ff;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-left: 4px solid #0ea5e9;
+    }
+
+    .help-card h5 {
+        margin: 0 0 15px 0;
+        color: #0c4a6e;
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .help-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .help-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #e0f2fe;
+    }
+
+    .help-item span:last-child {
+        font-size: 12px;
+        color: #64748b;
+        line-height: 1.4;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+        color: white;
+        box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+        box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
+    }
+
+    .btn-secondary:hover {
+        background: #4b5563;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(107, 114, 128, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: #3b82f6;
+        border: 2px solid #3b82f6;
+    }
+
+    .btn-outline:hover {
+        background: #3b82f6;
+        color: white;
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding-top: 25px;
+        border-top: 2px solid #f1f5f9;
+        margin-top: 25px;
+    }
+
+    .actions-left,
+    .actions-right {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .form-grid.four-columns {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .form-grid.two-columns {
+            grid-template-columns: 1fr;
+        }
+        
+        .header-content {
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .header-actions {
+            align-self: stretch;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .editar-tarea-insumos-container {
+            padding: 15px;
+        }
+
+        .form-grid.four-columns {
+            grid-template-columns: 1fr;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .help-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .actions-left,
+        .actions-right {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+
+    /* Smooth animations */
+    .form-card,
+    .header-section {
+        animation: fadeInUp 0.5s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Form Validation States */
+    .form-input.error,
+    .form-select.error,
+    .form-textarea.error {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    .form-input.success,
+    .form-select.success,
+    .form-textarea.success {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    /* Loading states */
+    .btn.loading {
+        position: relative;
+        color: transparent;
+    }
+
+    .btn.loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-left: -10px;
+        margin-top: -10px;
+        width: 20px;
+        height: 20px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Insumos Section */
+    .insumos-container {
+        margin-top: 30px;
+    }
+
+    .insumos-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .insumos-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        padding: 20px;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .insumos-header h3 {
+        color: #374151;
+        font-size: 1.1em;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .insumos-header h3 i {
+        color: #6366f1;
+    }
+
+    .insumos-actions .btn {
+        font-size: 0.875em;
+        padding: 6px 12px;
+    }
+
+    .insumos-content {
+        padding: 20px;
+    }
+
+    .insumos-grid {
+        display: grid;
+        gap: 15px;
+    }
+
+    .insumo-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 15px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: white;
+        transition: all 0.2s ease;
+    }
+
+    .insumo-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+    }
+
+    .btn-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875em;
+    }
+
+    .btn-remove {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .btn-remove:hover {
+        background: #fecaca;
+        transform: scale(1.05);
+    }
+
+    .insumo-item.processed {
+        border-color: #10b981;
+        background: #f0fdf4;
+    }
+
+    .insumo-item.pending {
+        border-color: #f59e0b;
+        background: #fffbeb;
+    }
+
+    .insumo-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .insumo-info h4 {
+        color: #1f2937;
+        font-size: 1em;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .insumo-details {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .insumo-details .detail {
+        font-size: 0.875em;
+        color: #6b7280;
+    }
+
+    .insumo-details .detail strong {
+        color: #374151;
+    }
+
+    .badge-categoria {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75em;
+        font-weight: 500;
+    }
+
+    .insumo-status {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.875em;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .status-processed {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6b7280;
+    }
+
+    .empty-state i {
+        font-size: 3em;
+        color: #d1d5db;
+        margin-bottom: 15px;
+    }
+
+    .empty-state h4 {
+        color: #374151;
+        font-size: 1.1em;
+        margin: 0 0 8px 0;
+    }
+
+    .empty-state p {
+        margin: 0;
+        font-size: 0.95em;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .insumos-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .insumo-item {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .insumo-actions {
+            align-items: flex-start;
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%;
+        }
+    }
+
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-close:hover {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .modal-body {
+        padding: 20px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .search-filters {
+        margin-bottom: 20px;
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 15px;
+    }
+
+    .modal-insumos-list {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .modal-insumo-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        border-bottom: 1px solid #f3f4f6;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .modal-insumo-item:hover {
+        background: #f9fafb;
+    }
+
+    .modal-insumo-item.selected {
+        background: #eff6ff;
+        border-color: #3b82f6;
+    }
+
+    .modal-insumo-info h5 {
+        margin: 0 0 4px 0;
+        color: #374151;
+        font-size: 0.95em;
+    }
+
+    .modal-insumo-info p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.85em;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 20px;
+        border-top: 1px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    .loading-state {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: #6b7280;
+        gap: 10px;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales para el modal
+    let insumosSeleccionados = [];
+    let insumosDisponibles = [];
+    
+    // Referencias al modal
+    const modal = document.getElementById('agregarInsumosModal');
+    const modalInsumosContainer = document.getElementById('modalInsumosContainer');
+    const buscarInsumosInput = document.getElementById('buscarInsumos');
+    const laboratorioFiltroSelect = document.getElementById('laboratorioFiltro');
+    const contadorSeleccionados = document.getElementById('contadorSeleccionados');
+    
+    // Función para abrir el modal
+    window.openAgregarInsumosModal = function() {
+        insumosSeleccionados = [];
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        cargarLaboratoriosFiltro();
+        cargarInsumosDisponibles();
+    };
+    
+    // Función para cerrar el modal
+    window.closeAgregarInsumosModal = function() {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        limpiarModal();
+    };
+    
+    // Función para limpiar el modal
+    function limpiarModal() {
+        buscarInsumosInput.value = '';
+        laboratorioFiltroSelect.value = '';
+        insumosSeleccionados = [];
+        actualizarContadorSeleccionados();
+        modalInsumosContainer.innerHTML = '';
+    }
+    
+    // Función para cargar laboratorios en el filtro
+    function cargarLaboratoriosFiltro() {
+        {% if unidad %}
+        const unidadId = {{ unidad.id }};
+        {% else %}
+        console.error('No hay unidad disponible');
+        return;
+        {% endif %}
+        
+        fetch(`/insumos/api/laboratorios-por-unidad/${unidadId}/`)
+            .then(response => response.json())
+            .then(data => {
+                laboratorioFiltroSelect.innerHTML = '<option value="">Todos los laboratorios</option>';
+                if (data.success && data.laboratorios) {
+                    data.laboratorios.forEach(laboratorio => {
+                        const option = document.createElement('option');
+                        option.value = laboratorio.id;
+                        option.textContent = laboratorio.nombre;
+                        laboratorioFiltroSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar laboratorios:', error);
+            });
+    }
+    
+    // Función para cargar insumos disponibles
+    function cargarInsumosDisponibles() {
+        modalInsumosContainer.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Cargando insumos...</div>';
+        
+        {% if unidad %}
+        const unidadId = {{ unidad.id }};
+        {% else %}
+        modalInsumosContainer.innerHTML = '<div class="alert alert-danger">Error: No hay unidad académica disponible</div>';
+        return;
+        {% endif %}
+        const busqueda = buscarInsumosInput.value.trim();
+        const laboratorioId = laboratorioFiltroSelect.value;
+        
+        let url = `/insumos/api/insumos-disponibles/${unidadId}/`;
+        const params = new URLSearchParams();
+        
+        if (busqueda) params.append('busqueda', busqueda);
+        if (laboratorioId) params.append('laboratorio_id', laboratorioId);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                insumosDisponibles = data;
+                mostrarInsumosEnModal(data);
+            })
+            .catch(error => {
+                console.error('Error al cargar insumos:', error);
+                modalInsumosContainer.innerHTML = '<div class="alert alert-danger">Error al cargar los insumos</div>';
+            });
+    }
+    
+    // Función para mostrar insumos en el modal
+    function mostrarInsumosEnModal(insumos) {
+        if (insumos.length === 0) {
+            modalInsumosContainer.innerHTML = '<div class="alert alert-info">No se encontraron insumos disponibles</div>';
+            return;
+        }
+        
+        modalInsumosContainer.innerHTML = '';
+        
+        insumos.forEach(insumo => {
+            const insumoDiv = document.createElement('div');
+            insumoDiv.className = 'modal-insumo-item';
+            insumoDiv.dataset.insumoId = insumo.id;
+            
+            insumoDiv.innerHTML = `
+                <div class="modal-insumo-info">
+                    <h5>${insumo.nombre}</h5>
+                    <p><strong>Categoría:</strong> ${insumo.categoria_nombre}</p>
+                    <p><strong>Laboratorio:</strong> ${insumo.laboratorio_nombre}</p>
+                    <p><strong>Cantidad:</strong> ${insumo.cantidad} ${insumo.unidad_medida || ''}</p>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="insumo_${insumo.id}">
+                    <label class="form-check-label" for="insumo_${insumo.id}">
+                        Seleccionar
+                    </label>
+                </div>
+            `;
+            
+            // Event listener para selección
+            insumoDiv.addEventListener('click', function(e) {
+                if (e.target.type !== 'checkbox') {
+                    const checkbox = insumoDiv.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    toggleInsumoSeleccion(insumo, checkbox.checked);
+                }
+            });
+            
+            const checkbox = insumoDiv.querySelector('input[type="checkbox"]');
+            checkbox.addEventListener('change', function() {
+                toggleInsumoSeleccion(insumo, this.checked);
+            });
+            
+            modalInsumosContainer.appendChild(insumoDiv);
+        });
+    }
+    
+    // Función para toggle selección de insumo
+    function toggleInsumoSeleccion(insumo, seleccionado) {
+        const insumoDiv = document.querySelector(`[data-insumo-id="${insumo.id}"]`);
+        
+        if (seleccionado) {
+            if (!insumosSeleccionados.find(i => i.id === insumo.id)) {
+                insumosSeleccionados.push(insumo);
+                insumoDiv.classList.add('selected');
+            }
+        } else {
+            insumosSeleccionados = insumosSeleccionados.filter(i => i.id !== insumo.id);
+            insumoDiv.classList.remove('selected');
+        }
+        
+        actualizarContadorSeleccionados();
+    }
+    
+    // Función para actualizar contador de seleccionados
+    function actualizarContadorSeleccionados() {
+        const cantidad = insumosSeleccionados.length;
+        contadorSeleccionados.textContent = `${cantidad} insumo${cantidad !== 1 ? 's' : ''} seleccionado${cantidad !== 1 ? 's' : ''}`;
+    }
+    
+    // Función para agregar insumos seleccionados
+    window.agregarInsumosSeleccionados = function() {
+        if (insumosSeleccionados.length === 0) {
+            alert('Por favor selecciona al menos un insumo');
+            return;
+        }
+        
+        const tareaId = {{ tarea.id }};
+        const insumosIds = insumosSeleccionados.map(i => i.id);
+        
+        // Mostrar loading
+        const btnAgregar = document.querySelector('.btn-primary[onclick="agregarInsumosSeleccionados()"]');
+        const textoOriginal = btnAgregar.textContent;
+        btnAgregar.disabled = true;
+        btnAgregar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Agregando...';
+        
+        fetch(`/insumos/reordenamiento/api/agregar-insumos-tarea/${tareaId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                insumos_ids: insumosIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeAgregarInsumosModal();
+                location.reload(); // Recargar para mostrar los nuevos insumos
+            } else {
+                alert('Error al agregar insumos: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al agregar insumos');
+        })
+        .finally(() => {
+            btnAgregar.disabled = false;
+            btnAgregar.textContent = textoOriginal;
+        });
+    };
+    
+    // Función para remover insumo de la tarea
+    window.removeInsumoFromTarea = function(insumoTareaId, insumoNombre) {
+        if (!confirm(`¿Estás seguro de que quieres remover "${insumoNombre}" de esta tarea?`)) {
+            return;
+        }
+        
+        const tareaId = {{ tarea.id }};
+        
+        fetch(`/insumos/reordenamiento/api/remover-insumo-tarea/${tareaId}/${insumoTareaId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload(); // Recargar para actualizar la lista
+            } else {
+                alert('Error al remover insumo: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al remover insumo');
+        });
+    };
+    
+    // Event listeners para el modal
+    buscarInsumosInput.addEventListener('input', function() {
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            cargarInsumosDisponibles();
+        }, 300);
+    });
+    
+    laboratorioFiltroSelect.addEventListener('change', function() {
+        cargarInsumosDisponibles();
+    });
+    
+    // Cerrar modal al hacer click fuera
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeAgregarInsumosModal();
+        }
+    });
+    
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.style.display === 'flex') {
+            closeAgregarInsumosModal();
+        }
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const estadoSelect = document.getElementById('estado');
+    const progresoInput = document.getElementById('porcentaje_completado');
+    const progressFill = document.querySelector('.progress-fill-mini');
+    const form = document.getElementById('editarTareaForm');
+    
+    // Actualizar barra de progreso visual
+    function updateProgressBar() {
+        const value = progresoInput.value || 0;
+        progressFill.style.width = value + '%';
+    }
+    
+    // Actualizar progreso cuando cambia el input
+    progresoInput.addEventListener('input', updateProgressBar);
+    
+    // Actualizar progreso automáticamente según el estado
+    estadoSelect.addEventListener('change', function() {
+        const estado = this.value;
+        switch(estado) {
+            case 'pendiente':
+                if (progresoInput.value == 0 || progresoInput.value == '') {
+                    progresoInput.value = 0;
+                    updateProgressBar();
+                }
+                break;
+            case 'en_proceso':
+                if (progresoInput.value == 0) {
+                    progresoInput.value = 10;
+                    updateProgressBar();
+                }
+                break;
+            case 'completada':
+                progresoInput.value = 100;
+                updateProgressBar();
+                break;
+            case 'cancelada':
+                // No cambiar el progreso automáticamente
+                break;
+        }
+    });
+    
+    // Validación del progreso
+    progresoInput.addEventListener('change', function() {
+        const valor = parseInt(this.value);
+        if (valor < 0) {
+            this.value = 0;
+            updateProgressBar();
+        }
+        if (valor > 100) {
+            this.value = 100;
+            updateProgressBar();
+        }
+        
+        // Sugerir cambio de estado según progreso
+        const estado = estadoSelect.value;
+        if (valor === 100 && estado !== 'completada') {
+            if (confirm('El progreso es 100%. ¿Deseas cambiar el estado a "Completada"?')) {
+                estadoSelect.value = 'completada';
+            }
+        } else if (valor > 0 && valor < 100 && estado === 'pendiente') {
+            if (confirm('Has establecido progreso. ¿Deseas cambiar el estado a "En Proceso"?')) {
+                estadoSelect.value = 'en_proceso';
+            }
+        }
+    });
+    
+    // Validación en tiempo real del título
+    const tituloInput = document.getElementById('titulo');
+    const tituloFeedback = document.getElementById('titulo-feedback');
+    
+    tituloInput.addEventListener('input', function() {
+        const valor = this.value.trim();
+        if (valor.length === 0) {
+            this.classList.add('error');
+            this.classList.remove('success');
+            tituloFeedback.textContent = 'El título es obligatorio';
+            tituloFeedback.className = 'input-feedback error';
+        } else if (valor.length < 3) {
+            this.classList.add('error');
+            this.classList.remove('success');
+            tituloFeedback.textContent = 'El título debe tener al menos 3 caracteres';
+            tituloFeedback.className = 'input-feedback error';
+        } else {
+            this.classList.remove('error');
+            this.classList.add('success');
+            tituloFeedback.textContent = 'Título válido';
+            tituloFeedback.className = 'input-feedback success';
+        }
+    });
+    
+    // Validación del formulario
+    form.addEventListener('submit', function(e) {
+        const titulo = document.getElementById('titulo').value.trim();
+        const tipo = document.getElementById('tipo').value;
+        const estado = document.getElementById('estado').value;
+        const prioridad = document.getElementById('prioridad').value;
+        
+        let isValid = true;
+        
+        // Validar campos obligatorios
+        if (!titulo || !tipo || !estado || !prioridad) {
+            e.preventDefault();
+            alert('Por favor, completa todos los campos obligatorios.');
+            isValid = false;
+        }
+        
+        // Validar título mínimo
+        if (titulo.length < 3) {
+            e.preventDefault();
+            alert('El título debe tener al menos 3 caracteres.');
+            isValid = false;
+        }
+        
+        if (!isValid) return false;
+        
+        // Confirmación para estados críticos
+        if (estado === 'completada') {
+            if (!confirm('¿Estás seguro de marcar esta tarea como completada? Esto afectará el estado de todos los insumos asociados.')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        if (estado === 'cancelada') {
+            if (!confirm('¿Estás seguro de cancelar esta tarea? Los insumos no se procesarán.')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        // Mostrar estado de carga
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+    });
+    
+    // Configurar fecha mínima para fecha fin estimada (hoy)
+    const fechaInput = document.getElementById('fecha_fin_estimada');
+    const today = new Date().toISOString().split('T')[0];
+    fechaInput.min = today;
+    
+    // Inicializar barra de progreso
+    updateProgressBar();
+    
+    // Auto-save draft (opcional)
+    let saveTimeout;
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                // Aquí podrías implementar auto-guardado
+                console.log('Auto-saving draft...');
+            }, 2000);
+        });
+    });
+});
+</script>
+{% endblock %}

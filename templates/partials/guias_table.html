@@ -1,0 +1,164 @@
+<!-- Tabla de Guías para R2 -->
+<div class="table-header">
+    <h4><i class="fas fa-book-open"></i> Lista de Guías de Laboratorio</h4>
+    <div class="table-actions">
+        <button class="btn-export" onclick="mostrarOpcionesExportacion()">
+            <i class="fas fa-download"></i> Exportar Avanzado
+        </button>
+        <button class="btn-export-pdf" onclick="exportarGuiasFiltradas()" style="background: #dc2626; margin-left: 10px;">
+            <i class="fas fa-file-pdf"></i> PDF Guías
+        </button>
+    </div>
+</div>
+
+<div class="table-wrapper">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Título</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Carrera</th>
+                <th>Asignatura</th>
+                <th>Semestre</th>
+                <th>Unidad Didáctica</th>
+                <th>Duración</th>
+                <th>Fecha Registro</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for guia in guias %}
+            <tr>
+                <td>{{ guia.codigo|default:'-' }}</td>
+                <td>{{ guia.titulo }}</td>
+                <td>
+                    <span class="badge badge-tipo-{{ guia.tipo|lower }}">
+                        {{ guia.get_tipo_display|default:'N/A' }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge badge-{{ guia.estado|lower }}">
+                        {{ guia.get_estado_display|default:'N/A' }}
+                    </span>
+                </td>
+                <td>{{ guia.carrera|default:'-' }}</td>
+                <td>{{ guia.asignatura|default:'-' }}</td>
+                <td>{{ guia.semestre|default:'-' }}°</td>
+                <td>{{ guia.unidad_didactica|default:'-' }}</td>
+                <td>
+                    {% if guia.duracion_horas %}
+                        <span class="duration-badge">
+                            {{ guia.duracion_horas }}h
+                        </span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ guia.fecha_registro|date:"d/m/Y" }}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-action btn-correlaciones" 
+                                onclick="mostrarCorrelacionesGuia({{ guia.id }})" 
+                                title="Ver Correlaciones">
+                            <i class="fas fa-project-diagram"></i>
+                        </button>
+                        <button class="btn-action btn-pdf" 
+                                onclick="exportarGuiaCompleta({{ guia.id }}, '{{ guia.titulo|escapejs }}')" 
+                                title="Exportar PDF Completo">
+                            <i class="fas fa-file-pdf"></i>
+                        </button>
+                        <a href="#" class="btn-action btn-view" title="Ver Detalle">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="#" class="btn-action btn-edit" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="11" class="no-data">
+                    <i class="fas fa-book-open"></i>
+                    <p>No se encontraron guías con los filtros aplicados</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginación -->
+{% if guias.has_other_pages %}
+<div class="pagination-wrapper">
+    <nav class="pagination">
+        {% if guias.has_previous %}
+            <a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Primera</a>
+            <a href="?page={{ guias.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Anterior</a>
+        {% endif %}
+
+        <span class="page-info">
+            Página {{ guias.number }} de {{ guias.paginator.num_pages }}
+        </span>
+
+        {% if guias.has_next %}
+            <a href="?page={{ guias.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Siguiente</a>
+            <a href="?page={{ guias.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">Última</a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+
+<style>
+/* Estilos específicos para guías */
+.badge-tipo-practica {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.badge-tipo-teoria {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.badge-tipo-laboratorio {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.badge-completa {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge-pendiente {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-borrador {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.duration-badge {
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.btn-download {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.btn-download:hover {
+    background: #dc2626;
+    color: white;
+}
+</style>
