@@ -18,7 +18,7 @@ urlpatterns = [
     
     # URLs para prácticas de laboratorio (nuevas guías basadas en prácticas reales)
     path('practica/<int:practica_id>/generar-word/', views.generar_practica_word, name='generar_practica_word'),
-    path('practica/<int:practica_id>/generar-pdf/', views.generar_practica_pdf, name='generar_practica_pdf'),
+    path('practica/<int:practica_id>/generar-pdf/', views.generar_practica_word, name='generar_practica_pdf'),  # Usar LaTeX también para PDF
     path('practica/<int:practica_id>/detalle/', views.detalle_practica_completa, name='detalle_practica_completa'),
     
     # API para dropdowns dinámicos

@@ -1697,26 +1697,97 @@ def html_to_latex(html_content, temp_dir=None):
     soup = BeautifulSoup(html_content, 'html.parser')
     image_counter = [0]  # Usar lista para modificar en función anidada
     
+    def is_math_context(text):
+        """Detecta si el texto parece contener matemáticas"""
+        # Si el texto es muy largo (>50 chars), probablemente NO es una ecuación
+        if len(text.strip()) > 50:
+            return False
+        
+        # Si contiene palabras comunes del español, NO es matemática
+        spanish_words = ['PARA', 'CON', 'ACERO', 'EQUIPO', 'DE', 'LA', 'EL', 'EN', 'A', 'Y', 'O']
+        text_upper = text.upper()
+        if any(word in text_upper for word in spanish_words):
+            return False
+        
+        # Patrones que indican matemáticas
+        math_indicators = [
+            r'\d+\s*[+\-*=×]\s*\d+',  # 1+2, 3-4, 5*6, 9=10 (SIN división para evitar falsos positivos)
+            r'[a-zA-Z]\^[a-zA-Z0-9\{\}]',  # x^2, a^n, x^{10}
+            r'[a-zA-Z]_[a-zA-Z0-9\{\}]',  # x_1, a_n, x_{10}
+            r'^\d+\s*/\s*\d+$',  # SOLO fracciones simples aisladas como 3/4, 233/443
+            r'^[a-zA-Z]\s*/\s*[a-zA-Z]$',  # SOLO fracciones algebraicas aisladas como a/b
+            r'[∫∑√∞±×÷≤≥≠πθλμαβγδ]',  # símbolos matemáticos y griegos
+        ]
+        import re
+        for pattern in math_indicators:
+            if re.search(pattern, text):
+                return True
+        
+        return False
+    
     # Función recursiva para procesar nodos
     def process_node(node):
         if isinstance(node, str):
-            # Escapar caracteres especiales de LaTeX
             text = str(node)
-            replacements = {
-                '\\': '\\textbackslash{}',
-                '&': '\\&',
-                '%': '\\%',
-                '$': '\\$',
-                '#': '\\#',
-                '_': '\\_',
-                '{': '\\{',
-                '}': '\\}',
-                '~': '\\textasciitilde{}',
-                '^': '\\textasciicircum{}',
-            }
-            for old, new in replacements.items():
-                text = text.replace(old, new)
-            return text
+            
+            # Si parece matemática, no escapar ^ y _ , y envolver en modo math
+            if is_math_context(text):
+                # Solo escapar algunos caracteres problemáticos
+                basic_replacements = {
+                    '\\': '\\textbackslash{}',
+                    '&': '\\&',
+                    '%': '\\%',
+                    '$': '\\$',
+                    '#': '\\#',
+                    '{': '\\{',
+                    '}': '\\}',
+                    '~': '\\textasciitilde{}',
+                }
+                for old, new in basic_replacements.items():
+                    text = text.replace(old, new)
+                
+                # Convertir símbolos matemáticos Unicode
+                math_symbols = {
+                    '∫': r'\int',
+                    '∑': r'\sum',
+                    '√': r'\sqrt',
+                    '∞': r'\infty',
+                    '≤': r'\leq',
+                    '≥': r'\geq',
+                    '≠': r'\neq',
+                    '±': r'\pm',
+                    '×': r'\times',
+                    '÷': r'\div',
+                }
+                for symbol, latex in math_symbols.items():
+                    text = text.replace(symbol, latex)
+                
+                # Convertir fracciones simples a \frac{}{} para mejor visualización
+                import re
+                # Fracciones como 233/443 → \frac{233}{443}
+                text = re.sub(r'(\d+)\s*/\s*(\d+)', r'\\frac{\1}{\2}', text)
+                # Fracciones algebraicas como a/b → \frac{a}{b}
+                text = re.sub(r'([a-zA-Z]+)\s*/\s*([a-zA-Z]+)', r'\\frac{\1}{\2}', text)
+                
+                # Envolver en modo matemático
+                return f"${text}$"
+            else:
+                # Escapar caracteres especiales de LaTeX normalmente
+                replacements = {
+                    '\\': '\\textbackslash{}',
+                    '&': '\\&',
+                    '%': '\\%',
+                    '$': '\\$',
+                    '#': '\\#',
+                    '_': '\\_',
+                    '{': '\\{',
+                    '}': '\\}',
+                    '~': '\\textasciitilde{}',
+                    '^': '\\textasciicircum{}',
+                }
+                for old, new in replacements.items():
+                    text = text.replace(old, new)
+                return text
         
         result = ""
         tag_name = node.name
@@ -1741,6 +1812,22 @@ def html_to_latex(html_content, temp_dir=None):
             for child in node.children:
                 result += process_node(child)
             result += "}"
+        
+        # Superíndice (exponentes) - de fórmulas de Word
+        elif tag_name == 'sup':
+            content = ""
+            for child in node.children:
+                content += process_node(child)
+            # Usar modo matemático para superíndice
+            result += f"$^{{{content}}}$"
+        
+        # Subíndice - de fórmulas de Word
+        elif tag_name == 'sub':
+            content = ""
+            for child in node.children:
+                content += process_node(child)
+            # Usar modo matemático para subíndice
+            result += f"$_{{{content}}}$"
         
         # Divs (usado para centrado principalmente)
         elif tag_name == 'div':
@@ -1848,8 +1935,30 @@ def html_to_latex(html_content, temp_dir=None):
                         with open(img_path, 'wb') as f:
                             f.write(image_data)
                         
+                        # Extraer dimensiones del style si existen
+                        style = node.get('style', '')
+                        width_param = 'max width=0.8\\textwidth'
+                        height_param = 'max height=0.6\\textheight'
+                        
+                        if style:
+                            # Parsear width y height del style
+                            import re
+                            width_match = re.search(r'width:\s*(\d+)px', style)
+                            height_match = re.search(r'height:\s*(\d+)px', style)
+                            
+                            if width_match:
+                                # Convertir px a cm (aproximadamente 1px = 0.0264583cm)
+                                width_px = int(width_match.group(1))
+                                width_cm = width_px * 0.0264583
+                                width_param = f'width={width_cm:.2f}cm'
+                            
+                            if height_match:
+                                height_px = int(height_match.group(1))
+                                height_cm = height_px * 0.0264583
+                                height_param = f'height={height_cm:.2f}cm'
+                        
                         # Agregar a LaTeX
-                        result += f"\n\\begin{{center}}\n\\includegraphics[max width=0.8\\textwidth, max height=0.6\\textheight, keepaspectratio]{{{img_filename}}}\n\\end{{center}}\n"
+                        result += f"\n\\begin{{center}}\n\\includegraphics[{width_param}, {height_param}, keepaspectratio]{{{img_filename}}}\n\\end{{center}}\n"
                 except Exception as e:
                     result += f"[Error al procesar imagen: {alt}]"
             elif src.startswith('http'):
@@ -1857,10 +1966,10 @@ def html_to_latex(html_content, temp_dir=None):
             else:
                 result += f"[Imagen: {src}]"
         
-        # Ecuaciones - CKEditor usa span class="equation"
+        # Ecuaciones - CKEditor usa span class="equation" o math tags de Word
         elif tag_name == 'span':
             classes = node.get('class', [])
-            if 'equation' in classes:
+            if 'equation' in classes or 'math-tex' in classes:
                 # Extraer ecuación LaTeX
                 equation_text = node.get_text()
                 # Limpiar \( y \) si existen
@@ -1869,6 +1978,47 @@ def html_to_latex(html_content, temp_dir=None):
                 result += f"${equation_text}$"
             else:
                 # Span normal, procesar hijos
+                for child in node.children:
+                    result += process_node(child)
+        
+        # Tags matemáticos de Word/MathML
+        elif tag_name in ['math', 'mrow', 'msup', 'msub', 'mfrac', 'msqrt']:
+            # Intentar convertir MathML a LaTeX básico
+            try:
+                math_text = node.get_text()
+                # Si el texto contiene operadores matemáticos, envolverlo en modo math
+                if any(char in math_text for char in ['∫', '∑', '√', '∞', '≤', '≥', '≠', '±', '×', '÷', 'α', 'β', 'γ', 'δ', 'θ', 'λ', 'μ', 'π', 'σ', 'ω']):
+                    # Mapear algunos símbolos comunes
+                    math_replacements = {
+                        '∫': r'\int',
+                        '∑': r'\sum',
+                        '√': r'\sqrt',
+                        '∞': r'\infty',
+                        '≤': r'\leq',
+                        '≥': r'\geq',
+                        '≠': r'\neq',
+                        '±': r'\pm',
+                        '×': r'\times',
+                        '÷': r'\div',
+                        'α': r'\alpha',
+                        'β': r'\beta',
+                        'γ': r'\gamma',
+                        'δ': r'\delta',
+                        'θ': r'\theta',
+                        'λ': r'\lambda',
+                        'μ': r'\mu',
+                        'π': r'\pi',
+                        'σ': r'\sigma',
+                        'ω': r'\omega',
+                    }
+                    for symbol, latex in math_replacements.items():
+                        math_text = math_text.replace(symbol, latex)
+                    result += f"${math_text}$"
+                else:
+                    result += math_text
+            except:
+                for child in node.children:
+                    result += process_node(child)
                 for child in node.children:
                     result += process_node(child)
         
@@ -1946,9 +2096,19 @@ def generar_practica_word(request, practica_id):
 \usepackage{titlesec}
 \usepackage{tcolorbox}
 \usepackage{adjustbox}
+\usepackage{seqsplit}
 
 % Configuración de página
 \geometry{a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+
+% Permitir corte de palabras largas
+\sloppy
+\emergencystretch=3em
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+
+% Definir columna con texto justificado a la izquierda
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
 % Colores EMI
 \definecolor{emiazul}{RGB}{0,46,93}
@@ -2208,13 +2368,14 @@ def generar_practica_word(request, practica_id):
         if equipos.exists():
             latex_content += r"""\subsection{Equipos}
 
-\begin{longtable}{|p{10cm}|p{3cm}|}
+\begin{longtable}{|L{12cm}|p{2cm}|}
 \hline
 \textbf{Equipo} & \textbf{Cantidad} \\
 \hline
 """
             for equipo in equipos:
-                latex_content += f"{html_to_latex(equipo.nombre)} & {equipo.cantidad if equipo.cantidad else '1'} \\\\\n\\hline\n"
+                nombre_limpio = html_to_latex(equipo.nombre).strip()
+                latex_content += f"{nombre_limpio} & {equipo.cantidad if equipo.cantidad else '1'} \\\\\n\\hline\n"
             
             latex_content += r"""\end{longtable}
 
@@ -2224,13 +2385,14 @@ def generar_practica_word(request, practica_id):
         if materiales.exists():
             latex_content += r"""\subsection{Materiales}
 
-\begin{longtable}{|p{10cm}|p{3cm}|}
+\begin{longtable}{|L{12cm}|p{2cm}|}
 \hline
 \textbf{Material} & \textbf{Cantidad} \\
 \hline
 """
             for material in materiales:
-                latex_content += f"{html_to_latex(material.nombre)} & {material.cantidad if material.cantidad else '1'} \\\\\n\\hline\n"
+                nombre_limpio = html_to_latex(material.nombre).strip()
+                latex_content += f"{nombre_limpio} & {material.cantidad if material.cantidad else '1'} \\\\\n\\hline\n"
             
             latex_content += r"""\end{longtable}
 
@@ -2240,13 +2402,14 @@ def generar_practica_word(request, practica_id):
         if herramientas.exists():
             latex_content += r"""\subsection{Herramientas}
 
-\begin{longtable}{|p{10cm}|p{3cm}|}
+\begin{longtable}{|L{12cm}|p{2cm}|}
 \hline
 \textbf{Herramienta} & \textbf{Cantidad} \\
 \hline
 """
             for herramienta in herramientas:
-                latex_content += f"{html_to_latex(herramienta.nombre)} & {herramienta.cantidad if herramienta.cantidad else '1'} \\\\\n\\hline\n"
+                nombre_limpio = html_to_latex(herramienta.nombre).strip()
+                latex_content += f"{nombre_limpio} & {herramienta.cantidad if herramienta.cantidad else '1'} \\\\\n\\hline\n"
             
             latex_content += r"""\end{longtable}
 
@@ -2256,13 +2419,14 @@ def generar_practica_word(request, practica_id):
         if reactivos.exists():
             latex_content += r"""\subsection{Reactivos}
 
-\begin{longtable}{|p{10cm}|p{3cm}|}
+\begin{longtable}{|L{12cm}|p{2cm}|}
 \hline
 \textbf{Reactivo} & \textbf{Cantidad} \\
 \hline
 """
             for reactivo in reactivos:
-                latex_content += f"{html_to_latex(reactivo.nombre)} & {reactivo.cantidad if reactivo.cantidad else '1'} \\\\\n\\hline\n"
+                nombre_limpio = html_to_latex(reactivo.nombre).strip()
+                latex_content += f"{nombre_limpio} & {reactivo.cantidad if reactivo.cantidad else '1'} \\\\\n\\hline\n"
             
             latex_content += r"""\end{longtable}
 
