@@ -560,10 +560,11 @@ def detalle_combinacion_view(request, combinacion_id):
         'fundamentos_teoricos': FundamentoTeorico.objects.filter(contenido_analitico=contenido_analitico),
         'procedimientos': Procedimientos.objects.filter(contenido_analitico=contenido_analitico).order_by('numero_paso'),
         
-        # RECURSOS (Equipos, Materiales, Herramientas)
+        # RECURSOS (Equipos, Materiales, Herramientas, Reactivos)
         'equipos': MaterialesHerramientasEquipos.objects.filter(contenido_analitico=contenido_analitico, tipo_elemento='equipo').order_by('orden'),
         'materiales': MaterialesHerramientasEquipos.objects.filter(contenido_analitico=contenido_analitico, tipo_elemento='material').order_by('orden'),  
         'herramientas': MaterialesHerramientasEquipos.objects.filter(contenido_analitico=contenido_analitico, tipo_elemento='herramienta').order_by('orden'),
+        'reactivos': MaterialesHerramientasEquipos.objects.filter(contenido_analitico=contenido_analitico, tipo_elemento='reactivo').order_by('orden'),
         
         # CÁLCULOS Y RESULTADOS
         'calculos_resultados': CalculosResultados.objects.filter(contenido_analitico=contenido_analitico),
@@ -853,14 +854,17 @@ def agregar_datos_malla_view(request):
                             equipos_seleccionados_json = request.POST.get(f'equipos_seleccionados_{i}_{grupo_index}', '[]')
                             materiales_seleccionados_json = request.POST.get(f'materiales_seleccionados_{i}_{grupo_index}', '[]')
                             herramientas_seleccionados_json = request.POST.get(f'herramientas_seleccionados_{i}_{grupo_index}', '[]')
+                            reactivos_seleccionados_json = request.POST.get(f'reactivos_seleccionados_{i}_{grupo_index}', '[]')
                             
                             equipos_seleccionados = json.loads(equipos_seleccionados_json) if equipos_seleccionados_json else []
                             materiales_seleccionados = json.loads(materiales_seleccionados_json) if materiales_seleccionados_json else []
                             herramientas_seleccionados = json.loads(herramientas_seleccionados_json) if herramientas_seleccionados_json else []
+                            reactivos_seleccionados = json.loads(reactivos_seleccionados_json) if reactivos_seleccionados_json else []
                         except (json.JSONDecodeError, ValueError):
                             equipos_seleccionados = []
                             materiales_seleccionados = []
                             herramientas_seleccionados = []
+                            reactivos_seleccionados = []
                         
                         # Solo crear registros si hay contenido en al menos un campo
                         if any(valor.strip() for valor in campos_grupo.values()):
@@ -948,6 +952,18 @@ def agregar_datos_malla_view(request):
                                         contenido_analitico=contenido,
                                         nombre=herramienta_nombre[:200],
                                         tipo_elemento='herramienta',
+                                        cantidad='1',
+                                        orden=(grupo_index * 100) + orden_contador
+                                    )
+                                    orden_contador += 1
+                            
+                            # Crear reactivos seleccionados (múltiples)
+                            for reactivo_nombre in reactivos_seleccionados:
+                                if reactivo_nombre.strip():
+                                    MaterialesHerramientasEquipos.objects.create(
+                                        contenido_analitico=contenido,
+                                        nombre=reactivo_nombre[:200],
+                                        tipo_elemento='reactivo',
                                         cantidad='1',
                                         orden=(grupo_index * 100) + orden_contador
                                     )
