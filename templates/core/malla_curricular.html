@@ -57,12 +57,12 @@
 
     /* Header con estilo del sistema */
     .page-header-custom {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        border-radius: 12px;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        border-radius: 16px;
         padding: 2rem;
         margin-bottom: 2rem;
         color: white;
-        box-shadow: var(--shadow-lg);
+        box-shadow: 0 10px 25px rgba(30, 58, 138, 0.15);
         position: relative;
         overflow: hidden;
     }
@@ -70,12 +70,12 @@
     .page-header-custom::before {
         content: '';
         position: absolute;
-        top: -50%;
-        right: -10%;
-        width: 150px;
-        height: 150px;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-        border-radius: 50%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.1;
     }
 
     .header-content {
@@ -93,13 +93,15 @@
         display: flex;
         align-items: center;
         gap: 1rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .header-subtitle {
         font-size: 1.1rem;
         opacity: 0.9;
         margin: 0;
-        max-width: 500px;
+        font-weight: 300;
+        max-width: 600px;
     }
 
     .btn-admin {
@@ -916,7 +918,7 @@
     <div class="page-header-custom">
         <div class="header-content">
             <div class="header-text">
-                <h1><i class="fas fa-book-open"></i> Sistema de Malla Curricular</h1>
+                <h1><i class="fas fa-book-open"></i> Malla Curricular</h1>
                 <p class="header-subtitle">Gestión integral de planes de estudio y contenidos académicos del sistema de laboratorios</p>
             </div>
             <a href="{% url 'core:agregar_datos_malla' %}" class="btn-admin">
@@ -1064,68 +1066,7 @@
         {% endif %}
     </div>
 
-    <!-- Información de filtros y resultados -->
-    <div class="filters-info">
-        <div class="results-summary">
-            {% if filterset %}
-                <div class="results-count">
-                    <strong>{{ filtered_count }}</strong> asignatura{{ filtered_count|pluralize }} 
-                    {% if filtered_count != total_count %}
-                        de <strong>{{ total_count }}</strong> total{{ total_count|pluralize }}
-                    {% endif %}
-                </div>
-                
-                <!-- Filtros activos -->
-                {% if request.GET %}
-                <div class="active-filters">
-                    <span class="filters-label">Filtros activos:</span>
-                    {% if request.GET.search %}
-                        <span class="filter-tag">
-                            Búsqueda: "{{ request.GET.search }}"
-                            <a href="?{% for key, value in request.GET.items %}{% if key != 'search' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
-                        </span>
-                    {% endif %}
-                    {% if request.GET.nombre %}
-                        <span class="filter-tag">
-                            Nombre: "{{ request.GET.nombre }}"
-                            <a href="?{% for key, value in request.GET.items %}{% if key != 'nombre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
-                        </span>
-                    {% endif %}
-                    {% if request.GET.unidad_academica %}
-                        <span class="filter-tag">
-                            Unidad: {{ request.GET.unidad_academica }}
-                            <a href="?{% for key, value in request.GET.items %}{% if key != 'unidad_academica' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
-                        </span>
-                    {% endif %}
-                    {% if request.GET.carrera %}
-                        <span class="filter-tag">
-                            Carrera: {{ request.GET.carrera }}
-                            <a href="?{% for key, value in request.GET.items %}{% if key != 'carrera' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
-                        </span>
-                    {% endif %}
-                    {% if request.GET.semestre %}
-                        <span class="filter-tag">
-                            Semestre: {{ request.GET.semestre }}°
-                            <a href="?{% for key, value in request.GET.items %}{% if key != 'semestre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
-                        </span>
-                    {% endif %}
-                    {% if request.GET.codigo_competencia %}
-                        <span class="filter-tag">
-                            Código: "{{ request.GET.codigo_competencia }}"
-                            <a href="?{% for key, value in request.GET.items %}{% if key != 'codigo_competencia' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
-                        </span>
-                    {% endif %}
-                    {% if request.GET.sigla_curricular %}
-                        <span class="filter-tag">
-                            Sigla: "{{ request.GET.sigla_curricular }}"
-                            <a href="?{% for key, value in request.GET.items %}{% if key != 'sigla_curricular' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="remove-filter">×</a>
-                        </span>
-                    {% endif %}
-                </div>
-                {% endif %}
-            {% endif %}
-        </div>
-    </div>
+    <!-- Información de filtros y resultados (Eliminado) -->
 
     <!-- Resultados de búsqueda (cuando hay filtros aplicados) -->
     {% if show_filtered_results and asignaturas %}

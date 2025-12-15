@@ -91,7 +91,15 @@ class RegistroForm(forms.ModelForm):
         user.email = self.cleaned_data['correo_institucional']
         user.estado_usuario = 'activo'
         user.debe_cambiar_password = False
-        user.rol = 'docente'  # Rol por defecto
+        
+        # Asignar rol basado en el correo
+        correo = self.cleaned_data['correo_institucional']
+        if '@doc.emi.edu.bo' in correo:
+            user.rol = 'docente'
+        elif '@est.emi.edu.bo' in correo:
+            user.rol = 'estudiante'
+        else:
+            user.rol = 'docente'  # Rol por defecto
         
         if commit:
             user.save()

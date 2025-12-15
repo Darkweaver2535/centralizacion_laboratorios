@@ -67,6 +67,7 @@ class Usuario(AbstractUser):
     ROLES = [
         ('administrador', 'Administrador'),
         ('docente', 'Docente'),
+        ('estudiante', 'Estudiante'),
         ('jefe_uycit', 'Jefe UYCIT'),
         ('auxiliar', 'Auxiliar/Encargado de Laboratorio'),
     ]

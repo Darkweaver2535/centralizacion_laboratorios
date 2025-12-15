@@ -664,7 +664,7 @@
                 </li>
                 
                 <!-- 2. Gestión de la Información (Registro R1) -->
-                {% if user.rol != 'docente' %}
+                {% if user.rol != 'docente' and user.rol != 'estudiante' %}
                 <li class="dropdown-menu bubble-menu" data-dropdown="gestion-informacion">
                     <button class="dropdown-toggle bubble-toggle" onclick="toggleBubble(this)">
                         <div class="bubble-content">
@@ -690,28 +690,36 @@
                             <i class="fas fa-boxes"></i>
                             Insumos
                         </a>
-                        <a href="{% url 'activos:seleccionar_metodo' %}" class="submenu-item {% if request.resolver_match.namespace == 'activos' %}active{% endif %}">
-                            <i class="fas fa-archive"></i>
-                            Activos Fijos
-                        </a>
                     </div>
                 </li>
                 {% endif %}
 
                 <!-- 3. Gestión de Laboratorios (Visualización R2) - Enlace Directo -->
+                {% if user.rol != 'estudiante' %}
                 <li>
                     <a href="{% url 'visualizacion:analisis' %}" class="menu-item {% if request.resolver_match.namespace == 'visualizacion' %}active{% endif %}">
                         <i class="fas fa-microscope"></i>
                         Gestión de Laboratorios
                     </a>
                 </li>
+                {% endif %}
 
                 <!-- 4. Usuarios -->
-                {% if user.rol != 'docente' %}
+                {% if user.rol != 'docente' and user.rol != 'estudiante' %}
                 <li>
                     <a href="{% url 'usuarios:lista' %}" class="menu-item {% if request.resolver_match.namespace == 'usuarios' %}active{% endif %}">
                         <i class="fas fa-users"></i>
                         Usuarios
+                    </a>
+                </li>
+                {% endif %}
+
+                <!-- 5. Guías de Laboratorio (Solo Estudiantes) -->
+                {% if user.rol == 'estudiante' %}
+                <li>
+                    <a href="{% url 'guias:lista' %}" class="menu-item {% if request.resolver_match.namespace == 'guias' %}active{% endif %}">
+                        <i class="fas fa-book-open"></i>
+                        Guías de Laboratorio
                     </a>
                 </li>
                 {% endif %}

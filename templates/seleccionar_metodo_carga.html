@@ -6,13 +6,19 @@
 
 {% block page_description %}Seleccione el método de carga de datos que desea utilizar{% endblock %}
 
+{% block header_content %}{% endblock %}
+
 {% block content %}
 <div class="method-selector-container">
     
     <!-- Título y descripción -->
-    <div class="selector-header">
-        <h2><i class="fas fa-{% if tipo == 'equipos' %}flask{% elif tipo == 'insumos' %}boxes{% else %}tools{% endif %}"></i> Registrar {{ tipo|title }}</h2>
-        <p class="description">Elija el método más conveniente para registrar los datos en el sistema</p>
+    <div class="page-header-custom">
+        <div class="header-content">
+            <div class="header-text">
+                <h1><i class="fas fa-{% if tipo == 'equipos' %}flask{% elif tipo == 'insumos' %}boxes{% else %}tools{% endif %}"></i> Registrar {{ tipo|title }}</h1>
+                <p class="header-subtitle">Elija el método más conveniente para registrar los datos en el sistema</p>
+            </div>
+        </div>
     </div>
 
     <!-- Opciones de carga -->
@@ -153,25 +159,53 @@
     padding: 20px;
 }
 
-.selector-header {
-    text-align: center;
-    margin-bottom: 40px;
+/* Header con estilo del sistema */
+.page-header-custom {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: white;
+    box-shadow: 0 10px 25px rgba(30, 58, 138, 0.15);
+    position: relative;
+    overflow: hidden;
 }
 
-.selector-header h2 {
-    color: #1e3a8a;
+.page-header-custom::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.1;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.header-text h1 {
     font-size: 2.5rem;
-    margin-bottom: 10px;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 15px;
+    gap: 1rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.selector-header .description {
+.header-subtitle {
     font-size: 1.1rem;
-    color: #64748b;
+    opacity: 0.9;
     margin: 0;
+    font-weight: 300;
+    max-width: 600px;
 }
 
 .method-options {

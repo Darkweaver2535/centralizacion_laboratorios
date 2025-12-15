@@ -109,23 +109,6 @@
                 </div>
             </div>
         </div>
-        
-        <div class="stat-card warning">
-            <div class="stat-background">
-                <div class="stat-wave"></div>
-            </div>
-            <div class="stat-icon">
-                <i class="fas fa-archive"></i>
-            </div>
-            <div class="stat-content">
-                <h3 class="stat-number" id="total-activos">0</h3>
-                <p>Activos Fijos</p>
-                <div class="stat-trend positive">
-                    <i class="fas fa-arrow-up trend-arrow"></i>
-                    <span class="trend-text" id="valor-activos">$0 registrados</span>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 {% endif %}
@@ -184,22 +167,10 @@
                             <i class="fas fa-chevron-right"></i>
                         </div>
                     </a>
-                    
-                    <a href="{% url 'activos:seleccionar_metodo' %}" class="quick-action-btn warning-action">
-                        <div class="action-icon">
-                            <i class="fas fa-archive"></i>
-                        </div>
-                        <div class="action-content">
-                            <span class="action-title">Activos Fijos</span>
-                            <span class="action-desc">Patrimonio institucional</span>
-                        </div>
-                        <div class="action-arrow">
-                            <i class="fas fa-chevron-right"></i>
-                        </div>
-                    </a>
                     {% endif %}
                     
                     <!-- Gestión de Laboratorios -->
+                    {% if user.rol != 'estudiante' %}
                     <a href="{% url 'visualizacion:analisis' %}" class="quick-action-btn success-action">
                         <div class="action-icon">
                             <i class="fas fa-microscope"></i>
@@ -212,6 +183,7 @@
                             <i class="fas fa-chevron-right"></i>
                         </div>
                     </a>
+                    {% endif %}
                     
                     {% if user.rol == 'administrador' %}
                     <!-- Guías de Laboratorio -->
@@ -222,6 +194,22 @@
                         <div class="action-content">
                             <span class="action-title">Guías de Laboratorio</span>
                             <span class="action-desc">Gestión de prácticas</span>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    {% if user.rol == 'estudiante' %}
+                    <!-- Guías de Laboratorio para Estudiantes -->
+                    <a href="{% url 'guias:lista' %}" class="quick-action-btn info-action">
+                        <div class="action-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <div class="action-content">
+                            <span class="action-title">Guías de Laboratorio</span>
+                            <span class="action-desc">Ver guías disponibles</span>
                         </div>
                         <div class="action-arrow">
                             <i class="fas fa-chevron-right"></i>

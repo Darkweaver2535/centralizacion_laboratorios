@@ -456,6 +456,11 @@ def detalle_guia(request, guia_id):
 def eliminar_guia(request, guia_id):
     """Vista para eliminar una guía"""
     
+    # Verificar permisos
+    if request.user.rol == 'estudiante':
+        messages.error(request, 'No tienes permisos para eliminar guías.')
+        return redirect('guias:lista')
+    
     guia = get_object_or_404(GuiaGenerada, id=guia_id)
     
     if request.method == 'POST':

@@ -573,9 +573,11 @@
             <p>Gestión completa de guías didácticas y material de laboratorio</p>
         </div>
         <div class="header-actions">
+            {% if user.rol != 'estudiante' %}
             <a href="{% url 'guias:nueva' %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Nueva Guía
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -746,9 +748,11 @@
                             <a href="{% url 'guias:detalle' guia.id %}" class="action-btn view" title="Ver detalle">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            {% if user.rol != 'estudiante' %}
                             <a href="{% url 'guias:eliminar' guia.id %}" class="action-btn delete" title="Eliminar">
                                 <i class="fas fa-trash"></i>
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
@@ -759,10 +763,14 @@
                     <i class="fas fa-book"></i>
                 </div>
                 <h3>No hay guías disponibles</h3>
+                {% if user.rol != 'estudiante' %}
                 <p>Comienza creando tu primera guía de laboratorio</p>
                 <a href="{% url 'guias:nueva' %}" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Crear Primera Guía
                 </a>
+                {% else %}
+                <p>No hay guías disponibles en este momento.</p>
+                {% endif %}
             </div>
         {% endif %}
     </div>
