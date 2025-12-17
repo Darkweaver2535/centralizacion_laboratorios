@@ -603,6 +603,34 @@
                     {% endif %}
                 </div>
             </div>
+            
+            <!-- Datos Curriculares Opcionales -->
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.criterio_desempeno.label_tag }}
+                    {{ form.criterio_desempeno }}
+                    <small class="form-text text-muted">Opcional - Se carga según asignatura seleccionada</small>
+                    {% if form.criterio_desempeno.errors %}
+                        <div class="text-danger">{{ form.criterio_desempeno.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.unidad_didactica.label_tag }}
+                    {{ form.unidad_didactica }}
+                    <small class="form-text text-muted">Opcional - Se carga según asignatura seleccionada</small>
+                    {% if form.unidad_didactica.errors %}
+                        <div class="text-danger">{{ form.unidad_didactica.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.contenido_analitico.label_tag }}
+                    {{ form.contenido_analitico }}
+                    <small class="form-text text-muted">Opcional - Se carga según asignatura seleccionada</small>
+                    {% if form.contenido_analitico.errors %}
+                        <div class="text-danger">{{ form.contenido_analitico.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         <!-- Información del Equipo -->
@@ -700,6 +728,48 @@
                     {{ form.responsable_excel }}
                     {% if form.responsable_excel.errors %}
                         <div class="text-danger">{{ form.responsable_excel.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.ci_responsable.label_tag }}
+                    {{ form.ci_responsable }}
+                    {% if form.ci_responsable.errors %}
+                        <div class="text-danger">{{ form.ci_responsable.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.cargo_responsable.label_tag }}
+                    {{ form.cargo_responsable }}
+                    {% if form.cargo_responsable.errors %}
+                        <div class="text-danger">{{ form.cargo_responsable.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.oficina.label_tag }}
+                    {{ form.oficina }}
+                    {% if form.oficina.errors %}
+                        <div class="text-danger">{{ form.oficina.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.codigo_excel.label_tag }}
+                    {{ form.codigo_excel }}
+                    {% if form.codigo_excel.errors %}
+                        <div class="text-danger">{{ form.codigo_excel.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.descripcion_excel.label_tag }}
+                    {{ form.descripcion_excel }}
+                    {% if form.descripcion_excel.errors %}
+                        <div class="text-danger">{{ form.descripcion_excel.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.fecha_asignacion.label_tag }}
+                    {{ form.fecha_asignacion }}
+                    {% if form.fecha_asignacion.errors %}
+                        <div class="text-danger">{{ form.fecha_asignacion.errors.0 }}</div>
                     {% endif %}
                 </div>
             </div>

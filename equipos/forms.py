@@ -15,11 +15,14 @@ class EquipoForm(forms.ModelForm):
             'seccion',  # Sección a la que pertenece el equipo
             'unidad_academica', 'carrera', 'semestre', 'asignatura',
             'carga_horaria_semanal', 'carga_horaria_semestral',
+            'criterio_desempeno', 'unidad_didactica', 'contenido_analitico',
             'equipo_existente', 'marca', 'modelo', 'estado', 'numero_unidades',
             'es_activo_fijo', 'fotografia_frontal', 'fotografia_placa',
             'laboratorio', 'seccion_area', 'identificador_aula',
             'equipo_requerido', 'numero_equipos_requeridos',
-            'responsable_excel', 'observaciones'
+            'responsable_excel', 'ci_responsable', 'cargo_responsable', 
+            'oficina', 'codigo_excel', 'descripcion_excel', 'fecha_asignacion',
+            'observaciones'
         ]
         
         widgets = {
@@ -39,6 +42,9 @@ class EquipoForm(forms.ModelForm):
             }),
             'carga_horaria_semanal': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'carga_horaria_semestral': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'criterio_desempeno': forms.Select(attrs={'class': 'form-control'}),
+            'unidad_didactica': forms.Select(attrs={'class': 'form-control'}),
+            'contenido_analitico': forms.Select(attrs={'class': 'form-control'}),
             'equipo_existente': forms.TextInput(attrs={'class': 'form-control'}),
             'marca': forms.TextInput(attrs={'class': 'form-control'}),
             'modelo': forms.TextInput(attrs={'class': 'form-control'}),
@@ -59,6 +65,12 @@ class EquipoForm(forms.ModelForm):
             }),
             'numero_equipos_requeridos': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
             'responsable_excel': forms.TextInput(attrs={'class': 'form-control'}),
+            'ci_responsable': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 12345678'}),
+            'cargo_responsable': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Ingeniero'}),
+            'oficina': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Oficina 201'}),
+            'codigo_excel': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Código del equipo'}),
+            'descripcion_excel': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Descripción detallada del activo'}),
+            'fecha_asignacion': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
         }
         
@@ -70,6 +82,9 @@ class EquipoForm(forms.ModelForm):
             'asignatura': 'Asignatura',
             'carga_horaria_semanal': 'Carga Horaria Semanal',
             'carga_horaria_semestral': 'Carga Horaria Semestral',
+            'criterio_desempeno': 'Criterio de Desempeño',
+            'unidad_didactica': 'Unidad Didáctica',
+            'contenido_analitico': 'Contenido Analítico',
             'equipo_existente': 'Nombre del Equipo',
             'marca': 'Marca',
             'modelo': 'Modelo',
@@ -84,6 +99,12 @@ class EquipoForm(forms.ModelForm):
             'equipo_requerido': 'Equipo Requerido',
             'numero_equipos_requeridos': 'Número de Equipos Requeridos',
             'responsable_excel': 'Responsable',
+            'ci_responsable': 'C.I. del Responsable',
+            'cargo_responsable': 'Cargo del Responsable',
+            'oficina': 'Oficina',
+            'codigo_excel': 'Código',
+            'descripcion_excel': 'Descripción del Activo',
+            'fecha_asignacion': 'Fecha de Asignación',
             'observaciones': 'Observaciones'
         }
 
@@ -96,6 +117,17 @@ class EquipoForm(forms.ModelForm):
         
         # Semestres
         self.fields['semestre'].choices = [(i, f"{i}° Semestre") for i in range(1, 11)]
+        
+        # Inicializar querysets vacíos para campos que se cargan dinámicamente
+        # Pero permitir todos para validación (se verificarán en clean)
+        self.fields['criterio_desempeno'].queryset = CriterioDesempeno.objects.all()
+        self.fields['unidad_didactica'].queryset = UnidadDidactica.objects.all()
+        self.fields['contenido_analitico'].queryset = ContenidoAnalitico.objects.all()
+        
+        # Hacer estos campos opcionales en el formulario
+        self.fields['criterio_desempeno'].required = False
+        self.fields['unidad_didactica'].required = False
+        self.fields['contenido_analitico'].required = False
         
         # Si hay una instancia (estamos editando), cargar datos relacionados
         if self.instance and self.instance.pk:
@@ -116,6 +148,12 @@ class EquipoForm(forms.ModelForm):
                 )
             else:
                 self.fields['asignatura'].queryset = Asignatura.objects.all()
+            
+            # Cargar datos curriculares si hay asignatura
+            if equipo.asignatura:
+                self.fields['criterio_desempeno'].queryset = CriterioDesempeno.objects.filter(asignatura=equipo.asignatura)
+                self.fields['unidad_didactica'].queryset = UnidadDidactica.objects.filter(asignatura=equipo.asignatura)
+                self.fields['contenido_analitico'].queryset = ContenidoAnalitico.objects.filter(unidad_didactica__asignatura=equipo.asignatura)
         else:
             # Para nuevos equipos, permitir todas las opciones
             # La validación de relaciones se hará en clean_asignatura

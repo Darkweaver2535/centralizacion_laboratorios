@@ -1405,16 +1405,22 @@ def cargar_guias_laboratorio_ajax(request):
     asignatura_id = request.GET.get('asignatura_id')
     
     if asignatura_id:
-        guias = GuiaLaboratorio.objects.filter(
-            unidad_tematica__asignatura_id=asignatura_id
-        ).values('id', 'nombre', 'numero')
-        guias_data = [
-            {
-                'id': guia['id'],
-                'text': f"Guía {guia['numero']}: {guia['nombre']}"
-            }
-            for guia in guias
-        ]
+        try:
+            # Buscar guías a través de contenido_analitico -> unidad_didactica -> asignatura
+            guias = GuiaLaboratorio.objects.filter(
+                contenido_analitico__unidad_didactica__asignatura_id=asignatura_id
+            ).distinct().values('id', 'nombre')
+            
+            guias_data = [
+                {
+                    'id': guia['id'],
+                    'text': guia['nombre']
+                }
+                for guia in guias
+            ]
+        except Exception as e:
+            print(f"Error cargando guías: {e}")
+            guias_data = []
     else:
         guias_data = []
     
@@ -1426,18 +1432,25 @@ def cargar_practicas_ajax(request):
     guia_laboratorio_id = request.GET.get('guia_laboratorio_id')
     
     if guia_laboratorio_id:
-        practicas = Practica.objects.filter(guia_laboratorio_id=guia_laboratorio_id).values(
-            'id', 'nombre', 'numero'
-        )
-        practicas_data = [
-            {
-                'id': practica['id'],
-                'text': f"Práctica {practica['numero']}: {practica['nombre']}"
-            }
-            for practica in practicas
-        ]
+        try:
+            practicas = Practica.objects.filter(
+                contenido_analitico__guia_laboratorio_id=guia_laboratorio_id
+            ).distinct().values('id', 'nombre')
+            
+            practicas_data = [
+                {
+                    'id': practica['id'],
+                    'text': practica['nombre']
+                }
+                for practica in practicas
+            ]
+        except Exception as e:
+            print(f"Error cargando prácticas: {e}")
+            practicas_data = []
     else:
         practicas_data = []
+    
+    return JsonResponse({'practicas': practicas_data})
     
     return JsonResponse({'practicas': practicas_data})
 
