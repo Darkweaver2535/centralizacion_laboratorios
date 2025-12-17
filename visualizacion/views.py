@@ -109,8 +109,10 @@ def visualizacion_view(request):
     
     # Lógica según categoría seleccionada - USAR DJANGO-FILTER
     if categoria == 'equipos':
-        # Usar EquipoFilter en lugar de lógica manual
-        filterset = EquipoFilter(request.GET, queryset=Equipo.objects.select_related(
+        # Usar EquipoFilter en lugar de lógica manual - filtrar por sección académica
+        filterset = EquipoFilter(request.GET, queryset=Equipo.objects.filter(
+            seccion='academico'
+        ).select_related(
             'unidad_academica', 'carrera', 'asignatura',
             'criterio_desempeno', 'unidad_didactica', 'contenido_analitico',
             'guia_laboratorio', 'practica', 'laboratorio'
@@ -128,8 +130,10 @@ def visualizacion_view(request):
         }
         
     elif categoria == 'insumos':
-        # Usar InsumoFilter en lugar de lógica manual
-        filterset = InsumoFilter(request.GET, queryset=Insumo.objects.select_related(
+        # Usar InsumoFilter en lugar de lógica manual - filtrar por sección académica
+        filterset = InsumoFilter(request.GET, queryset=Insumo.objects.filter(
+            seccion='academico'
+        ).select_related(
             'unidad_academica', 'carrera', 'asignatura', 'laboratorio'
         ))
         items = filterset.qs  # Queryset filtrado por django-filter
@@ -224,6 +228,8 @@ def visualizacion_view(request):
     context = {
         # Datos comunes - SIEMPRE mostrar totales reales para la interfaz principal
         'categoria': categoria,
+        'seccion': 'academico',  # Sección académica por defecto
+        'mostrar_guias': True,  # Mostrar guías en sección académica
         'stats': {
             'total_equipos': Equipo.objects.count(),
             'total_insumos': Insumo.objects.count(),
@@ -1152,3 +1158,236 @@ def api_buscar_titulos_guias(request):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def investigacion_view(request):
+    """Vista para visualización de Equipos e Insumos de la sección de Investigación"""
+    
+    # Importar filtros de django-filter
+    from .filters import EquipoFilter, InsumoFilter
+    
+    # Obtener categoría seleccionada y validarla
+    categoria = request.GET.get('categoria', 'equipos')
+    
+    # Validar categoría (solo equipos e insumos, sin guías)
+    categorias_validas = ['equipos', 'insumos']
+    if categoria not in categorias_validas or categoria == 'undefined':
+        categoria = 'equipos'  # Categoría por defecto
+    
+    # Inicializar variables
+    items = None
+    filterset = None
+    stats = {}
+    
+    # Lógica según categoría seleccionada - filtrar por seccion='investigacion'
+    if categoria == 'equipos':
+        filterset = EquipoFilter(request.GET, queryset=Equipo.objects.filter(
+            seccion='investigacion'
+        ).select_related(
+            'unidad_academica', 'carrera', 'asignatura',
+            'criterio_desempeno', 'unidad_didactica', 'contenido_analitico',
+            'guia_laboratorio', 'practica', 'laboratorio'
+        ))
+        items = filterset.qs
+        
+        # Estadísticas para equipos de investigación
+        stats = {
+            'total_items': items.count(),
+            'total_laboratorios': Laboratorio.objects.count(),
+            'items_buenos': items.filter(estado='bueno').count(),
+            'items_regulares': items.filter(estado='regular').count(),
+            'items_malos': items.filter(estado='malo').count(),
+            'categoria_nombre': 'Equipos de Investigación'
+        }
+        
+    elif categoria == 'insumos':
+        filterset = InsumoFilter(request.GET, queryset=Insumo.objects.filter(
+            seccion='investigacion'
+        ).select_related(
+            'unidad_academica', 'carrera', 'asignatura', 'laboratorio'
+        ))
+        items = filterset.qs
+        
+        # Estadísticas para insumos de investigación
+        stats = {
+            'total_items': items.count(),
+            'total_laboratorios': Laboratorio.objects.count(),
+            'items_buenos': items.filter(estado='disponible').count() if hasattr(Insumo, 'estado') else 0,
+            'items_regulares': items.filter(estado='agotado').count() if hasattr(Insumo, 'estado') else 0,
+            'items_malos': items.filter(estado='vencido').count() if hasattr(Insumo, 'estado') else 0,
+            'categoria_nombre': 'Insumos de Investigación'
+        }
+    
+    # Verificación de seguridad para items
+    if items is None:
+        from django.db.models import QuerySet
+        items = Equipo.objects.none()
+        stats = {
+            'total_items': 0,
+            'total_laboratorios': Laboratorio.objects.count(),
+            'items_buenos': 0,
+            'items_regulares': 0,
+            'items_malos': 0,
+            'categoria_nombre': 'Sin categoría'
+        }
+    
+    # Paginación unificada
+    paginator = Paginator(items, 50)
+    page_number = request.GET.get('page')
+    items_page = paginator.get_page(page_number)
+    
+    # Datos para filtros jerárquicos
+    unidades = UnidadAcademica.objects.all()
+    carreras = Carrera.objects.all()
+    asignaturas = Asignatura.objects.all()
+    unidades_tematicas = UnidadTematica.objects.all()
+    laboratorios = Laboratorio.objects.all()
+    
+    # Obtener responsables únicos según categoría
+    responsables = []
+    if categoria == 'equipos':
+        responsables = Equipo.objects.filter(seccion='investigacion').exclude(responsable_excel='').values_list('responsable_excel', flat=True).distinct().order_by('responsable_excel')
+    
+    # Agregar estadísticas globales para las tarjetas de categoría
+    stats['total_equipos'] = Equipo.objects.filter(seccion='investigacion').count()
+    stats['total_insumos'] = Insumo.objects.filter(seccion='investigacion').count()
+    stats['total_guias'] = 0  # No hay guías en investigación
+    
+    context = {
+        'items': items_page,
+        'equipos': items_page if categoria == 'equipos' else None,  # Para el template
+        'insumos': items_page if categoria == 'insumos' else None,  # Para el template
+        'guias': None,  # No hay guías en investigación
+        'categoria': categoria,
+        'seccion': 'investigacion',  # Identificador de sección
+        'filterset': filterset,
+        'stats': stats,
+        'unidades': unidades,
+        'carreras': carreras,
+        'asignaturas': asignaturas,
+        'unidades_tematicas': unidades_tematicas,
+        'laboratorios': laboratorios,
+        'responsables': responsables,
+        'mostrar_guias': False,  # No mostrar guías en esta sección
+        'unidades_academicas': unidades,  # Alias para compatibilidad con template
+    }
+    
+    return render(request, 'visualizacion_r2.html', context)
+
+
+@login_required
+def produccion_view(request):
+    """Vista para visualización de Equipos e Insumos de la sección de Producción"""
+    
+    # Importar filtros de django-filter
+    from .filters import EquipoFilter, InsumoFilter
+    
+    # Obtener categoría seleccionada y validarla
+    categoria = request.GET.get('categoria', 'equipos')
+    
+    # Validar categoría (solo equipos e insumos, sin guías)
+    categorias_validas = ['equipos', 'insumos']
+    if categoria not in categorias_validas or categoria == 'undefined':
+        categoria = 'equipos'  # Categoría por defecto
+    
+    # Inicializar variables
+    items = None
+    filterset = None
+    stats = {}
+    
+    # Lógica según categoría seleccionada - filtrar por seccion='produccion'
+    if categoria == 'equipos':
+        filterset = EquipoFilter(request.GET, queryset=Equipo.objects.filter(
+            seccion='produccion'
+        ).select_related(
+            'unidad_academica', 'carrera', 'asignatura',
+            'criterio_desempeno', 'unidad_didactica', 'contenido_analitico',
+            'guia_laboratorio', 'practica', 'laboratorio'
+        ))
+        items = filterset.qs
+        
+        # Estadísticas para equipos de producción
+        stats = {
+            'total_items': items.count(),
+            'total_laboratorios': Laboratorio.objects.count(),
+            'items_buenos': items.filter(estado='bueno').count(),
+            'items_regulares': items.filter(estado='regular').count(),
+            'items_malos': items.filter(estado='malo').count(),
+            'categoria_nombre': 'Equipos de Producción'
+        }
+        
+    elif categoria == 'insumos':
+        filterset = InsumoFilter(request.GET, queryset=Insumo.objects.filter(
+            seccion='produccion'
+        ).select_related(
+            'unidad_academica', 'carrera', 'asignatura', 'laboratorio'
+        ))
+        items = filterset.qs
+        
+        # Estadísticas para insumos de producción
+        stats = {
+            'total_items': items.count(),
+            'total_laboratorios': Laboratorio.objects.count(),
+            'items_buenos': items.filter(estado='disponible').count() if hasattr(Insumo, 'estado') else 0,
+            'items_regulares': items.filter(estado='agotado').count() if hasattr(Insumo, 'estado') else 0,
+            'items_malos': items.filter(estado='vencido').count() if hasattr(Insumo, 'estado') else 0,
+            'categoria_nombre': 'Insumos de Producción'
+        }
+    
+    # Verificación de seguridad para items
+    if items is None:
+        from django.db.models import QuerySet
+        items = Equipo.objects.none()
+        stats = {
+            'total_items': 0,
+            'total_laboratorios': Laboratorio.objects.count(),
+            'items_buenos': 0,
+            'items_regulares': 0,
+            'items_malos': 0,
+            'categoria_nombre': 'Sin categoría'
+        }
+    
+    # Paginación unificada
+    paginator = Paginator(items, 50)
+    page_number = request.GET.get('page')
+    items_page = paginator.get_page(page_number)
+    
+    # Datos para filtros jerárquicos
+    unidades = UnidadAcademica.objects.all()
+    carreras = Carrera.objects.all()
+    asignaturas = Asignatura.objects.all()
+    unidades_tematicas = UnidadTematica.objects.all()
+    laboratorios = Laboratorio.objects.all()
+    
+    # Obtener responsables únicos según categoría
+    responsables = []
+    if categoria == 'equipos':
+        responsables = Equipo.objects.filter(seccion='produccion').exclude(responsable_excel='').values_list('responsable_excel', flat=True).distinct().order_by('responsable_excel')
+    
+    # Agregar estadísticas globales para las tarjetas de categoría
+    stats['total_equipos'] = Equipo.objects.filter(seccion='produccion').count()
+    stats['total_insumos'] = Insumo.objects.filter(seccion='produccion').count()
+    stats['total_guias'] = 0  # No hay guías en producción
+    
+    context = {
+        'items': items_page,
+        'equipos': items_page if categoria == 'equipos' else None,  # Para el template
+        'insumos': items_page if categoria == 'insumos' else None,  # Para el template
+        'guias': None,  # No hay guías en producción
+        'categoria': categoria,
+        'seccion': 'produccion',  # Identificador de sección
+        'filterset': filterset,
+        'stats': stats,
+        'unidades': unidades,
+        'carreras': carreras,
+        'asignaturas': asignaturas,
+        'unidades_tematicas': unidades_tematicas,
+        'laboratorios': laboratorios,
+        'responsables': responsables,
+        'mostrar_guias': False,  # No mostrar guías en esta sección
+        'unidades_academicas': unidades,  # Alias para compatibilidad con template
+    }
+    
+    return render(request, 'visualizacion_r2.html', context)
+

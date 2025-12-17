@@ -5,6 +5,8 @@ app_name = 'visualizacion'
 
 urlpatterns = [
     path('', views.visualizacion_view, name='analisis'),
+    path('investigacion/', views.investigacion_view, name='investigacion'),
+    path('produccion/', views.produccion_view, name='produccion'),
     path('filtrar/', views.filtrar_datos, name='filtrar_datos'),
     path('opciones-filtro/', views.obtener_opciones_filtro, name='opciones_filtro'),
     path('equipos/', views.equipos_ajax, name='equipos_ajax'),

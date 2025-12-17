@@ -228,6 +228,7 @@ class InsumoForm(forms.ModelForm):
         model = Insumo
         fields = [
             # Las 21 columnas oficiales (agregamos Guía y Práctica)
+            'seccion',                    # Sección a la que pertenece el insumo
             'unidad_academica',           # 1. UNIDAD ACADÉMICA
             'laboratorio',                # 2. LABORATORIO
             'categoria',                  # 3. CATEGORÍA
@@ -252,6 +253,11 @@ class InsumoForm(forms.ModelForm):
         ]
         
         widgets = {
+            # Sección
+            'seccion': forms.Select(attrs={
+                'class': 'form-control',
+                'required': True
+            }),
             # Información básica
             'unidad_academica': forms.Select(attrs={
                 'class': 'form-control',
@@ -329,6 +335,7 @@ class InsumoForm(forms.ModelForm):
         }
         
         labels = {
+            'seccion': 'Sección *',
             'unidad_academica': 'Unidad Académica *',
             'laboratorio': 'Laboratorio *',
             'categoria': 'Categoría *',

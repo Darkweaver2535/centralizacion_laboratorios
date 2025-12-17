@@ -12,11 +12,10 @@ class EquipoForm(forms.ModelForm):
     class Meta:
         model = Equipo
         fields = [
+            'seccion',  # Sección a la que pertenece el equipo
             'unidad_academica', 'carrera', 'semestre', 'asignatura',
             'carga_horaria_semanal', 'carga_horaria_semestral',
-            'criterio_desempeno', 'unidad_didactica', 'contenido_analitico',
-            'guia_laboratorio', 'practica', 'equipo_existente',
-            'marca', 'modelo', 'estado', 'numero_unidades',
+            'equipo_existente', 'marca', 'modelo', 'estado', 'numero_unidades',
             'es_activo_fijo', 'fotografia_frontal', 'fotografia_placa',
             'laboratorio', 'seccion_area', 'identificador_aula',
             'equipo_requerido', 'numero_equipos_requeridos',
@@ -24,36 +23,22 @@ class EquipoForm(forms.ModelForm):
         ]
         
         widgets = {
-            'unidad_academica': forms.Select(attrs={
+            'seccion': forms.Select(attrs={
                 'class': 'form-control',
-                'onchange': 'cargarCarreras(this.value)'
+                'required': True
+            }),
+            'unidad_academica': forms.Select(attrs={
+                'class': 'form-control'
             }),
             'carrera': forms.Select(attrs={
-                'class': 'form-control',
-                'onchange': 'cargarAsignaturas(this.value)'
+                'class': 'form-control'
             }),
             'semestre': forms.Select(attrs={'class': 'form-control'}),
             'asignatura': forms.Select(attrs={
-                'class': 'form-control',
-                'onchange': 'cargarDatosCurriculares(this.value)'
+                'class': 'form-control'
             }),
             'carga_horaria_semanal': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'carga_horaria_semestral': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
-            'criterio_desempeno': forms.Select(attrs={
-                'class': 'form-control',
-                'data-live-search': 'true'
-            }),
-            'unidad_didactica': forms.Select(attrs={
-                'class': 'form-control',
-                'data-live-search': 'true',
-                'onchange': 'cargarContenidosAnaliticos(this.value)'
-            }),
-            'contenido_analitico': forms.Select(attrs={
-                'class': 'form-control',
-                'data-live-search': 'true'
-            }),
-            'guia_laboratorio': forms.Select(attrs={'class': 'form-control'}),
-            'practica': forms.Select(attrs={'class': 'form-control'}),
             'equipo_existente': forms.TextInput(attrs={'class': 'form-control'}),
             'marca': forms.TextInput(attrs={'class': 'form-control'}),
             'modelo': forms.TextInput(attrs={'class': 'form-control'}),
@@ -78,17 +63,13 @@ class EquipoForm(forms.ModelForm):
         }
         
         labels = {
+            'seccion': 'Sección',
             'unidad_academica': 'Unidad Académica',
             'carrera': 'Carrera',
             'semestre': 'Semestre',
             'asignatura': 'Asignatura',
             'carga_horaria_semanal': 'Carga Horaria Semanal',
             'carga_horaria_semestral': 'Carga Horaria Semestral',
-            'criterio_desempeno': 'Criterio de Desempeño',
-            'unidad_didactica': 'Unidad Didáctica',
-            'contenido_analitico': 'Contenido Analítico',
-            'guia_laboratorio': 'Guía de Laboratorio',
-            'practica': 'Práctica',
             'equipo_existente': 'Nombre del Equipo',
             'marca': 'Marca',
             'modelo': 'Modelo',
@@ -111,7 +92,6 @@ class EquipoForm(forms.ModelForm):
         
         # Cargar todas las opciones dinámicamente
         self.fields['unidad_academica'].queryset = UnidadAcademica.objects.all()
-        self.fields['carrera'].queryset = Carrera.objects.all()
         self.fields['laboratorio'].queryset = Laboratorio.objects.all()
         
         # Semestres
@@ -121,67 +101,39 @@ class EquipoForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             equipo = self.instance
             
+            # Cargar carreras de la unidad académica seleccionada
+            if equipo.unidad_academica:
+                self.fields['carrera'].queryset = Carrera.objects.filter(
+                    unidad_academica=equipo.unidad_academica
+                )
+            else:
+                self.fields['carrera'].queryset = Carrera.objects.all()
+            
             # Cargar asignaturas de la carrera seleccionada
             if equipo.carrera:
                 self.fields['asignatura'].queryset = Asignatura.objects.filter(
                     carrera=equipo.carrera
                 )
             else:
-                self.fields['asignatura'].queryset = Asignatura.objects.none()
-            
-            # Cargar criterios de desempeño de la asignatura seleccionada
-            if equipo.asignatura:
-                self.fields['criterio_desempeno'].queryset = CriterioDesempeno.objects.filter(
-                    asignatura=equipo.asignatura
-                )
-                
-                # Cargar unidades didácticas de la asignatura
-                self.fields['unidad_didactica'].queryset = UnidadDidactica.objects.filter(
-                    asignatura=equipo.asignatura
-                )
-                
-                # Cargar guías de laboratorio
-                self.fields['guia_laboratorio'].queryset = GuiaLaboratorio.objects.filter(
-                    unidad_tematica__asignatura=equipo.asignatura
-                )
-            else:
-                self.fields['criterio_desempeno'].queryset = CriterioDesempeno.objects.none()
-                self.fields['unidad_didactica'].queryset = UnidadDidactica.objects.none()
-                self.fields['guia_laboratorio'].queryset = GuiaLaboratorio.objects.none()
-            
-            # Cargar contenidos analíticos de la unidad didáctica seleccionada
-            if equipo.unidad_didactica:
-                self.fields['contenido_analitico'].queryset = ContenidoAnalitico.objects.filter(
-                    unidad_didactica=equipo.unidad_didactica
-                )
-            else:
-                self.fields['contenido_analitico'].queryset = ContenidoAnalitico.objects.none()
-            
-            # Cargar prácticas de la guía seleccionada
-            if equipo.guia_laboratorio:
-                self.fields['practica'].queryset = Practica.objects.filter(
-                    guia_laboratorio=equipo.guia_laboratorio
-                )
-            else:
-                self.fields['practica'].queryset = Practica.objects.none()
+                self.fields['asignatura'].queryset = Asignatura.objects.all()
         else:
-            # Para nuevo equipo, inicializar con querysets vacíos que se llenarán por AJAX
-            self.fields['asignatura'].queryset = Asignatura.objects.none()
-            self.fields['criterio_desempeno'].queryset = CriterioDesempeno.objects.none()
-            self.fields['unidad_didactica'].queryset = UnidadDidactica.objects.none()
-            self.fields['contenido_analitico'].queryset = ContenidoAnalitico.objects.none()
-            self.fields['guia_laboratorio'].queryset = GuiaLaboratorio.objects.none()
-            self.fields['practica'].queryset = Practica.objects.none()
+            # Para nuevos equipos, permitir todas las opciones
+            # La validación de relaciones se hará en clean_asignatura
+            self.fields['carrera'].queryset = Carrera.objects.all()
+            self.fields['asignatura'].queryset = Asignatura.objects.all()
 
-    def clean(self):
-        cleaned_data = super().clean()
-        
-        # Validaciones personalizadas
-        carrera = cleaned_data.get('carrera')
-        asignatura = cleaned_data.get('asignatura')
+    def clean_asignatura(self):
+        """Validación personalizada para asignatura"""
+        asignatura = self.cleaned_data.get('asignatura')
+        carrera = self.data.get('carrera')
         
         if asignatura and carrera:
-            if asignatura.carrera != carrera:
+            # Verificar que la asignatura pertenezca a la carrera
+            if str(asignatura.carrera_id) != str(carrera):
                 raise forms.ValidationError("La asignatura debe pertenecer a la carrera seleccionada.")
         
+        return asignatura
+    
+    def clean(self):
+        cleaned_data = super().clean()
         return cleaned_data

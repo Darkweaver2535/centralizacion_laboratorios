@@ -697,13 +697,29 @@
 
                 <!-- 3. Gestión de Laboratorios (Visualización R2) - Enlace Directo -->
                 <li>
-                    <a href="{% url 'visualizacion:analisis' %}" class="menu-item {% if request.resolver_match.namespace == 'visualizacion' %}active{% endif %}">
+                    <a href="{% url 'visualizacion:analisis' %}" class="menu-item {% if request.resolver_match.url_name == 'analisis' %}active{% endif %}">
                         <i class="fas fa-microscope"></i>
                         Gestión de Laboratorios
                     </a>
                 </li>
 
-                <!-- 4. Usuarios -->
+                <!-- 4. Gestión de Investigación - Nueva sección -->
+                <li>
+                    <a href="{% url 'visualizacion:investigacion' %}" class="menu-item {% if request.resolver_match.url_name == 'investigacion' %}active{% endif %}">
+                        <i class="fas fa-flask"></i>
+                        Gestión de Investigación
+                    </a>
+                </li>
+
+                <!-- 5. Gestión de Producción - Nueva sección -->
+                <li>
+                    <a href="{% url 'visualizacion:produccion' %}" class="menu-item {% if request.resolver_match.url_name == 'produccion' %}active{% endif %}">
+                        <i class="fas fa-industry"></i>
+                        Gestión de Producción
+                    </a>
+                </li>
+
+                <!-- 6. Usuarios -->
                 <li>
                     <a href="{% url 'usuarios:lista' %}" class="menu-item {% if request.resolver_match.namespace == 'usuarios' %}active{% endif %}">
                         <i class="fas fa-users"></i>
@@ -875,7 +891,12 @@
             const menuItems = document.querySelectorAll('.menu-item, .submenu-item');
             menuItems.forEach(item => {
                 const itemPath = item.getAttribute('href');
-                if (itemPath && currentPath.includes(itemPath) && itemPath !== '#') {
+                // Usar coincidencia exacta para evitar activar múltiples elementos
+                // Agregar '/' al final para comparación consistente
+                const normalizedCurrentPath = currentPath.endsWith('/') ? currentPath : currentPath + '/';
+                const normalizedItemPath = itemPath && itemPath.endsWith('/') ? itemPath : itemPath + '/';
+                
+                if (itemPath && normalizedCurrentPath === normalizedItemPath && itemPath !== '#') {
                     item.classList.add('active');
                     
                     // Si es un submenu, abrir su dropdown/burbuja padre

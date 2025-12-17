@@ -36,6 +36,7 @@
                 <div class="category-count">{{ stats.total_insumos|default:0 }} insumos</div>
             </div>
             
+            {% if mostrar_guias %}
             <div class="category-card" data-category="guias" onclick="seleccionarCategoria('guias')">
                 <div class="category-icon">
                     <i class="fas fa-book-open"></i>
@@ -44,6 +45,7 @@
                 <p>Guías de prácticas</p>
                 <div class="category-count">{{ stats.total_guias|default:0 }} guías</div>
             </div>
+            {% endif %}
         </div>
     </div>
 

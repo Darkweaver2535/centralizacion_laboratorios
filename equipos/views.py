@@ -207,6 +207,16 @@ def nuevo_equipo_view(request):
             except Exception as e:
                 messages.error(request, f'Error al crear el equipo: {str(e)}')
         else:
+            # Si hay errores, recargar las opciones para los campos dependientes
+            unidad_academica_id = request.POST.get('unidad_academica')
+            carrera_id = request.POST.get('carrera')
+            
+            if unidad_academica_id:
+                form.fields['carrera'].queryset = Carrera.objects.filter(unidad_academica_id=unidad_academica_id)
+            
+            if carrera_id:
+                form.fields['asignatura'].queryset = Asignatura.objects.filter(carrera_id=carrera_id)
+            
             messages.error(request, 'Por favor corrija los errores en el formulario.')
     else:
         form = EquipoForm()
@@ -1286,18 +1296,36 @@ def cargar_asignaturas_ajax(request):
             'id', 'nombre', 'semestre', 'codigo_competencia', 'sigla_curricular',
             'carga_horaria_semanal', 'carga_horaria_semestral'
         )
-        asignaturas_data = [
-            {
-                'id': asignatura['id'], 
-                'text': f"{dict(Asignatura.ASIGNATURAS_CHOICES)[asignatura['nombre']]} (Semestre {asignatura['semestre']})",
-                'semestre': asignatura['semestre'],
-                'codigo_competencia': asignatura['codigo_competencia'] or '',
-                'sigla_curricular': asignatura['sigla_curricular'] or '',
-                'carga_horaria_semanal': asignatura['carga_horaria_semanal'] or '',
-                'carga_horaria_semestral': asignatura['carga_horaria_semestral'] or ''
-            }
-            for asignatura in asignaturas
-        ]
+        
+        # Crear diccionario de choices para búsqueda rápida
+        choices_dict = dict(Asignatura.ASIGNATURAS_CHOICES)
+        
+        asignaturas_data = []
+        for asignatura in asignaturas:
+            try:
+                # Intentar obtener el nombre desde las choices, si no existe usar el valor directo
+                nombre_display = choices_dict.get(asignatura['nombre'], asignatura['nombre'])
+                
+                asignaturas_data.append({
+                    'id': asignatura['id'], 
+                    'text': f"{nombre_display} (Semestre {asignatura['semestre']})",
+                    'semestre': asignatura['semestre'],
+                    'codigo_competencia': asignatura['codigo_competencia'] or '',
+                    'sigla_curricular': asignatura['sigla_curricular'] or '',
+                    'carga_horaria_semanal': asignatura['carga_horaria_semanal'] or '',
+                    'carga_horaria_semestral': asignatura['carga_horaria_semestral'] or ''
+                })
+            except Exception as e:
+                # Si hay algún error con una asignatura específica, usar el nombre directo
+                asignaturas_data.append({
+                    'id': asignatura['id'],
+                    'text': f"{asignatura['nombre']} (Semestre {asignatura['semestre']})",
+                    'semestre': asignatura['semestre'],
+                    'codigo_competencia': asignatura['codigo_competencia'] or '',
+                    'sigla_curricular': asignatura['sigla_curricular'] or '',
+                    'carga_horaria_semanal': asignatura['carga_horaria_semanal'] or '',
+                    'carga_horaria_semestral': asignatura['carga_horaria_semestral'] or ''
+                })
     else:
         asignaturas_data = []
     

@@ -41,6 +41,12 @@ class Equipo(models.Model):
         ('malo', 'Malo'),
     ]
     
+    SECCIONES = [
+        ('academico', 'Académico'),
+        ('investigacion', 'Investigación'),
+        ('produccion', 'Producción'),
+    ]
+    
     # 1. UNIDAD ACADÉMICA
     unidad_academica = models.ForeignKey(
         UnidadAcademica, 
@@ -117,14 +123,18 @@ class Equipo(models.Model):
     guia_laboratorio = models.ForeignKey(
         GuiaLaboratorio, 
         on_delete=models.CASCADE,
-        verbose_name="Guía de Laboratorio"
+        verbose_name="Guía de Laboratorio",
+        null=True,
+        blank=True
     )
     
     # 11. PRÁCTICA
     practica = models.ForeignKey(
         Practica, 
         on_delete=models.CASCADE,
-        verbose_name="Práctica"
+        verbose_name="Práctica",
+        null=True,
+        blank=True
     )
     
     # 12. NOMBRE DE EQUIPO EXISTENTE
@@ -276,6 +286,17 @@ class Equipo(models.Model):
         blank=True,
         verbose_name="Observaciones"
     )
+    
+    # Sección de destino del equipo
+    seccion = models.CharField(
+        max_length=20,
+        choices=SECCIONES,
+        default='academico',
+        verbose_name="Sección",
+        help_text="Sección a la que pertenece el equipo",
+        db_index=True
+    )
+    
     codigo_inventario = models.CharField(
         max_length=50,
         blank=True,

@@ -52,6 +52,12 @@ class Insumo(models.Model):
         ('descartado', 'Descartado'),
     ]
     
+    SECCIONES = [
+        ('academico', 'Académico'),
+        ('investigacion', 'Investigación'),
+        ('produccion', 'Producción'),
+    ]
+    
     UNIDADES_MEDIDA = [
         ('unidades', 'Unidades'),
         ('ml', 'Mililitros'),
@@ -260,6 +266,17 @@ class Insumo(models.Model):
         null=True,
         verbose_name="Usuario Creador"
     )
+    
+    # Sección de destino del insumo
+    seccion = models.CharField(
+        max_length=20,
+        choices=SECCIONES,
+        default='academico',
+        verbose_name="Sección",
+        help_text="Sección a la que pertenece el insumo",
+        db_index=True
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
     
