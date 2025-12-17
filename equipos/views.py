@@ -200,12 +200,13 @@ def nuevo_equipo_view(request):
         form = EquipoForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                with transaction.atomic():
-                    equipo = form.save(commit=False)
-                    equipo.usuario_creador = request.user  # Asignar el usuario actual
-                    equipo.save()
-                    messages.success(request, f'Equipo "{equipo.equipo_existente}" creado exitosamente.')
-                    return redirect('equipos:detalle', pk=equipo.pk)
+                equipo = form.save(commit=False)
+                equipo.usuario_creador = request.user  # Asignar el usuario actual
+                equipo.save()
+                # Guardar las relaciones many-to-many después de save()
+                form.save_m2m()
+                messages.success(request, f'Equipo "{equipo.equipo_existente}" creado exitosamente.')
+                return redirect('equipos:detalle', pk=equipo.pk)
             except Exception as e:
                 messages.error(request, f'Error al crear el equipo: {str(e)}')
         else:
